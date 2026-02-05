@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Summary - St Michael Eritrean Orthodox Church</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            background: linear-gradient(120deg, #2c3e50, #4a6491);
+            color: white;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eaeaea;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+        
+        .financial-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .financial-table th {
+            background: #2c3e50;
+            color: white;
+            text-align: left;
+            padding: 12px 15px;
+        }
+        
+        .financial-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .financial-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        
+        .financial-table tr:hover {
+            background: #f1f7ff;
+        }
+        
+        .positive {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .negative {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 15px;
+        }
+        
+        .summary {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-top: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .summary h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .summary p {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .highlight {
+            background: #e8f4ff;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>St Michael Eritrean Orthodox Church</h1>
+            <p class="subtitle">Financial Summary Dashboard (2018-2025)</p>
+        </header>
+        
+        <div class="dashboard">
+            <div class="card">
+                <h2>Income vs Expenses Trend</h2>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Net Surplus/Deficit</h2>
+                <div class="chart-container">
+                    <canvas id="netChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Expense Percentage of Income</h2>
+                <div class="chart-container">
+                    <canvas id="expensePctChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Detailed Financial Data</h2>
+            <table class="financial-table">
+                <thead>
+                    <tr>
+                        <th>Reporting Period</th>
+                        <th>Income</th>
+                        <th>Expenses</th>
+                        <th>Net Surplus/(Deficit)</th>
+                        <th>Expenses % of Income</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>31 Jan 2018 - 30 Jan 2019</td>
+                        <td>$37,854</td>
+                        <td>$31,138</td>
+                        <td class="positive">+$6,716</td>
+                        <td>82%</td>
+                    </tr>
+                    <tr>
+                        <td>31 Jan 2019 - 30 Jan 2020</td>
+                        <td>$30,034</td>
+                        <td>$27,396</td>
+                        <td class="positive">+$2,638</td>
+                        <td>91%</td>
+                    </tr>
+                    <tr>
+                        <td>1 Feb 2020 - 31 Jan 2021</td>
+                        <td>$150,291</td>
+                        <td>$38,402</td>
+                        <td class="positive">+$111,889</td>
+                        <td>26%</td>
+                    </tr>
+                    <tr>
+                        <td>1 Feb 2021 - 31 Jan 2022</td>
+                        <td>$33,275</td>
+                        <td>$15,038</td>
+                        <td class="positive">+$18,237</td>
+                        <td>45%</td>
+                    </tr>
+                    <tr>
+                        <td>1 Feb 2022 - 31 Jan 2023</td>
+                        <td>$25,103</td>
+                        <td>$27,133</td>
+                        <td class="negative">-$2,030</td>
+                        <td class="negative">108%</td>
+                    </tr>
+                    <tr>
+                        <td>1 Jan 2023 - 31 Dec 2023</td>
+                        <td>$17,623</td>
+                        <td>$60,128</td>
+                        <td class="negative">-$42,505</td>
+                        <td class="negative">341%</td>
+                    </tr>
+                    <tr>
+                        <td>1 Feb 2024 - 31 Jan 2025</td>
+                        <td>$415</td>
+                        <td>$12,098</td>
+                        <td class="negative">-$11,683</td>
+                        <td class="negative">2,915%</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="summary">
+            <h2>Financial Performance Summary</h2>
+            <p>The financial data shows a significant shift in the charity's performance over the years:</p>
+            
+            <div class="highlight">
+                <p><strong>2018-2022:</strong> The charity maintained relatively stable operations with consistent surpluses, peaking in 2021 with a remarkable surplus of $111,889.</p>
+            </div>
+            
+            <div class="highlight">
+                <p><strong>2023-2025:</strong> A concerning trend emerged with expenses dramatically outpacing income, resulting in substantial deficits. The expense-to-income ratio climbed to extremely high levels (341% in 2023 and 2,915% in 2025).</p>
+            </div>
+            
+            <p>Despite recent financial challenges, the charity reported holding $128,878 in savings and a term deposit as of the end of 2023, which provides an important financial buffer.</p>
+        </div>
+        
+        <footer>
+            <p>Financial Summary Dashboard for St Michael Eritrean Orthodox Church | Data from 2018 to 2025</p>
+        </footer>
+    </div>
+<script src="js/financailreo2018-2025.js"></script>
+    <script>
+        // Financial data in correct chronological order (2018-19 to 2024-25)
+        const periods = [
+            '2018-19', '2019-20', '2020-21', '2021-22', '2022-23', '2023-24', '2024-25'
+        ];gvvv
+        
+        const income = [37854, 30034, 150291, 33275, 25103, 17623, 415];
+        const expenses = [31138, 27396, 38402, 15038, 27133, 60128, 12098];
+        const net = [6716, 2638, 111889, 18237, -2030, -42505, -11683];
+        const expensePct = [82, 91, 26, 45, 108, 341, 2915];
+        
+        // Trend Chart (Income vs Expenses)
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: periods,
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: income,
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Expenses',
+                        data: expenses,
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Income and Expenses Over Time'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': $' + context.raw.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Net Surplus/Deficit Chart
+        const netCtx = document.getElementById('netChart').getContext('2d');
+        new Chart(netCtx, {
+            type: 'bar',
+            data: {
+                labels: periods,
+                datasets: [{
+                    label: 'Net Surplus/(Deficit)',
+                    data: net,
+                    backgroundColor: net.map(value => value >= 0 ? 'rgba(39, 174, 96, 0.7)' : 'rgba(231, 76, 60, 0.7)'),
+                    borderColor: net.map(value => value >= 0 ? '#27ae60' : '#e74c3c'),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Annual Net Position'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const sign = value >= 0 ? '+' : '';
+                                return sign + '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Expense Percentage Chart
+        const expensePctCtx = document.getElementById('expensePctChart').getContext('2d');
+        new Chart(expensePctCtx, {
+            type: 'bar',
+            data: {
+                labels: periods,
+                datasets: [{
+                    label: 'Expenses as % of Income',
+                    data: expensePct,
+                    backgroundColor: expensePct.map(value => value > 100 ? 'rgba(231, 76, 60, 0.7)' : 'rgba(52, 152, 219, 0.7)'),
+                    borderColor: expensePct.map(value => value > 100 ? '#e74c3c' : '#3498db'),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Expense Efficiency Ratio'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw + '%';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Church Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/config.js?v=3"></script>
+    <script src="js/auth-redirect.js"></script>
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4361ee, #3a0ca3, #7209b7);
+        }
+        
+        .login-logo {
+            font-size: 3rem;
+            color: #4361ee;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .login-title {
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .login-subtitle {
+            color: #718096;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+        
+        .login-form .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+            position: relative;
+        }
+        
+        .login-form label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+        
+        .input-wrapper {
+            position: relative;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            z-index: 2;
+        }
+        
+        .login-form input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        .login-form input:focus {
+            border-color: #4361ee;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+        
+        .login-form input:focus + .input-icon {
+            color: #4361ee;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            cursor: pointer;
+            z-index: 2;
+            transition: color 0.3s ease;
+        }
+        
+        .password-toggle:hover {
+            color: #4361ee;
+        }
+        
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .remember-me input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
+        }
+        
+        .login-btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .login-btn .spinner {
+            display: none;
+        }
+        
+        .login-btn.loading .spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+        
+        .login-btn.loading .btn-text {
+            display: none;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .forgot-password {
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        
+        .forgot-password a {
+            color: #4361ee;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .forgot-password a:hover {
+            color: #3a0ca3;
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            background: linear-gradient(135deg, #fed7d7, #feb2b2);
+            color: #c53030;
+            padding: 0.875rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: none;
+            border-left: 4px solid #e53e3e;
+            font-size: 0.9rem;
+        }
+        
+        .success-message {
+            background: linear-gradient(135deg, #c6f6d5, #9ae6b4);
+            color: #2f855a;
+            padding: 0.875rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: none;
+            border-left: 4px solid #38a169;
+            font-size: 0.9rem;
+        }
+        
+        .demo-accounts {
+            background: linear-gradient(135deg, #f7fafc, #edf2f7);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-top: 2rem;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .demo-accounts h4 {
+            margin-bottom: 0.75rem;
+            color: #4a5568;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .demo-account {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .demo-account:hover {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        
+        .demo-account:last-child {
+            margin-bottom: 0;
+        }
+        
+        .demo-credentials {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #4361ee;
+        }
+        
+        .login-footer {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+            color: #718096;
+            font-size: 0.85rem;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+            20%, 40%, 60%, 80% { transform: translateX(8px); }
+        }
+        
+        .shake {
+            animation: shake 0.6s ease-in-out;
+        }
+        
+        .first-login-notice {
+            background: linear-gradient(135deg, #fef5e7, #fed7aa);
+            border: 1px solid #f6ad55;
+            color: #c05621;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 1rem;
+            }
+            
+            .login-card {
+                padding: 2rem;
+            }
+            
+            .demo-accounts {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-logo">
+                <i class="fas fa-church"></i>
+            </div>
+            <h1 class="login-title">Church Management</h1>
+            <p class="login-subtitle">Welcome back! Please sign in to continue</p>
+            
+            <div id="error-message" class="error-message">
+                <i class="fas fa-exclamation-circle"></i> <span id="error-text">Invalid username or password</span>
+            </div>
+            
+            <div id="success-message" class="success-message">
+                <i class="fas fa-check-circle"></i> <span id="success-text">Login successful!</span>
+            </div>
+            
+            <div id="first-login-notice" class="first-login-notice">
+                <i class="fas fa-info-circle"></i>
+                <strong>First Login:</strong> You'll be prompted to change your password after signing in.
+            </div>
+            
+            <form class="login-form" id="login-form">
+                <div class="form-group">
+                    <label for="username">
+                        <i class="fas fa-user"></i> Username
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="text" id="username" name="username" 
+                               placeholder="Enter your username" required autocomplete="username">
+                        <i class="fas fa-user input-icon"></i>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-lock"></i> Password
+                    </label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" name="password" 
+                               placeholder="Enter your password" required autocomplete="current-password">
+                        <i class="fas fa-lock input-icon"></i>
+                        <i class="fas fa-eye password-toggle" id="password-toggle" title="Show/Hide Password"></i>
+                    </div>
+                </div>
+                
+                <div class="remember-me">
+                    <input type="checkbox" id="remember-me" name="remember-me">
+                    <label for="remember-me">Remember me for 30 days</label>
+                </div>
+                
+                <button type="submit" class="login-btn" id="login-btn">
+                    <span class="btn-text">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    </span>
+                    <span class="spinner">
+                        <i class="fas fa-spinner"></i> Signing in...
+                    </span>
+                </button>
+            </form>
+            
+            <div class="forgot-password">
+                <a href="forgot-password.html">
+                    <i class="fas fa-key"></i> Forgot your password?
+                </a>
+            </div>
+            <!--  
+            <div class="demo-accounts">
+                <h4>
+                    <i class="fas fa-users"></i> Demo Accounts
+                </h4>
+                <div class="demo-account" data-username="admin" data-password="admin123">
+                    <span><i class="fas fa-crown"></i> Super Admin</span>
+                    <span class="demo-credentials">admin / admin123</span>
+                </div>
+                <div class="demo-account" data-username="chairperson" data-password="chair123">
+                    <span><i class="fas fa-gavel"></i> Chairperson</span>
+                    <span class="demo-credentials">chairperson / chair123</span>
+                </div>
+                <div class="demo-account" data-username="secretary" data-password="secretary123">
+                    <span><i class="fas fa-clipboard"></i> Secretary</span>
+                    <span class="demo-credentials">secretary / secretary123</span>
+                </div>
+                <div class="demo-account" data-username="accountant" data-password="accountant123">
+                    <span><i class="fas fa-calculator"></i> Accountant</span>
+                    <span class="demo-credentials">accountant / accountant123</span>
+                </div>
+                <div class="demo-account" data-username="holder" data-password="holder123">
+                    <span><i class="fas fa-boxes"></i> Holder of Goods</span>
+                    <span class="demo-credentials">holder / holder123</span>
+                </div>
+                <div class="demo-account" data-username="coordinator" data-password="coord123">
+                    <span><i class="fas fa-users-cog"></i> Coordinator</span>
+                    <span class="demo-credentials">coordinator / coord123</span>
+                </div>
+            </div>
+            -->
+            <div class="login-footer">
+                <p><i class="fas fa-shield-alt"></i> Secure Church Management System &copy; 2024</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        // Enhanced login functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordToggle = document.getElementById('password-toggle');
+            const passwordInput = document.getElementById('password');
+            const demoAccounts = document.querySelectorAll('.demo-account');
+            const forgotPasswordLink = document.getElementById('forgot-password-link');
+            
+            // Password visibility toggle
+            passwordToggle.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                // Toggle icon
+                if (type === 'text') {
+                    passwordToggle.classList.remove('fa-eye');
+                    passwordToggle.classList.add('fa-eye-slash');
+                    passwordToggle.title = 'Hide Password';
+                } else {
+                    passwordToggle.classList.remove('fa-eye-slash');
+                    passwordToggle.classList.add('fa-eye');
+                    passwordToggle.title = 'Show Password';
+                }
+            });
+            
+            // Demo account quick fill
+            demoAccounts.forEach(account => {
+                account.addEventListener('click', function() {
+                    const username = this.dataset.username;
+                    const password = this.dataset.password;
+                    
+                    document.getElementById('username').value = username;
+                    document.getElementById('password').value = password;
+                    
+                    // Add visual feedback
+                    this.style.backgroundColor = 'rgba(67, 97, 238, 0.1)';
+                    setTimeout(() => {
+                        this.style.backgroundColor = '';
+                    }, 200);
+                });
+            });
+            
+            // Forgot password functionality
+            forgotPasswordLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Create and show forgot password modal
+                const modal = document.createElement('div');
+                modal.className = 'forgot-password-modal';
+                modal.innerHTML = `
+                    <div class="modal-overlay">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3><i class="fas fa-key"></i> Reset Password</h3>
+                                <button class="modal-close">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Enter your username or email address and we'll send you a password reset link.</p>
+                                <form id="forgot-password-form">
+                                    <div class="form-group">
+                                        <label for="forgot-identifier">Username or Email</label>
+                                        <input type="text" id="forgot-identifier" name="identifier" 
+                                               placeholder="Enter your username or email" required>
+                                    </div>
+                                    <button type="submit" class="reset-btn">
+                                        <i class="fas fa-paper-plane"></i> Send Reset Link
+                                    </button>
+                                </form>
+                                <div class="forgot-message" id="forgot-message"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add modal styles
+                const style = document.createElement('style');
+                style.textContent = `
+                    .forgot-password-modal {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        z-index: 10000;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    
+                    .modal-overlay {
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0, 0, 0, 0.5);
+                        backdrop-filter: blur(5px);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 2rem;
+                    }
+                    
+                    .modal-content {
+                        background: white;
+                        border-radius: 15px;
+                        width: 100%;
+                        max-width: 400px;
+                        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+                        animation: modalSlideIn 0.3s ease-out;
+                    }
+                    
+                    @keyframes modalSlideIn {
+                        from { transform: translateY(-50px); opacity: 0; }
+                        to { transform: translateY(0); opacity: 1; }
+                    }
+                    
+                    .modal-header {
+                        padding: 1.5rem;
+                        border-bottom: 1px solid #e2e8f0;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+                    
+                    .modal-header h3 {
+                        margin: 0;
+                        color: #2d3748;
+                        font-size: 1.2rem;
+                    }
+                    
+                    .modal-close {
+                        background: none;
+                        border: none;
+                        font-size: 1.5rem;
+                        color: #a0aec0;
+                        cursor: pointer;
+                        padding: 0;
+                        width: 30px;
+                        height: 30px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 50%;
+                        transition: all 0.2s ease;
+                    }
+                    
+                    .modal-close:hover {
+                        background: #f7fafc;
+                        color: #4a5568;
+                    }
+                    
+                    .modal-body {
+                        padding: 1.5rem;
+                    }
+                    
+                    .modal-body p {
+                        color: #718096;
+                        margin-bottom: 1.5rem;
+                        font-size: 0.9rem;
+                    }
+                    
+                    .modal-body .form-group {
+                        margin-bottom: 1rem;
+                    }
+                    
+                    .modal-body label {
+                        display: block;
+                        margin-bottom: 0.5rem;
+                        color: #4a5568;
+                        font-weight: 600;
+                        font-size: 0.9rem;
+                    }
+                    
+                    .modal-body input {
+                        width: 100%;
+                        padding: 0.75rem;
+                        border: 2px solid #e2e8f0;
+                        border-radius: 8px;
+                        font-size: 1rem;
+                        transition: border-color 0.3s ease;
+                        box-sizing: border-box;
+                    }
+                    
+                    .modal-body input:focus {
+                        outline: none;
+                        border-color: #4361ee;
+                    }
+                    
+                    .modal-body .reset-btn {
+                        width: 100%;
+                        padding: 0.75rem;
+                        background: linear-gradient(135deg, #4361ee, #3a0ca3);
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 1rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: transform 0.2s ease;
+                        margin-top: 1rem;
+                    }
+                    
+                    .modal-body .reset-btn:hover:not(:disabled) {
+                        transform: translateY(-2px);
+                    }
+                    
+                    .modal-body .reset-btn:disabled {
+                        background: #a0aec0;
+                        cursor: not-allowed;
+                        transform: none;
+                    }
+                    
+                    .forgot-message {
+                        margin-top: 1rem;
+                        padding: 0.75rem;
+                        border-radius: 6px;
+                        font-size: 0.9rem;
+                        display: none;
+                    }
+                    
+                    .forgot-message.success {
+                        background: #c6f6d5;
+                        color: #2f855a;
+                        border: 1px solid #9ae6b4;
+                    }
+                    
+                    .forgot-message.error {
+                        background: #fed7d7;
+                        color: #c53030;
+                        border: 1px solid #feb2b2;
+                    }
+                `;
+                
+                document.head.appendChild(style);
+                document.body.appendChild(modal);
+                
+                // Handle modal close
+                const closeModal = () => {
+                    document.body.removeChild(modal);
+                    document.head.removeChild(style);
+                };
+                
+                modal.querySelector('.modal-close').addEventListener('click', closeModal);
+                modal.querySelector('.modal-overlay').addEventListener('click', (e) => {
+                    if (e.target === e.currentTarget) closeModal();
+                });
+                
+                // Handle form submission
+                modal.querySelector('#forgot-password-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const identifier = modal.querySelector('#forgot-identifier').value;
+                    const submitBtn = modal.querySelector('.reset-btn');
+                    const messageDiv = modal.querySelector('#forgot-message');
+                    
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                    messageDiv.style.display = 'none';
+                    
+                    try {
+                        // For demo purposes, show success message
+                        // In production, this would call the actual API
+                        setTimeout(() => {
+                            messageDiv.className = 'forgot-message success';
+                            messageDiv.innerHTML = '<i class="fas fa-check-circle"></i> If an account with that identifier exists, you will receive a password reset email shortly.';
+                            messageDiv.style.display = 'block';
+                            
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reset Link';
+                            
+                            // Close modal after 3 seconds
+                            setTimeout(closeModal, 3000);
+                        }, 1500);
+                        
+                    } catch (error) {
+                        messageDiv.className = 'forgot-message error';
+                        messageDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Failed to send reset email. Please try again.';
+                        messageDiv.style.display = 'block';
+                        
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reset Link';
+                    }
+                });
+                
+                // Focus on input
+                setTimeout(() => {
+                    modal.querySelector('#forgot-identifier').focus();
+                }, 100);
+            });
+            
+            // Enhanced form submission with better UX
+            const loginForm = document.getElementById('login-form');
+            const loginBtn = document.getElementById('login-btn');
+            
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Add loading state
+                loginBtn.classList.add('loading');
+                loginBtn.disabled = true;
+                
+                // Hide any existing messages
+                document.getElementById('error-message').style.display = 'none';
+                document.getElementById('success-message').style.display = 'none';
+                
+                // Let the auth system handle the actual login
+                // The loading state will be cleared by the auth system
+            });
+        });
+    </script>
+</body>
+</html>

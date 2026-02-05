@@ -1,0 +1,33 @@
+{
+  "routes": [
+    {
+      "route": "/admin/*",
+      "rewrite": "/frontend-admin/index.html"
+    },
+    {
+      "route": "/api/*",
+      "allowedRoles": ["authenticated"]
+    },
+    {
+      "route": "/*",
+      "rewrite": "/frontend-website/index.html"
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/frontend-admin/index.html",
+    "exclude": ["/api/*", "/css/*", "/js/*", "/images/*", "/*.{css,js,png,jpg,jpeg,gif,ico,svg,woff,woff2,ttf,eot}"]
+  },
+  "mimeTypes": {
+    ".css": "text/css",
+    ".js": "application/javascript",
+    ".json": "application/json"
+  },
+  "globalHeaders": {
+    "Cache-Control": "public, max-age=31536000"
+  },
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/frontend-admin/index.html"
+    }
+  }
+}

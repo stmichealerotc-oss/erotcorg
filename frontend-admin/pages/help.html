@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help & Documentation - Church Management System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .help-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .help-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #4361ee 0%, #7209b7 100%);
+            color: white;
+            border-radius: 12px;
+        }
+        
+        .help-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            line-height: 1.6;
+        }
+        
+        .help-content h1, .help-content h2, .help-content h3 {
+            color: #4361ee;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        
+        .help-content h1 {
+            border-bottom: 3px solid #4361ee;
+            padding-bottom: 10px;
+        }
+        
+        .help-content h2 {
+            border-left: 4px solid #4361ee;
+            padding-left: 15px;
+        }
+        
+        .help-content ul, .help-content ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        
+        .help-content li {
+            margin: 8px 0;
+        }
+        
+        .help-content code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .help-content blockquote {
+            border-left: 4px solid #17a2b8;
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .help-toc {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .help-toc h3 {
+            margin-top: 0;
+            color: #4361ee;
+        }
+        
+        .help-toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .help-toc li {
+            margin: 8px 0;
+        }
+        
+        .help-toc a {
+            color: #4361ee;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        .help-toc a:hover {
+            background: #e3f2fd;
+        }
+        
+        /* Documentation Selection Styles */
+        .doc-selection {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .doc-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .doc-option {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .doc-option:hover {
+            border-color: #4361ee;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(67, 97, 238, 0.15);
+        }
+        
+        .doc-icon {
+            font-size: 48px;
+            color: #4361ee;
+            margin-bottom: 20px;
+        }
+        
+        .doc-option h3 {
+            color: #2c3e50;
+            margin: 15px 0;
+            font-size: 1.4em;
+        }
+        
+        .doc-option p {
+            color: #6c757d;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        
+        .doc-button {
+            background: #4361ee;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .doc-button:hover {
+            background: #3651d4;
+        }
+        
+        .doc-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .back-to-selection {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .back-to-selection:hover {
+            background: #5a6268;
+        }
+        
+        #doc-title {
+            margin: 0;
+            color: #4361ee;
+        }
+        
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #4361ee;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .back-button:hover {
+            background: #3651d4;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            z-index: 1000;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .print-button:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Print styles */
+        @media print {
+            .back-button,
+            .print-button {
+                display: none !important;
+            }
+            
+            .help-header {
+                background: none !important;
+                color: black !important;
+                border: 2px solid #000;
+            }
+            
+            .help-content {
+                box-shadow: none !important;
+                border: none !important;
+            }
+            
+            .help-content h1, .help-content h2, .help-content h3 {
+                color: black !important;
+            }
+            
+            .help-toc a {
+                color: black !important;
+            }
+            
+            body {
+                background: white !important;
+            }
+            
+            .help-container {
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .help-container {
+                padding: 10px;
+            }
+            
+            .help-content {
+                padding: 20px;
+            }
+            
+            .back-button {
+                position: static;
+                display: block;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            
+            .print-button {
+                position: static;
+                display: block;
+                text-align: center;
+                margin-bottom: 10px;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-button">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+    
+    <button onclick="printDocumentation()" class="print-button">
+        <i class="fas fa-download"></i> Download PDF
+    </button>
+
+    <div class="help-container">
+        <div class="help-header">
+            <h1><i class="fas fa-question-circle"></i> Church Management System</h1>
+            <h2>Help & Documentation</h2>
+            <p>ST. MICHAEL ERITREAN ORTHODOX TEWAHEDO CHURCH<br>
+            Perth, Western Australia | ABN: 80 798 549 161</p>
+        </div>
+
+        <!-- Documentation Selection -->
+        <div class="help-content">
+            <div class="doc-selection">
+                <h2><i class="fas fa-book"></i> Choose Documentation Type</h2>
+                <div class="doc-options">
+                    <div class="doc-option" onclick="loadDocumentation('system')">
+                        <div class="doc-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <h3>System Documentation</h3>
+                        <p>Technical documentation covering system architecture, features, and implementation details.</p>
+                        <button class="doc-button">View System Docs</button>
+                    </div>
+                    
+                    <div class="doc-option" onclick="loadDocumentation('faq')">
+                        <div class="doc-icon">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <h3>Frequently Asked Questions</h3>
+                        <p>User guide with step-by-step instructions and answers to common questions.</p>
+                        <button class="doc-button">View FAQ Guide</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Content (hidden initially) -->
+        <div class="help-content" id="help-content" style="display: none;">
+            <div class="doc-header">
+                <button onclick="showDocSelection()" class="back-to-selection">
+                    <i class="fas fa-arrow-left"></i> Back to Documentation Options
+                </button>
+                <h2 id="doc-title"></h2>
+            </div>
+            <div id="doc-content">
+                <div class="loading-message">
+                    <i class="fas fa-spinner fa-spin"></i> Loading documentation...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDocType = null;
+        
+        // Show documentation selection
+        function showDocSelection() {
+            console.log('Showing documentation selection');
+            document.querySelector('.doc-selection').parentElement.style.display = 'block';
+            document.getElementById('help-content').style.display = 'none';
+            currentDocType = null;
+        }
+        
+        // Load the selected documentation
+        async function loadDocumentation(type) {
+            currentDocType = type;
+            
+            // Hide selection and show content
+            document.querySelector('.doc-selection').parentElement.style.display = 'none';
+            document.getElementById('help-content').style.display = 'block';
+            
+            // Set title and show loading
+            const title = type === 'system' ? 'System Documentation' : 'Frequently Asked Questions';
+            document.getElementById('doc-title').textContent = title;
+            document.getElementById('doc-content').innerHTML = `
+                <div class="loading-message">
+                    <i class="fas fa-spinner fa-spin"></i> Loading ${title.toLowerCase()}...
+                </div>
+            `;
+            
+            try {
+                const filename = type === 'system' ? 'SYSTEM_DOCUMENTATION.md' : 'FAQ_CHURCH_MANAGEMENT_SYSTEM.md';
+                console.log('Loading file:', filename);
+                const response = await fetch(`../${filename}`);
+                
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const markdown = await response.text();
+                console.log('Markdown loaded, length:', markdown.length);
+                
+                // Simple markdown to HTML conversion
+                let html = markdown
+                    // Headers (order matters - do h3 first, then h2, then h1)
+                    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                    // Bold and italic
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    // Code blocks (do before inline code)
+                    .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+                    // Inline code
+                    .replace(/`([^`]+)`/g, '<code>$1</code>')
+                    // Links
+                    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+                    // Unordered lists
+                    .replace(/^\- (.+$)/gim, '<li>$1</li>')
+                    // Ordered lists
+                    .replace(/^(\d+)\. (.+$)/gim, '<li>$2</li>')
+                    // Convert line breaks
+                    .split('\n\n').map(paragraph => {
+                        if (paragraph.includes('<h1>') || paragraph.includes('<h2>') || paragraph.includes('<h3>') || 
+                            paragraph.includes('<li>') || paragraph.includes('<pre>')) {
+                            return paragraph;
+                        }
+                        return paragraph ? `<p>${paragraph.replace(/\n/g, '<br>')}</p>` : '';
+                    }).join('\n');
+                
+                // Fix list formatting - wrap consecutive <li> elements in <ul>
+                html = html.replace(/(<li>.*?<\/li>)(\s*<li>.*?<\/li>)*/gs, function(match) {
+                    return '<ul>' + match + '</ul>';
+                });
+                
+                console.log('HTML generated, length:', html.length);
+                
+                document.getElementById('doc-content').innerHTML = html;
+                
+                // Add table of contents
+                generateTableOfContents();
+                
+            } catch (error) {
+                console.error('Error loading documentation:', error);
+                
+                // Try alternative approach - embed content directly if fetch fails
+                if (type === 'system') {
+                    document.getElementById('doc-content').innerHTML = `
+                        <div style="text-align: center; padding: 40px;">
+                            <h2>System Documentation</h2>
+                            <p>Loading system documentation...</p>
+                            <p><em>If this persists, please contact your system administrator.</em></p>
+                            <br>
+                            <button onclick="location.reload()" style="background: #4361ee; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                                Retry Loading
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('doc-content').innerHTML = `
+                        <div style="text-align: center; padding: 40px;">
+                            <h2>FAQ Guide</h2>
+                            <p>Loading FAQ documentation...</p>
+                            <p><em>If this persists, please contact your system administrator.</em></p>
+                            <br>
+                            <button onclick="location.reload()" style="background: #4361ee; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                                Retry Loading
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        }
+        
+        function generateTableOfContents() {
+            const headers = document.querySelectorAll('#doc-content h1, #doc-content h2');
+            if (headers.length === 0) return;
+            
+            let tocHtml = '<div class="help-toc"><h3><i class="fas fa-list"></i> Table of Contents</h3><ul>';
+            
+            headers.forEach((header, index) => {
+                const id = 'section-' + index;
+                header.id = id;
+                const level = header.tagName.toLowerCase();
+                const indent = level === 'h2' ? 'style="margin-left: 20px;"' : '';
+                tocHtml += `<li ${indent}><a href="#${id}">${header.textContent}</a></li>`;
+            });
+            
+            tocHtml += '</ul></div>';
+            
+            const content = document.getElementById('doc-content');
+            content.innerHTML = tocHtml + content.innerHTML;
+        }
+        
+        function printDocumentation() {
+            if (!currentDocType) {
+                alert('Please select a documentation type first.');
+                return;
+            }
+            
+            // Optimize content for printing
+            const originalTitle = document.title;
+            const docTitle = currentDocType === 'system' ? 'System Documentation' : 'FAQ Guide';
+            document.title = `Church Management System - ${docTitle}`;
+            
+            // Add print-specific styling
+            const printStyle = document.createElement('style');
+            printStyle.innerHTML = `
+                @media print {
+                    @page {
+                        margin: 1in;
+                        size: A4;
+                    }
+                    
+                    .doc-selection { display: none !important; }
+                    .doc-header { display: none !important; }
+                    
+                    body {
+                        font-size: 12pt;
+                        line-height: 1.4;
+                    }
+                    
+                    .help-header h1 {
+                        font-size: 18pt;
+                        margin-bottom: 10pt;
+                    }
+                    
+                    .help-header h2 {
+                        font-size: 14pt;
+                        margin-bottom: 8pt;
+                    }
+                    
+                    #doc-content h1 {
+                        font-size: 16pt;
+                        margin-top: 20pt;
+                        margin-bottom: 10pt;
+                        page-break-after: avoid;
+                    }
+                    
+                    #doc-content h2 {
+                        font-size: 14pt;
+                        margin-top: 16pt;
+                        margin-bottom: 8pt;
+                        page-break-after: avoid;
+                    }
+                    
+                    #doc-content h3 {
+                        font-size: 12pt;
+                        margin-top: 12pt;
+                        margin-bottom: 6pt;
+                        page-break-after: avoid;
+                    }
+                    
+                    .help-toc {
+                        page-break-after: always;
+                    }
+                    
+                    ul, ol {
+                        margin: 8pt 0;
+                    }
+                    
+                    li {
+                        margin: 4pt 0;
+                    }
+                    
+                    code {
+                        font-size: 10pt;
+                        background: #f0f0f0 !important;
+                    }
+                    
+                    pre {
+                        font-size: 10pt;
+                        background: #f0f0f0 !important;
+                        padding: 8pt;
+                        border: 1pt solid #ccc;
+                        page-break-inside: avoid;
+                    }
+                }
+            `;
+            document.head.appendChild(printStyle);
+            
+            // Trigger print dialog
+            window.print();
+            
+            // Clean up
+            setTimeout(() => {
+                document.title = originalTitle;
+                document.head.removeChild(printStyle);
+            }, 1000);
+        }
+        
+        // Initialize page - show documentation selection
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Help page loaded');
+            showDocSelection();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+{
+  "id": "worship-services-qa",
+  "title": "Worship & Services - Frequently Asked Questions",
+  "subtitle": "What to Expect During Orthodox Tewahdo Worship",
+  "author": "Liturgical Committee",
+  "date": "2024-01-31",
+  "category": "qa",
+  "tags": ["FAQ", "worship", "liturgy", "services", "fasting", "feast days"],
+  "excerpt": "Practical guidance for participating in Orthodox Tewahdo worship services, including liturgy, fasting, and feast day observances.",
+  "reading_time": "6 min read",
+  "sections": [
+    {
+      "title": "What should I expect during the Divine Liturgy?",
+      "content": [
+        "The **Divine Liturgy (Kidase)** is the central worship service of our church, typically lasting 2-3 hours. Here's what to expect:",
+        "**Language**: The liturgy is celebrated in **Ge'ez**, the ancient liturgical language, with some explanations in English and Tigrinya.",
+        "**Standing Worship**: Traditional Orthodox worship involves **standing for most of the service**, though seating is available for those who need it.",
+        "**Participation**: Congregation joins in **responses, hymns, and prayers**. Don't worry if you're unfamiliar - you'll learn gradually.",
+        "**Communion**: Only **baptized Orthodox Christians** who have prepared through fasting and confession may receive communion.",
+        "**Dress Code**: **Modest, respectful attire** is expected. Women traditionally cover their heads during worship.",
+        "**For detailed liturgy guide**, see our comprehensive article: [Understanding the Divine Liturgy (Kidase)](#articles) in our Articles section."
+      ]
+    },
+    {
+      "title": "When and where are services held?",
+      "content": [
+        "**Regular Sunday Services:**",
+        "- **Divine Liturgy**: Sundays at 9:00 AM",
+        "- **Sunday School**: After liturgy, 1:00 PM - 2:30 PM",
+        "**Location**: [Church address and directions available on our Contact page](#contact)",
+        "**Special Services:**",
+        "- **Feast Day Celebrations**: Times vary by occasion",
+        "- **Lenten Services**: Additional services during fasting periods", 
+        "- **Wedding and Baptism**: By appointment with clergy",
+        "**Holiday Schedule**: Services may have different times during major Orthodox holidays. Check our announcements or contact the church office for current schedules."
+      ]
+    },
+    {
+      "title": "Are there special feast days I should know about?",
+      "content": [
+        "The Orthodox Church celebrates numerous **feast days** throughout the year. Major celebrations include:",
+        "**Major Feasts:**",
+        "- **Genna (Christmas)**: January 7th - Birth of Christ",
+        "- **Timkat (Epiphany)**: January 19th - Baptism of Christ", 
+        "- **Fasika (Easter)**: Date varies - Resurrection of Christ",
+        "- **Meskel**: September 27th - Finding of the True Cross",
+        "**Marian Feasts:**",
+        "- **Assumption of Mary**: August 15th",
+        "- **Nativity of Mary**: September 1st",
+        "**Saints' Days**: Including our patron **Saint Michael** and other Orthodox saints",
+        "**Feast day services** often include special liturgies, processions, and community celebrations. These are wonderful opportunities to experience the richness of Orthodox tradition."
+      ]
+    },
+    {
+      "title": "What are fasting rules and why do we observe them?",
+      "content": [
+        "**Fasting is a spiritual discipline** that helps us grow closer to God through self-control, prayer, and compassion for others.",
+        "**Major Fasting Periods:**",
+        "- **Lent (Hudadi/Abiy Tsom)**: 55 days before Easter",
+        "- **Advent Fast**: 40 days before Christmas", 
+        "- **Fast of the Apostles**: From Monday after Pentecost until June 29th",
+        "- **Fast of the Assumption**: August 1-15",
+        "**Fasting Guidelines:**",
+        "- **Abstain from**: Animal products (meat, dairy, eggs), fish (except certain days)",
+        "- **Spiritual focus**: Increased prayer, almsgiving, and spiritual reading",
+        "- **Individual circumstances**: Health conditions, pregnancy, age may modify requirements",
+        "**For complete fasting guide**, see our detailed article: [Orthodox Fasting: Spiritual Discipline and Growth](#articles) with practical guidance and spiritual insights."
+      ]
+    }
+  ],
+  "related_articles": ["understanding-kidase", "orthodox-fasting-periods", "christmas-celebration-2024"]
+}

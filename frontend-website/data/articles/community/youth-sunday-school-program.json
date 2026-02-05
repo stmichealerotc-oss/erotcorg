@@ -1,0 +1,43 @@
+{
+  "id": "youth-sunday-school-program",
+  "title": "Youth Sunday School Program Launch",
+  "subtitle": "Expanding Our Educational Ministry",
+  "author": "Youth Ministry Team",
+  "date": "2024-01-05",
+  "category": "community",
+  "tags": ["youth", "education", "sunday school", "community", "children"],
+  "excerpt": "Exciting news about our expanded youth programs, including new classes for teenagers and young adults in our community.",
+  "reading_time": "3 min read",
+  "sections": [
+    {
+      "title": "Program Overview",
+      "content": [
+        "We are excited to announce the launch of our expanded **Youth Sunday School Program**, designed to serve children and young adults from ages 5 to 25. This comprehensive program aims to strengthen our young people's understanding of Orthodox Tewahdo faith and traditions.",
+        "The program includes age-appropriate classes, interactive learning activities, and opportunities for spiritual growth within our church community."
+      ]
+    },
+    {
+      "title": "Class Structure",
+      "content": [
+        "**Children's Classes (Ages 5-12):** Basic Bible stories, Orthodox traditions, and Ge'ez alphabet introduction.",
+        "**Youth Classes (Ages 13-18):** Church history, theological foundations, and preparation for adult participation in church life.",
+        "**Young Adults (Ages 19-25):** Advanced theological discussions, leadership development, and community service opportunities."
+      ]
+    },
+    {
+      "title": "Schedule and Registration",
+      "content": [
+        "Classes are held every Sunday after the Divine Liturgy, from 1:00 PM to 2:30 PM. The program runs throughout the school year with breaks during major fasting periods.",
+        "Registration is open to all families in our community. Please contact the church office or speak with any member of the Youth Ministry Team to enroll your children."
+      ]
+    },
+    {
+      "title": "Volunteer Opportunities",
+      "content": [
+        "We are always looking for dedicated volunteers to help with our youth programs. Whether you have teaching experience or simply a heart for working with young people, there are many ways to contribute.",
+        "Volunteer roles include teaching assistants, activity coordinators, and special event organizers. Training and support are provided for all volunteers."
+      ]
+    }
+  ],
+  "related_articles": ["founding-of-erotc", "understanding-kidase"]
+}

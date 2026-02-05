@@ -1,0 +1,112 @@
+[
+  {
+    "id": "community-pastoral-practical-qa",
+    "title": "Community, Pastoral Care & Practical Information",
+    "excerpt": "Practical information about getting involved in church life, accessing pastoral care, and essential details about facilities and services.",
+    "category": "qa",
+    "date": "2024-01-31",
+    "author": "Church Administration",
+    "reading_time": "9 min read",
+    "featured": false
+  },
+  {
+    "id": "sacraments-qa",
+    "title": "Sacraments - Frequently Asked Questions",
+    "excerpt": "Essential information about the seven sacraments of the Orthodox Tewahdo Church, including preparation requirements and procedures.",
+    "category": "qa",
+    "date": "2024-01-31",
+    "author": "Pastoral Care Committee",
+    "reading_time": "7 min read",
+    "featured": false
+  },
+  {
+    "id": "worship-services-qa",
+    "title": "Worship & Services - Frequently Asked Questions",
+    "excerpt": "Practical guidance for participating in Orthodox Tewahdo worship services, including liturgy, fasting, and feast day observances.",
+    "category": "qa",
+    "date": "2024-01-31",
+    "author": "Liturgical Committee",
+    "reading_time": "6 min read",
+    "featured": false
+  },
+  {
+    "id": "about-our-faith-qa",
+    "title": "About Our Faith - Frequently Asked Questions",
+    "excerpt": "Answers to frequently asked questions about Orthodox Tewahdo faith, beliefs, and theological foundations.",
+    "category": "qa",
+    "date": "2024-01-31",
+    "author": "Church Teaching Committee",
+    "reading_time": "8 min read",
+    "featured": false
+  },
+  {
+    "id": "medieval-monastic-flourishing-modern-struggles",
+    "title": "Medieval Monastic Flourishing, Colonial Intrusions, and Modern Struggles",
+    "excerpt": "From the medieval golden age of monasticism through colonial challenges to modern independence and contemporary struggles, the Eritrean Orthodox Church has demonstrated remarkable resilience across fifteen centuries.",
+    "category": "church-history",
+    "date": "2024-01-30",
+    "author": "Church Historical Research Committee",
+    "reading_time": "18 min read",
+    "featured": true
+  },
+  {
+    "id": "apostolic-memory-aksumite-turning-point",
+    "title": "Apostolic Memory, Aksumite Foundations, and Early Monasticism",
+    "excerpt": "The history of Christianity in Eritrea begins at the intersection of scripture, classical geography, and historical development, from early apostolic traditions through King Ezana's conversion to the pioneering work of Abune Libanos.",
+    "category": "church-history",
+    "date": "2024-01-20",
+    "author": "Church Historical Research Committee",
+    "reading_time": "15 min read",
+    "featured": true
+  },
+  {
+    "id": "founding-of-erotc",
+    "title": "The Founding of Saint Michael Church",
+    "excerpt": "The inspiring story of how our church community was established in Western Australia, bringing together Eritrean Orthodox believers in faith and fellowship.",
+    "category": "church-history",
+    "date": "2024-01-15",
+    "author": "Church Leadership",
+    "reading_time": "5 min read",
+    "featured": true
+  },
+  {
+    "id": "understanding-kidase",
+    "title": "Understanding the Divine Liturgy (Kidase)",
+    "excerpt": "A comprehensive guide to the Orthodox Tewahdo Divine Liturgy, its structure, meaning, and spiritual significance for believers.",
+    "category": "liturgy",
+    "date": "2024-01-10",
+    "author": "Fr. Michael",
+    "reading_time": "8 min read",
+    "featured": false
+  },
+  {
+    "id": "youth-sunday-school-program",
+    "title": "Youth Sunday School Program Launch",
+    "excerpt": "Exciting news about our expanded youth programs, including new classes for teenagers and young adults in our community.",
+    "category": "community",
+    "date": "2024-01-05",
+    "author": "Youth Ministry Team",
+    "reading_time": "3 min read",
+    "featured": false
+  },
+  {
+    "id": "orthodox-fasting-periods",
+    "title": "Orthodox Fasting: Spiritual Discipline and Growth",
+    "excerpt": "Learn about the Orthodox tradition of fasting, its spiritual benefits, and how to observe fasting periods according to church teaching.",
+    "category": "theology",
+    "date": "2023-12-20",
+    "author": "Church Teaching Committee",
+    "reading_time": "6 min read",
+    "featured": false
+  },
+  {
+    "id": "christmas-celebration-2024",
+    "title": "Christmas Celebration 2024 - Genna",
+    "excerpt": "Join us for our annual Christmas celebration following the Orthodox calendar. Special services, community feast, and children's programs.",
+    "category": "announcements",
+    "date": "2023-12-15",
+    "author": "Event Committee",
+    "reading_time": "2 min read",
+    "featured": true
+  }
+]

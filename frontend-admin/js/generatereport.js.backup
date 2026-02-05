@@ -1,0 +1,1785 @@
+﻿console.log("🧪 generatereport.js loaded at", new Date().toISOString());
+
+(function () {
+
+class ReportsPage {
+    constructor() {
+        this.currentReport = null;
+        this.allReports = [];
+        this.monthlyChart = null;
+        this.selectedReportSlot = null;
+        this.reportHistory = []; // Store report history
+        this.init();
+    }
+
+    // Australian Financial Year Helper Functions
+    getCurrentAustralianFY() {
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1; // 1-12
+        const currentYear = now.getFullYear();
+        
+        console.log('🗓️ Current date info:', { currentMonth, currentYear });
+        
+        // If we're in Jul-Dec, we're in the first half of the FY
+        // If we're in Jan-Jun, we're in the second half of the FY
+        const fyYear = currentMonth >= 7 ? currentYear : currentYear - 1;
+        
+        console.log('🗓️ Calculated Australian FY year:', fyYear);
+        return fyYear;
+    }
+
+    getCurrentAustralianQuarter() {
+        const currentMonth = new Date().getMonth() + 1; // 1-12
+        
+        let quarter;
+        if (currentMonth >= 7 && currentMonth <= 9) quarter = 1; // Jul-Sep
+        else if (currentMonth >= 10 && currentMonth <= 12) quarter = 2; // Oct-Dec
+        else if (currentMonth >= 1 && currentMonth <= 3) quarter = 3; // Jan-Mar
+        else quarter = 4; // Apr-Jun
+        
+        console.log('🗓️ Current Australian quarter:', quarter, 'for month:', currentMonth);
+        return quarter;
+    }
+
+    formatAustralianFY(year) {
+        if (!year || isNaN(year)) {
+            return 'FY ????-??';
+        }
+        return `FY ${year}-${(year + 1).toString().slice(-2)}`;
+    }
+
+    getAustralianFYDateRange(year, quarter = null) {
+        if (quarter) {
+            // Quarterly date ranges
+            const quarterRanges = {
+                1: { start: `${year}-07-01`, end: `${year}-09-30` }, // Q1: Jul-Sep
+                2: { start: `${year}-10-01`, end: `${year}-12-31` }, // Q2: Oct-Dec
+                3: { start: `${year + 1}-01-01`, end: `${year + 1}-03-31` }, // Q3: Jan-Mar (next year)
+                4: { start: `${year + 1}-04-01`, end: `${year + 1}-06-30` }  // Q4: Apr-Jun (next year)
+            };
+            return quarterRanges[quarter];
+        } else {
+            // Annual date range
+            return {
+                start: `${year}-07-01`,
+                end: `${year + 1}-06-30`
+            };
+        }
+    }
+
+    async init() {
+        console.log('🧪 ReportsPage.init() called');
+        await this.loadAllReports();
+        this.setupEventListeners();
+        console.log('Reports page initialized');
+    }
+
+    setupEventListeners() {
+        console.log("🔧 Setting up event listeners...");
+
+        // Print button
+        const printBtn = document.getElementById('print-report-btn');
+        if (printBtn) {
+            printBtn.addEventListener('click', () => this.printReport());
+        }
+
+        // Export button
+        const exportBtn = document.getElementById('export-report-btn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => this.exportPDF());
+        }
+
+        // Save notes button
+        const saveNotesBtn = document.getElementById('save-notes-btn');
+        if (saveNotesBtn) {
+            saveNotesBtn.addEventListener('click', () => this.saveReportNotes());
+        }
+
+        // Modal generate button
+        const modalGenerateBtn = document.getElementById('modal-generate-btn');
+        if (modalGenerateBtn) {
+            modalGenerateBtn.addEventListener('click', () => this.generateReportFromModal());
+        }
+    }
+
+    async loadAllReports() {
+        try {
+            // Use authenticated API class
+            this.allReports = await API.get('/reports/all-slots');
+            this.renderAllReports();
+            
+        } catch (error) {
+            console.error('Failed to load reports:', error);
+            this.renderAllReports(); // Show empty state
+        }
+    }
+
+    renderAllReports() {
+        const container = document.getElementById('all-reports');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        if (this.allReports.length === 0) {
+            container.innerHTML = '<p class="no-reports">No reports available.</p>';
+            return;
+        }
+
+        // Store report history for later use
+        this.reportHistory = [...this.allReports];
+
+        this.allReports.forEach(reportSlot => {
+            const reportElement = document.createElement('div');
+            reportElement.className = `report-item ${reportSlot.status}`;
+            
+            const statusBadge = reportSlot.status === 'pending' 
+                ? '<span class="report-status pending">PENDING</span>'
+                : reportSlot.status === 'overdue'
+                ? '<span class="report-status overdue">OVERDUE</span>'
+                : '<span class="report-status generated">GENERATED</span>';
+            
+            // Format due date
+            const dueDate = reportSlot.dueDate 
+                ? new Date(reportSlot.dueDate).toLocaleDateString('en-US', { 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                })
+                : 'No due date';
+            
+            const dateInfo = reportSlot.status === 'generated' 
+                ? `<div class="report-dates">
+                    <span class="report-date"><strong>Due:</strong> ${dueDate}</span>
+                    <span class="report-date"><strong>Generated:</strong> ${new Date(reportSlot.generatedAt).toLocaleDateString('en-US', { 
+                        day: 'numeric', 
+                        month: 'long', 
+                        year: 'numeric' 
+                    })}</span>
+                </div>`
+                : `<div class="report-dates">
+                    <span class="report-date"><strong>Due:</strong> ${dueDate}</span>
+                    <span class="report-date text-warning">Not yet generated</span>
+                </div>`;
+            
+            const summaryInfo = reportSlot.status === 'generated'
+                ? `<div class="report-item-summary">
+                    <span>Income: $${reportSlot.totalIncome?.toFixed(2) || '0.00'}</span>
+                    <span>Expenses: $${reportSlot.totalExpenses?.toFixed(2) || '0.00'}</span>
+                    <span>Net: $${reportSlot.netBalance?.toFixed(2) || '0.00'}</span>
+                </div>`
+                : '';
+            
+            const actionButton = (reportSlot.status === 'pending' || reportSlot.status === 'overdue')
+                ? `<button class="btn btn-sm ${reportSlot.status === 'overdue' ? 'btn-danger' : 'btn-primary'}" onclick="reportsPage.openGenerateModal('${reportSlot.type}', '${reportSlot.financialYear || reportSlot.year}', ${reportSlot.quarter || null})">
+                    ${reportSlot.status === 'overdue' ? 'Generate Overdue Report' : 'Generate Report'}
+                </button>`
+                : `<button class="btn btn-sm btn-primary" onclick="reportsPage.viewReport('${reportSlot.reportId}')">
+                    View Report
+                </button>`;
+            
+            // Enhanced label with Australian FY format
+            let enhancedLabel = reportSlot.label;
+            if (reportSlot.type === 'quarterly' && reportSlot.quarter && reportSlot.financialYear) {
+                enhancedLabel = `Q${reportSlot.quarter} FY ${reportSlot.financialYear}`;
+            } else if (reportSlot.type === 'annual' && reportSlot.financialYear) {
+                enhancedLabel = `Annual FY ${reportSlot.financialYear}`;
+            } else if (reportSlot.type === 'quarterly' && reportSlot.quarter && reportSlot.year) {
+                // Fallback for old format
+                enhancedLabel = `Q${reportSlot.quarter} ${this.formatAustralianFY(reportSlot.year)}`;
+            } else if (reportSlot.type === 'annual' && reportSlot.year) {
+                // Fallback for old format
+                enhancedLabel = `Annual ${this.formatAustralianFY(reportSlot.year)}`;
+            }
+            
+            reportElement.innerHTML = `
+                <div class="report-item-header">
+                    <h4>${enhancedLabel} ${statusBadge}</h4>
+                    ${dateInfo}
+                </div>
+                ${summaryInfo}
+                ${actionButton}
+            `;
+            container.appendChild(reportElement);
+        });
+
+        // Create ACNC-style compact table
+        const table = document.createElement('table');
+        table.className = 'reports-table compact-table';
+        
+        // Table header
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Report</th>
+                    <th>Due Date</th>
+                    <th>Submitted Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+        
+        const tbody = table.querySelector('tbody');
+        
+        this.allReports.forEach(reportSlot => {
+            const row = document.createElement('tr');
+            row.className = `report-row ${reportSlot.status}`;
+            
+            // Enhanced label with Australian FY format
+            let enhancedLabel = reportSlot.label;
+            if (reportSlot.type === 'quarterly' && reportSlot.quarter && reportSlot.financialYear) {
+                enhancedLabel = `Q${reportSlot.quarter} Financial Report FY ${reportSlot.financialYear}`;
+            } else if (reportSlot.type === 'annual' && reportSlot.financialYear) {
+                enhancedLabel = `Annual Financial Report FY ${reportSlot.financialYear}`;
+            } else if (reportSlot.type === 'quarterly' && reportSlot.quarter && reportSlot.year) {
+                // Fallback for old format
+                enhancedLabel = `Q${reportSlot.quarter} Financial Report ${this.formatAustralianFY(reportSlot.year)}`;
+            } else if (reportSlot.type === 'annual' && reportSlot.year) {
+                // Fallback for old format
+                enhancedLabel = `Annual Financial Report ${this.formatAustralianFY(reportSlot.year)}`;
+            }
+            
+            // Format due date (Australian format)
+            const dueDate = reportSlot.dueDate 
+                ? new Date(reportSlot.dueDate).toLocaleDateString('en-AU', { 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                })
+                : '—';
+            
+            // Format submitted date (Australian format)
+            const submittedDate = reportSlot.status === 'generated' && reportSlot.generatedAt
+                ? new Date(reportSlot.generatedAt).toLocaleDateString('en-AU', { 
+                    day: 'numeric', 
+                    month: 'long', 
+                    year: 'numeric' 
+                })
+                : reportSlot.status === 'pending' ? 'Pending' : reportSlot.status === 'overdue' ? 'Overdue' : '—';
+            
+            // Action button
+            const actionButton = (reportSlot.status === 'pending' || reportSlot.status === 'overdue')
+                ? `<button class="btn btn-compact ${reportSlot.status === 'overdue' ? 'btn-danger' : 'btn-primary'}" onclick="reportsPage.openGenerateModal('${reportSlot.type}', '${reportSlot.financialYear || reportSlot.year}', ${reportSlot.quarter || null})">
+                    Generate
+                </button>`
+                : `<button class="btn btn-compact btn-primary" onclick="reportsPage.viewReportInOverlay('${reportSlot.reportId}')">
+                    View
+                </button>`;
+            
+            row.innerHTML = `
+                <td class="report-name">${enhancedLabel}</td>
+                <td class="due-date">${dueDate}</td>
+                <td class="submitted-date ${reportSlot.status}">${submittedDate}</td>
+                <td class="action-cell">${actionButton}</td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+        
+        // Clear container and add table
+        container.innerHTML = '';
+        container.appendChild(table);
+    }
+
+    // Method to open generate modal with current Australian FY defaults
+    openGenerateModalWithDefaults() {
+        const currentFY = this.getCurrentAustralianFY();
+        const currentQuarter = this.getCurrentAustralianQuarter();
+        
+        console.log('🎯 Opening modal with defaults:', {
+            currentFY,
+            currentQuarter,
+            formattedFY: this.formatAustralianFY(currentFY)
+        });
+        
+        // Default to quarterly report for current quarter
+        this.openGenerateModal('quarterly', currentFY, currentQuarter);
+    }
+
+    openGenerateModal(type, yearOrFinancialYear, quarter) {
+        // Handle both old format (year as number) and new format (financialYear as string)
+        let year, financialYear;
+        
+        if (typeof yearOrFinancialYear === 'string' && yearOrFinancialYear.includes('-')) {
+            // New format: "2024-2025"
+            financialYear = yearOrFinancialYear;
+            year = parseInt(yearOrFinancialYear.split('-')[0]);
+        } else if (typeof yearOrFinancialYear === 'number') {
+            // Old format: 2024
+            year = yearOrFinancialYear;
+            financialYear = `${year}-${year + 1}`;
+        } else {
+            console.error('Invalid year/financialYear format:', yearOrFinancialYear);
+            return;
+        }
+        
+        this.selectedReportSlot = { type, year, quarter, financialYear };
+        
+        const modal = document.getElementById('generate-modal');
+        const modalPeriod = document.getElementById('modal-period');
+        const modalNotes = document.getElementById('modal-notes-input');
+        
+        // Enhanced Australian FY format with null checks
+        if (type === 'quarterly') {
+            if (year && quarter) {
+                modalPeriod.textContent = `Q${quarter} FY ${financialYear}`;
+            } else {
+                modalPeriod.textContent = `Q${quarter || '?'} (Year not specified)`;
+            }
+        } else {
+            if (year) {
+                modalPeriod.textContent = `Annual FY ${financialYear}`;
+            } else {
+                modalPeriod.textContent = `Annual (Year not specified)`;
+            }
+        }
+        
+        if (modalNotes) {
+            modalNotes.value = '';
+        }
+        modal.style.display = 'flex';
+    }
+
+    closeGenerateModal() {
+        const modal = document.getElementById('generate-modal');
+        modal.style.display = 'none';
+        this.selectedReportSlot = null;
+    }
+
+    async generateReportFromModal() {
+        // Handle both cases: selected report slot OR new report generation
+        let type, year, quarter;
+        
+        if (this.selectedReportSlot) {
+            // Case 1: Generating from existing report slot
+            ({ type, year, quarter } = this.selectedReportSlot);
+        } else {
+            // Case 2: Generating new report with current defaults
+            type = 'quarterly'; // Default to quarterly
+            year = this.getCurrentAustralianFY();
+            quarter = this.getCurrentAustralianQuarter();
+            
+            console.log('🎯 No selected slot, using current defaults:', { type, year, quarter });
+        }
+
+        const notes = document.getElementById('modal-notes-input').value.trim();
+
+        // Validate required data
+        if (!year || isNaN(year)) {
+            alert('Error: Unable to determine financial year. Please try again.');
+            return;
+        }
+
+        if (type === 'quarterly' && (!quarter || isNaN(quarter))) {
+            alert('Error: Unable to determine quarter. Please try again.');
+            return;
+        }
+
+        try {
+            // Create period string
+            let period;
+            if (type === 'quarterly') {
+                period = `q${quarter}-${year}`;
+            } else {
+                period = `annual-${year}`;
+            }
+
+            // Create financialYear string in the format expected by backend
+            const financialYear = `${year}-${year + 1}`;
+
+            console.log(`📊 Generating ${type} report for ${period} (Australian FY: ${financialYear}, quarter: ${quarter})`);
+
+            // Use authenticated API class with Australian FY data
+            const requestData = { 
+                type, 
+                financialYear, // Send as string format "2024-2025"
+                notes,
+                dateRange: this.getAustralianFYDateRange(year, quarter)
+            };
+
+            // Add quarter for quarterly reports
+            if (type === 'quarterly') {
+                requestData.quarter = quarter;
+            }
+
+            console.log('📤 Sending request data:', requestData);
+
+            const data = await API.post('/reports/generate', requestData);
+            
+            console.log('📥 Received response data:', data);
+            
+            if (!data.report) {
+                throw new Error('No report data received from server');
+            }
+
+            this.currentReport = data.report;
+            
+            // Enhance the report object with Australian FY data if missing
+            if (!this.currentReport.financialYear && financialYear) {
+                this.currentReport.financialYear = financialYear;
+            }
+            if (!this.currentReport.quarter && quarter) {
+                this.currentReport.quarter = quarter;
+            }
+            if (!this.currentReport.type && type) {
+                this.currentReport.type = type;
+            }
+            
+            // Add to report history for tracking
+            this.reportHistory.unshift({
+                ...data.report,
+                financialYear: financialYear, // Ensure financialYear is preserved
+                quarter: quarter, // Ensure quarter is preserved
+                type: type, // Ensure type is preserved
+                generatedAt: new Date().toISOString(),
+                status: 'generated',
+                australianFY: `FY ${financialYear}`
+            });
+            
+            // Close modal
+            this.closeGenerateModal();
+            
+            // Reload reports list
+            await this.loadAllReports();
+            
+            // Use the fresh report data instead of making another API call
+            this.createReportOverlay(data.report);
+            
+            alert(`Report generated successfully for FY ${financialYear}!`);
+
+        } catch (error) {
+            console.error('❌ Error generating report:', error);
+            console.error('❌ Error details:', error.message, error.stack);
+            alert('Failed to generate report: ' + error.message);
+        }
+    }
+
+    async viewReport(reportId) {
+        try {
+            // Use authenticated API class instead of raw fetch
+            const report = await API.get(`/reports/${reportId}`);
+            this.currentReport = report;
+            this.renderReport(report);
+            
+        } catch (error) {
+            console.error('Error loading report:', error);
+            alert('Failed to load report: ' + error.message);
+        }
+    }
+
+    renderReport(report) {
+        if (!report) {
+            console.error('No report to render');
+            return;
+        }
+
+        console.log('Rendering report:', report);
+        console.log('🔍 Contribution breakdown data:', report.contributionBreakdown);
+
+        // Show report container
+        document.getElementById('report-content').style.display = 'block';
+
+        // Enhanced report title with Australian FY format
+        let reportTitle = `${(report.type || 'UNKNOWN').toUpperCase()} Financial Report`;
+        let periodDisplay = 'Period: Unknown';
+        
+        // Handle both old format (year/quarter) and new format (financialYear)
+        let fyYear = null;
+        let fyLabel = '';
+        
+        if (report.financialYear) {
+            // New format: financialYear is "2024-2025"
+            const [startYear] = report.financialYear.split('-').map(y => parseInt(y));
+            fyYear = startYear;
+            fyLabel = `FY ${report.financialYear}`;
+        } else if (report.year) {
+            // Old format: year is a number
+            fyYear = report.year;
+            fyLabel = this.formatAustralianFY(report.year);
+        }
+        
+        if (report.type === 'quarterly' && report.quarter && fyYear) {
+            reportTitle += ` - Q${report.quarter} ${fyLabel}`;
+            
+            // Generate proper date range for Australian FY quarter
+            const dateRange = this.getAustralianFYDateRange(fyYear, report.quarter);
+            periodDisplay = `Period: ${dateRange.start} to ${dateRange.end} (Q${report.quarter} ${fyLabel})`;
+            
+        } else if (report.type === 'annual' && fyYear) {
+            reportTitle += ` - Annual ${fyLabel}`;
+            
+            // Generate proper date range for Australian FY annual
+            const dateRange = this.getAustralianFYDateRange(fyYear);
+            periodDisplay = `Period: ${dateRange.start} to ${dateRange.end} (${fyLabel})`;
+            
+        } else if (report.period) {
+            reportTitle += ` - ${report.period}`;
+            periodDisplay = `Period: ${report.dateRange || report.period}`;
+        } else {
+            reportTitle += ` - Generated ${new Date().toLocaleDateString()}`;
+            periodDisplay = `Period: ${report.dateRange || 'Custom period'}`;
+        }
+        
+        document.getElementById('report-title').innerHTML = `
+            <div class="church-header">
+                <h2 style="margin: 0; color: #1976d2; font-size: 18px; font-weight: bold;">ST. MICHAEL ERITREAN ORTHODOX TEWAHEDO CHURCH</h2>
+                <p style="margin: 5px 0; color: #666; font-size: 14px;">Perth, Western Australia</p>
+                <p style="margin: 0; color: #666; font-size: 12px;">ABN: 80 798 549 161</p>
+                <hr style="margin: 15px 0; border: 1px solid #ddd;">
+            </div>
+            ${reportTitle}
+        `;
+        document.getElementById('report-period-display').textContent = periodDisplay;
+
+        // Render income categories with cash/non-cash breakdown
+        this.renderIncomeWithBreakdown('income-categories', report.incomeByCategory || [], report.contributionBreakdown);
+        document.getElementById('total-income').innerHTML = 
+            `<strong>$${(report.totalIncome || 0).toFixed(2)}</strong>`;
+
+        // Render expense categories
+        this.renderCategoryTable('expense-categories', report.expensesByCategory || []);
+        document.getElementById('total-expenses').innerHTML = 
+            `<strong>$${(report.totalExpenses || 0).toFixed(2)}</strong>`;
+
+        // Update summary - CASH ONLY for financial calculations
+        document.getElementById('new-total-income').textContent = `$${(report.totalIncome || 0).toFixed(2)}`;
+        document.getElementById('new-total-expenses').textContent = `$${(report.totalExpenses || 0).toFixed(2)}`;
+        document.getElementById('new-total-balance').textContent = `$${(report.netBalance || 0).toFixed(2)}`;
+
+        // Update cash flow - CASH ONLY
+        const cashFlow = report.cashFlow || {};
+        document.getElementById('previous-balance').textContent = `$${(cashFlow.previousBalance || 0).toFixed(2)}`;
+        document.getElementById('report-income').textContent = `+$${(report.totalIncome || 0).toFixed(2)}`;
+        document.getElementById('report-expenses').textContent = `-$${(report.totalExpenses || 0).toFixed(2)}`;
+        document.getElementById('current-balance').innerHTML = 
+            `<strong>$${(cashFlow.currentBalance || cashFlow.cashAssets || 0).toFixed(2)}</strong>`;
+
+        // Calculate and display assets - Separate cash and inventory
+        const cashAssets = cashFlow.cashAssets || cashFlow.currentBalance || 0;
+        const inventoryAssets = cashFlow.inventoryAssets || 0;
+        const totalAssets = cashFlow.totalAssets || (cashAssets + inventoryAssets); const finalTotalAssets = totalAssets || cashFlow.currentBalance || 0;
+        
+        document.getElementById('previous-asset').textContent = `$${(report.previousAsset || 0).toFixed(2)}`;
+        document.getElementById('current-period-net').textContent = `${(report.netBalance || 0) >= 0 ? '+' : ''}$${(report.netBalance || 0).toFixed(2)}`;
+        document.getElementById('total-asset-end').innerHTML = `<strong>$${finalTotalAssets.toFixed(2)}</strong>`;
+        
+        // Add breakdown display if elements exist
+        const cashAssetsEl = document.getElementById('cash-assets');
+        const inventoryAssetsEl = document.getElementById('inventory-assets');
+        if (cashAssetsEl) cashAssetsEl.textContent = `$${cashAssets.toFixed(2)}`;
+        if (inventoryAssetsEl) inventoryAssetsEl.textContent = `$${inventoryAssets.toFixed(2)}`;
+
+        // Add non-cash summary if element exists
+        const nonCashSummaryEl = document.getElementById('non-cash-summary');
+        if (nonCashSummaryEl && report.contributionBreakdown) {
+            const breakdown = report.contributionBreakdown;
+            nonCashSummaryEl.innerHTML = `
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <h5 style="margin: 0 0 10px 0; color: #666;">Non-Cash Contributions (Informational)</h5>
+                    <p style="margin: 5px 0;"><strong>In-Kind Donations Received:</strong> $${(breakdown.totalNonCashValue || 0).toFixed(2)} (${breakdown.nonCashContributionsCount || 0} items)</p>
+                    <p style="margin: 5px 0; font-size: 12px; color: #666; font-style: italic;">
+                        Note: Non-cash donations are tracked for donor recognition but do not affect cash balance.
+                        Items are valued when donated and expensed when consumed.
+                    </p>
+                </div>
+            `;
+        }
+
+        // Load notes
+        const notesTextarea = document.getElementById('report-notes');
+        if (notesTextarea) {
+            notesTextarea.value = report.notes || '';
+        }
+
+        // Render monthly overview chart
+        this.renderMonthlyChart(report.monthlyOverview || []);
+
+        // Scroll to report
+        document.getElementById('report-content').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // New function to view report in overlay/modal
+    async viewReportInOverlay(reportId) {
+        try {
+            // Use authenticated API class instead of raw fetch
+            const report = await API.get(`/reports/${reportId}`);
+            this.currentReport = report;
+            
+            // Create overlay modal
+            this.createReportOverlay(report);
+            
+        } catch (error) {
+            console.error('Error loading report:', error);
+            alert('Failed to load report: ' + error.message);
+        }
+    }
+
+    createReportOverlay(report) {
+        // Remove existing overlay if any
+        const existingOverlay = document.getElementById('report-overlay');
+        if (existingOverlay) {
+            existingOverlay.remove();
+        }
+
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'report-overlay';
+        overlay.className = 'report-overlay';
+        
+        // Enhanced report title with Australian FY format
+        let reportTitle = `${(report.type || 'UNKNOWN').toUpperCase()} Financial Report`;
+        let periodDisplay = 'Period: Unknown';
+        
+        // Handle both old format (year/quarter) and new format (financialYear)
+        let fyYear = null;
+        let fyLabel = '';
+        
+        if (report.financialYear) {
+            const [startYear] = report.financialYear.split('-').map(y => parseInt(y));
+            fyYear = startYear;
+            fyLabel = `FY ${report.financialYear}`;
+        } else if (report.year) {
+            fyYear = report.year;
+            fyLabel = this.formatAustralianFY(report.year);
+        }
+        
+        if (report.type === 'quarterly' && report.quarter && fyYear) {
+            reportTitle += ` - Q${report.quarter} ${fyLabel}`;
+            const dateRange = this.getAustralianFYDateRange(fyYear, report.quarter);
+            periodDisplay = `Period: ${dateRange.start} to ${dateRange.end}`;
+        } else if (report.type === 'annual' && fyYear) {
+            reportTitle += ` - Annual ${fyLabel}`;
+            const dateRange = this.getAustralianFYDateRange(fyYear);
+            periodDisplay = `Period: ${dateRange.start} to ${dateRange.end}`;
+        } else {
+            reportTitle += ` - Generated ${new Date().toLocaleDateString()}`;
+            periodDisplay = `Period: ${report.dateRange || 'Custom period'}`;
+        }
+
+        overlay.innerHTML = `
+            <div class="report-overlay-content">
+                <div class="report-overlay-header">
+                    <div class="church-header-overlay">
+                        <h2 style="margin: 0; color: #1976d2; font-size: 18px; font-weight: bold;">ST. MICHAEL ERITREAN ORTHODOX TEWAHEDO CHURCH</h2>
+                        <p style="margin: 5px 0; color: #666; font-size: 14px;">Perth, Western Australia</p>
+                        <p style="margin: 0 0 15px 0; color: #666; font-size: 12px;">ABN: 80 798 549 161</p>
+                        <h3 style="margin: 0; color: #333;">${reportTitle}</h3>
+                    </div>
+                    <div class="report-overlay-actions">
+                        <button class="btn btn-sm btn-secondary" onclick="reportsPage.printOverlayReport()">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="reportsPage.exportOverlayPDF()">
+                            <i class="fas fa-download"></i> Export PDF
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="reportsPage.closeReportOverlay()">
+                            <i class="fas fa-times"></i> Close
+                        </button>
+                    </div>
+                </div>
+                <div class="report-overlay-body" id="overlay-report-content">
+                    <p class="report-period">${periodDisplay}</p>
+                    
+                    <div class="report-sections">
+                        <div class="report-section">
+                            <h4>Income by Category</h4>
+                            <table class="report-table">
+                                <thead>
+                                    <tr><th>Category</th><th>Amount</th></tr>
+                                </thead>
+                                <tbody id="overlay-income-categories"></tbody>
+                                <tfoot>
+                                    <tr class="total-row">
+                                        <td><strong>Total Income</strong></td>
+                                        <td id="overlay-total-income"><strong>$${(report.totalIncome || 0).toFixed(2)}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <div class="report-section">
+                            <h4>Expenses by Category</h4>
+                            <table class="report-table">
+                                <thead>
+                                    <tr><th>Category</th><th>Amount</th></tr>
+                                </thead>
+                                <tbody id="overlay-expense-categories"></tbody>
+                                <tfoot>
+                                    <tr class="total-row">
+                                        <td><strong>Total Expenses</strong></td>
+                                        <td id="overlay-total-expenses"><strong>$${(report.totalExpenses || 0).toFixed(2)}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <div class="report-section">
+                            <h4>Financial Summary</h4>
+                            <table class="report-table">
+                                <tr>
+                                    <td>Total Income</td>
+                                    <td>$${(report.totalIncome || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td>Total Expenses</td>
+                                    <td>$${(report.totalExpenses || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td><strong>Net Balance</strong></td>
+                                    <td><strong>$${(report.netBalance || 0).toFixed(2)}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="report-section full-width">
+                            <h4>Cash Flow</h4>
+                            <table class="report-table">
+                                <tr>
+                                    <td>Starting Balance (Previous FY)</td>
+                                    <td>$${((report.cashFlow && report.cashFlow.startingBalance) || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Previous Balance (Cumulative)</strong></td>
+                                    <td><strong>$${((report.cashFlow && report.cashFlow.previousBalance) || 0).toFixed(2)}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>+ Current Period Income</td>
+                                    <td>+$${(report.totalIncome || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td>- Current Period Expenses</td>
+                                    <td>-$${(report.totalExpenses || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td><strong>Current Balance</strong></td>
+                                    <td><strong>$${((report.cashFlow && report.cashFlow.currentBalance) || report.netBalance || 0).toFixed(2)}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Additional sections for overlay -->
+                    <div class="report-sections">
+                        <div class="report-section full-width">
+                            <h4>Asset Calculation</h4>
+                            <table class="report-table">
+                                <tr>
+                                    <td>Starting Asset (Previous FY End)</td>
+                                    <td>$${((report.cashFlow && report.cashFlow.startingBalance) || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Previous Asset (Cumulative)</strong></td>
+                                    <td><strong>$${((report.cashFlow && report.cashFlow.previousBalance) || 0).toFixed(2)}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>+ Current Period Net Balance</td>
+                                    <td>+$${(report.netBalance || 0).toFixed(2)}</td>
+                                </tr>
+                                <tr class="total-row">
+                                    <td><strong>Total Asset at End</strong></td>
+                                    <td><strong>$${(((report.cashFlow && report.cashFlow.previousBalance) || 0) + (report.netBalance || 0)).toFixed(2)}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="report-section full-width">
+                            <h4>Notes / Comments</h4>
+                            <div class="notes-section">
+                                <textarea id="overlay-report-notes" class="form-control" rows="4" placeholder="Add notes or comments about this report...">${report.notes || ''}</textarea>
+                                <div style="margin-top: 10px;">
+                                    <button id="overlay-save-notes-btn" class="btn btn-sm btn-secondary" onclick="reportsPage.saveOverlayNotes()">Save Notes</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="report-section full-width">
+                            <h4>Monthly Overview</h4>
+                            <div class="chart-container">
+                                <canvas id="overlay-monthly-chart" width="800" height="300"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Non-Cash Section -->
+                        <div class="report-section full-width non-cash-section" style="margin-top: 40px; padding: 25px; background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 8px;">
+                            <h4 style="text-align: center; color: #495057; border-bottom: 2px solid #6c757d; padding-bottom: 10px; margin-bottom: 20px;">═══════════════════════════════════════════════</h4>
+                            <h4 style="text-align: center; color: #495057; margin: 10px 0;">NON-CASH CONTRIBUTIONS & INVENTORY</h4>
+                            <h4 style="text-align: center; color: #6c757d; font-size: 14px; margin: 5px 0 20px 0;">(For Recognition & Transparency Only)</h4>
+                            <h4 style="text-align: center; color: #495057; border-bottom: 2px solid #6c757d; padding-bottom: 10px; margin-bottom: 20px;">═══════════════════════════════════════════════</h4>
+                            
+                            ${this.renderNonCashSectionContent(report)}
+                            
+                            <h4 style="text-align: center; color: #495057; border-top: 2px solid #6c757d; padding-top: 20px; margin-top: 30px; margin-bottom: 10px;">═══════════════════════════════════════════════</h4>
+                            <h4 style="text-align: center; color: #495057; margin: 10px 0;">TOTAL ASSETS</h4>
+                            <h4 style="text-align: center; color: #495057; border-bottom: 2px solid #6c757d; padding-bottom: 10px; margin-bottom: 20px;">═══════════════════════════════════════════════</h4>
+                            
+                            <table class="report-table" style="max-width: 600px; margin: 0 auto;">
+                                <tr>
+                                    <td style="padding: 12px;">Cash Balance:</td>
+                                    <td style="padding: 12px; text-align: right;"><strong>$${((report.cashFlow && report.cashFlow.cashAssets) || (report.cashFlow && report.cashFlow.currentBalance) || 0).toFixed(2)}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 12px;">Current Inventory Value:</td>
+                                    <td style="padding: 12px; text-align: right;"><strong>$${((report.cashFlow && report.cashFlow.inventoryAssets) || 0).toFixed(2)}</strong></td>
+                                </tr>
+                                <tr style="background: #e9ecef; font-size: 16px;">
+                                    <td style="padding: 15px;"><strong>Total Assets:</strong></td>
+                                    <td style="padding: 15px; text-align: right;"><strong>$${((report.cashFlow && (report.cashFlow.totalAssets || report.cashFlow.currentBalance)) || 0).toFixed(2)}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        // Populate category tables
+        this.renderOverlayIncomeWithBreakdown('overlay-income-categories', report.incomeByCategory || [], report.contributionBreakdown);
+        this.renderOverlayCategoryTable('overlay-expense-categories', report.expensesByCategory || [], report.contributionBreakdown);
+
+        // Show overlay
+        overlay.style.display = 'flex';
+        
+        // Render chart after overlay is shown and Chart.js is available
+        this.waitForChartJS().then(() => {
+            this.renderOverlayChart(report.monthlyOverview || []);
+        });
+    }
+
+    // Helper function to wait for Chart.js to be available
+    waitForChartJS(maxAttempts = 10, delay = 100) {
+        return new Promise((resolve) => {
+            let attempts = 0;
+            
+            const checkChart = () => {
+                if (typeof Chart !== 'undefined') {
+                    resolve();
+                } else if (attempts < maxAttempts) {
+                    attempts++;
+                    setTimeout(checkChart, delay);
+                } else {
+                    console.warn('Chart.js not available after waiting');
+                    resolve(); // Resolve anyway to prevent hanging
+                }
+            };
+            
+            checkChart();
+        });
+    }
+
+    renderOverlayIncomeWithBreakdown(tableId, categories, contributionBreakdown) {
+        const tbody = document.querySelector(`#${tableId}`);
+        if (!tbody) return;
+
+        if (!categories || categories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2">No data available</td></tr>';
+            return;
+        }
+
+        const validCategories = (categories || []).filter(cat => cat && (cat.category || cat.amount !== undefined));
+        
+        if (validCategories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2">No data available</td></tr>';
+            return;
+        }
+
+        // Start building category rows
+        let categoryRows = ''
+
+        // We'll add summary first, then categories below
+        // (The summary is added in the contributionBreakdown section)
+        
+        // Render categories will be added after summary
+        // Categories will be added in the breakdown section below
+
+        // Add cash/non-cash breakdown if available
+        if (contributionBreakdown) {
+            const totalCash = contributionBreakdown.totalCashIncome || 0;
+            const totalInKind = contributionBreakdown.totalInKindIncome || 0;
+            const cashCount = contributionBreakdown.cashTransactionsCount || 0;
+            const nonCashCount = contributionBreakdown.nonCashContributionsCount || 0;
+
+            if (totalCash > 0 || totalInKind > 0) {
+                categoryRows += `
+                    <tr class="breakdown-separator">
+                        <td colspan="2" style="border-top: 2px solid #ddd; padding-top: 15px; padding-bottom: 5px; font-weight: bold; color: #666; background: #f8f9fa;">
+                            Income Summary
+                        </td>
+                    </tr>
+                    <tr class="breakdown-row">
+                        <td style="padding-left: 20px; color: #27ae60;">
+                            <i class="fas fa-money-bill-wave"></i> Cash Income (${cashCount} transactions)
+                        </td>
+                        <td style="color: #27ae60; font-weight: bold;">$${totalCash.toFixed(2)}</td>
+                    </tr>
+                    <tr class="breakdown-row">
+                        <td style="padding-left: 20px; color: #3498db;">
+                            <i class="fas fa-gift"></i> In-Kind Donations (${nonCashCount} items)
+                        </td>
+                        <td style="color: #3498db;">$${totalNonCash.toFixed(2)}</td>
+                    </tr>
+                    <tr style="background: #e8f5e9; font-weight: bold;">
+                        <td style="padding-left: 20px;">
+                            <i class="fas fa-calculator"></i> Total Recognition Value
+                        </td>
+                        <td>${(totalCash + totalNonCash).toFixed(2)}</td>
+                    </tr>
+                    <tr style="background: #fff3cd;">
+                        <td colspan="2" style="padding: 10px 20px; font-size: 12px; color: #856404; font-style: italic;">
+                            ℹ <strong>Cash Flow Impact:</strong> Only the cash income affects your bank balance. In-kind donations are tracked for donor recognition and offset when consumed.
+                        </td>
+                    </tr>
+                `;
+                
+                // Add CASH categories breakdown
+                const cashCategories = contributionBreakdown.cashIncomeByCategory || [];
+                if (cashCategories.length > 0) {
+                    categoryRows += `
+                        <tr class="breakdown-separator">
+                            <td colspan="2" style="border-top: 2px solid #ddd; padding-top: 15px; padding-bottom: 5px; font-weight: bold; color: #27ae60; background: #f8f9fa;">
+                                <i class="fas fa-money-bill-wave"></i> Cash Income by Category
+                            </td>
+                        </tr>
+                    `;
+                    categoryRows += cashCategories.map(cat => `
+                        <tr>
+                            <td style="padding-left: 20px;">${cat.category || 'Uncategorized'}</td>
+                            <td>$${(cat.amount || 0).toFixed(2)}</td>
+                        </tr>
+                    `).join('');
+                }
+                
+                // Add IN-KIND categories breakdown
+                const nonCashCategories = contributionBreakdown.nonCashIncomeByCategory || [];
+                if (nonCashCategories.length > 0) {
+                    categoryRows += `
+                        <tr class="breakdown-separator">
+                            <td colspan="2" style="border-top: 2px solid #ddd; padding-top: 15px; padding-bottom: 5px; font-weight: bold; color: #3498db; background: #f8f9fa;">
+                                <i class="fas fa-gift"></i> In-Kind Donations by Category
+                            </td>
+                        </tr>
+                    `;
+                    categoryRows += nonCashCategories.map(cat => `
+                        <tr>
+                            <td style="padding-left: 20px;">${cat.category || 'Uncategorized'}</td>
+                            <td>$${(cat.amount || 0).toFixed(2)}</td>
+                        </tr>
+                    `).join('');
+                }
+            }
+        } else {
+            // No breakdown data - just show categories as before
+            if (validCategories.length > 0) {
+                categoryRows = validCategories.map(cat => `
+                    <tr>
+                        <td>${cat.category || 'Uncategorized'}</td>
+                        <td>$${(cat.amount || 0).toFixed(2)}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        tbody.innerHTML = categoryRows;
+    }
+
+    renderOverlayCategoryTable(tableId, categories) {
+        const tbody = document.querySelector(`#${tableId}`);
+        if (!tbody) return;
+
+        if (!categories || categories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2">No data available</td></tr>';
+            return;
+        }
+
+        const validCategories = (categories || []).filter(cat => cat && (cat.category || cat.amount !== undefined));
+        
+        if (validCategories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2">No data available</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = validCategories.map(cat => `
+            <tr>
+                <td>${cat.category || 'Uncategorized'}</td>
+                <td>$${(cat.amount || 0).toFixed(2)}</td>
+            </tr>
+        `).join('');
+    }
+
+    renderNonCashSectionContent(report) {
+        const breakdown = report.contributionBreakdown || {};
+        const totalNonCash = breakdown.totalNonCashValue || 0;
+        const nonCashCount = breakdown.nonCashContributionsCount || 0;
+        const inventoryValue = (report.cashFlow && report.cashFlow.inventoryAssets) || 0;
+        
+        return `
+            <div style="background: white; padding: 20px; border-left: 4px solid #6c757d; border-radius: 4px; margin-bottom: 20px;">
+                <h5 style="color: #343a40; margin-bottom: 15px; font-size: 16px;">📦 In-Kind Donations Received This Period:</h5>
+                ${nonCashCount > 0 ? `
+                    <p style="margin: 10px 0; color: #495057;">
+                        <strong>${nonCashCount} item(s)</strong> donated with total estimated value of <strong>$${totalNonCash.toFixed(2)}</strong>
+                    </p>
+                    <p style="margin: 10px 0; font-size: 13px; color: #6c757d; font-style: italic;">
+                        (See Member Contributions page for detailed list of donors and items)
+                    </p>
+                ` : `
+                    <p style="color: #6c757d;">No in-kind donations recorded this period</p>
+                `}
+            </div>
+            
+            <div style="background: white; padding: 20px; border-left: 4px solid #6c757d; border-radius: 4px; margin-bottom: 20px;">
+                <h5 style="color: #343a40; margin-bottom: 15px; font-size: 16px;">🔄 In-Kind Items Consumed This Period:</h5>
+                <p style="color: #6c757d;">Consumption tracking available in Inventory page</p>
+                <p style="margin: 10px 0; font-size: 13px; color: #6c757d; font-style: italic;">
+                    (Items consumed for church operations are tracked in inventory management)
+                </p>
+            </div>
+            
+            <div style="background: white; padding: 20px; border-left: 4px solid #28a745; border-radius: 4px; margin-bottom: 20px;">
+                <h5 style="color: #343a40; margin-bottom: 15px; font-size: 16px;">📊 Current Inventory Status:</h5>
+                <p style="margin: 10px 0; color: #495057;">
+                    <strong>Total Inventory Value: $${inventoryValue.toFixed(2)}</strong>
+                </p>
+                <p style="margin: 10px 0; font-size: 13px; color: #6c757d; font-style: italic;">
+                    (See Inventory page for detailed item list and quantities)
+                </p>
+            </div>
+            
+            <div style="background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; border-radius: 4px; margin-top: 20px;">
+                <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
+                    <strong>📝 Important Note:</strong> Non-cash contributions are tracked separately for donor recognition and inventory management. 
+                    They <strong>do not affect the cash balance</strong> shown in the financial summary above. 
+                    Items are valued when donated and tracked when consumed for church operations.
+                </p>
+            </div>
+        `;
+    }
+
+    closeReportOverlay() {
+        // Destroy chart if it exists
+        if (this.overlayChart) {
+            try {
+                this.overlayChart.destroy();
+            } catch (error) {
+                console.warn('Error destroying overlay chart:', error);
+            }
+            this.overlayChart = null;
+        }
+        
+        const overlay = document.getElementById('report-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
+    }
+
+    printOverlayReport() {
+        // Hide overlay actions and print only the report content
+        const overlay = document.getElementById('report-overlay');
+        const actions = overlay.querySelector('.report-overlay-actions');
+        
+        if (actions) actions.style.display = 'none';
+        
+        window.print();
+        
+        if (actions) actions.style.display = 'flex';
+    }
+
+    exportOverlayPDF() {
+        if (!this.currentReport) {
+            alert('No report to export');
+            return;
+        }
+        this.exportPDF(); // Use existing PDF export function
+    }
+
+    // Function to save notes from overlay
+    async saveOverlayNotes() {
+        if (!this.currentReport) {
+            alert('No report selected. Please view a report first.');
+            return;
+        }
+
+        const notes = document.getElementById('overlay-report-notes').value;
+        
+        try {
+            const reportId = this.currentReport.id || this.currentReport._id;
+            
+            // Use authenticated API class instead of raw fetch
+            await API.put(`/reports/${reportId}/notes`, { notes });
+
+            this.currentReport.notes = notes;
+            alert('Notes saved successfully!');
+            
+            // Reload the reports list
+            await this.loadAllReports();
+            
+        } catch (error) {
+            console.error('Error saving notes:', error);
+            alert('Failed to save notes: ' + error.message);
+        }
+    }
+
+    // Function to render chart in overlay
+    renderOverlayChart(monthlyData) {
+        const ctx = document.getElementById('overlay-monthly-chart');
+        if (!ctx) {
+            console.error('Overlay monthly chart canvas not found');
+            return;
+        }
+
+        // Check if Chart.js is available
+        if (typeof Chart === 'undefined') {
+            console.warn('Chart.js not loaded, displaying message instead');
+            const context = ctx.getContext('2d');
+            context.clearRect(0, 0, ctx.width, ctx.height);
+            context.font = '16px Arial';
+            context.fillStyle = '#666';
+            context.textAlign = 'center';
+            context.fillText('Chart.js library not loaded', ctx.width / 2, ctx.height / 2 - 10);
+            context.fillText('Charts are not available', ctx.width / 2, ctx.height / 2 + 10);
+            return;
+        }
+
+        // Destroy existing chart if it exists
+        if (this.overlayChart) {
+            this.overlayChart.destroy();
+        }
+
+        if (!monthlyData || monthlyData.length === 0) {
+            ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+            const context = ctx.getContext('2d');
+            context.font = '16px Arial';
+            context.fillStyle = '#666';
+            context.textAlign = 'center';
+            context.fillText('No monthly data available', ctx.width / 2, ctx.height / 2);
+            return;
+        }
+
+        try {
+            const labels = monthlyData.map(item => item.month || 'Unknown');
+            const incomeData = monthlyData.map(item => item.income || 0);
+            const expenseData = monthlyData.map(item => item.expenses || 0);
+
+            this.overlayChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: incomeData,
+                            backgroundColor: 'rgba(67, 97, 238, 0.8)',
+                            borderColor: 'rgba(67, 97, 238, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Expenses',
+                            data: expenseData,
+                            backgroundColor: 'rgba(220, 53, 69, 0.8)',
+                            borderColor: 'rgba(220, 53, 69, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Monthly Income vs Expenses'
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error creating chart:', error);
+            const context = ctx.getContext('2d');
+            context.clearRect(0, 0, ctx.width, ctx.height);
+            context.font = '16px Arial';
+            context.fillStyle = '#dc3545';
+            context.textAlign = 'center';
+            context.fillText('Error loading chart', ctx.width / 2, ctx.height / 2);
+        }
+    }
+
+    renderIncomeWithBreakdown(tableId, categories, contributionBreakdown) {
+        console.log('🔍 renderIncomeWithBreakdown called with:', { tableId, categories, contributionBreakdown });
+        
+        const tbody = document.querySelector(`#${tableId}`);
+        if (!tbody) {
+            console.error(`Table body not found: ${tableId}`);
+            return;
+        }
+
+        if (!categories || categories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2">No data available</td></tr>';
+            return;
+        }
+
+        // Filter out invalid entries
+        const validCategories = (categories || []).filter(cat => cat && (cat.category || cat.amount !== undefined));
+        
+        if (validCategories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2">No data available</td></tr>';
+            return;
+        }
+
+        // Start building category rows
+        let categoryRows = ''
+
+        // We'll add summary first, then categories below
+        // (The summary is added in the contributionBreakdown section)
+        
+        // Render categories will be added after summary
+        // Categories will be added in the breakdown section below
+
+        // Add cash/non-cash breakdown if available
+        console.log('🔍 Checking contributionBreakdown:', contributionBreakdown);
+        if (contributionBreakdown) {
+            console.log('🔍 Found contributionBreakdown:', contributionBreakdown);
+            const totalCash = contributionBreakdown.totalCashIncome || 0;
+            const totalNonCash = contributionBreakdown.totalNonCashValue || 0;
+            const cashCount = contributionBreakdown.cashTransactionsCount || 0;
+            const nonCashCount = contributionBreakdown.nonCashContributionsCount || 0;
+
+            console.log('🔍 Breakdown values:', { totalCash, totalNonCash, cashCount, nonCashCount });
+
+            if (totalCash > 0 || totalNonCash > 0) {
+                console.log('🔍 Adding breakdown rows to table');
+                categoryRows += `
+                    <tr class="breakdown-separator">
+                        <td colspan="2" style="border-top: 2px solid #ddd; padding-top: 15px; padding-bottom: 5px; font-weight: bold; color: #666; background: #f8f9fa;">
+                            Income Summary
+                        </td>
+                    </tr>
+                    <tr class="breakdown-row">
+                        <td style="padding-left: 20px; color: #27ae60;">
+                            <i class="fas fa-money-bill-wave"></i> Cash Income (${cashCount} transactions)
+                        </td>
+                        <td style="color: #27ae60; font-weight: bold;">$${totalCash.toFixed(2)}</td>
+                    </tr>
+                    <tr class="breakdown-row">
+                        <td style="padding-left: 20px; color: #3498db;">
+                            <i class="fas fa-gift"></i> In-Kind Donations (${nonCashCount} items)
+                        </td>
+                        <td style="color: #3498db;">$${totalNonCash.toFixed(2)}</td>
+                    </tr>
+                    <tr style="background: #e8f5e9; font-weight: bold;">
+                        <td style="padding-left: 20px;">
+                            <i class="fas fa-calculator"></i> Total Recognition Value
+                        </td>
+                        <td>${(totalCash + totalNonCash).toFixed(2)}</td>
+                    </tr>
+                    <tr style="background: #fff3cd;">
+                        <td colspan="2" style="padding: 10px 20px; font-size: 12px; color: #856404; font-style: italic;">
+                            ℹ <strong>Cash Flow Impact:</strong> Only the cash income affects your bank balance. In-kind donations are tracked for donor recognition and offset when consumed.
+                        </td>
+                    </tr>
+                `;
+                
+                // Add CASH categories breakdown
+                const cashCategories = contributionBreakdown.cashIncomeByCategory || [];
+                if (cashCategories.length > 0) {
+                    categoryRows += `
+                        <tr class="breakdown-separator">
+                            <td colspan="2" style="border-top: 2px solid #ddd; padding-top: 15px; padding-bottom: 5px; font-weight: bold; color: #27ae60; background: #f8f9fa;">
+                                <i class="fas fa-money-bill-wave"></i> Cash Income by Category
+                            </td>
+                        </tr>
+                    `;
+                    categoryRows += cashCategories.map(cat => `
+                        <tr>
+                            <td style="padding-left: 20px;">${cat.category || 'Uncategorized'}</td>
+                            <td>$${(cat.amount || 0).toFixed(2)}</td>
+                        </tr>
+                    `).join('');
+                }
+                
+                // Add IN-KIND categories breakdown
+                const nonCashCategories = contributionBreakdown.nonCashIncomeByCategory || [];
+                if (nonCashCategories.length > 0) {
+                    categoryRows += `
+                        <tr class="breakdown-separator">
+                            <td colspan="2" style="border-top: 2px solid #ddd; padding-top: 15px; padding-bottom: 5px; font-weight: bold; color: #3498db; background: #f8f9fa;">
+                                <i class="fas fa-gift"></i> In-Kind Donations by Category
+                            </td>
+                        </tr>
+                    `;
+                    categoryRows += nonCashCategories.map(cat => `
+                        <tr>
+                            <td style="padding-left: 20px;">${cat.category || 'Uncategorized'}</td>
+                            <td>$${(cat.amount || 0).toFixed(2)}</td>
+                        </tr>
+                    `).join('');
+                }
+            } else {
+                console.log('🔍 No breakdown data to display (totals are zero)');
+            }
+        } else {
+            // No breakdown data - just show categories as before
+            if (validCategories.length > 0) {
+                categoryRows = validCategories.map(cat => `
+                    <tr>
+                        <td>${cat.category || 'Uncategorized'}</td>
+                        <td>$${(cat.amount || 0).toFixed(2)}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        tbody.innerHTML = categoryRows;
+        console.log('🔍 Table updated with HTML:', categoryRows);
+    }
+
+    renderCategoryTable(tableId, categories) {
+        const tbody = document.querySelector(`#${tableId}`);
+        if (!tbody) {
+            console.error(`Table body not found: ${tableId}`);
+            return;
+        }
+
+        if (!categories || categories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2">No data available</td></tr>';
+            return;
+        }
+
+        // Filter out invalid entries (objects with only _id)
+        const validCategories = (categories || []).filter(cat => cat && (cat.category || cat.amount !== undefined));
+        
+        if (validCategories.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2">No data available</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = validCategories.map(cat => `
+            <tr>
+                <td>${cat.category || 'Uncategorized'}</td>
+                <td>$${(cat.amount || 0).toFixed(2)}</td>
+            </tr>
+        `).join('');
+    }
+
+    renderMonthlyChart(monthlyData) {
+        const ctx = document.getElementById('monthly-chart');
+        if (!ctx) {
+            console.error('Monthly chart canvas not found');
+            return;
+        }
+
+        // Check if Chart.js is available
+        if (typeof Chart === 'undefined') {
+            console.warn('Chart.js not loaded, skipping chart rendering');
+            return;
+        }
+
+        // Destroy existing chart if it exists
+        if (this.monthlyChart) {
+            this.monthlyChart.destroy();
+        }
+
+        if (!monthlyData || monthlyData.length === 0) {
+            return;
+        }
+
+        try {
+            this.monthlyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: monthlyData.map(m => m.month),
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: monthlyData.map(m => m.income || 0),
+                            backgroundColor: '#4cc9f0',
+                            borderColor: '#4cc9f0',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Expenses',
+                            data: monthlyData.map(m => m.expenses || 0),
+                            backgroundColor: '#f72585',
+                            borderColor: '#f72585',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error creating main chart:', error);
+        }
+    }
+
+    updateQuarterlyBreakdown(report) {
+        const cashFlow = report.cashFlow || {};
+        
+        // Starting balance
+        const startingBalanceEl = document.getElementById('starting-balance');
+        if (startingBalanceEl) {
+            startingBalanceEl.textContent = `${(cashFlow.startingBalance || 0).toFixed(2)}`;
+        }
+        
+        // Previous quarters breakdown
+        const previousQuartersContainer = document.getElementById('previous-quarters-breakdown');
+        if (previousQuartersContainer) {
+            previousQuartersContainer.innerHTML = '';
+            
+            if (cashFlow.previousQuarters && cashFlow.previousQuarters.length > 0) {
+                cashFlow.previousQuarters.forEach(quarter => {
+                    const row = document.createElement('tr');
+                    row.style.backgroundColor = '#f8f9fa';
+                    row.innerHTML = `
+                        <td style="padding-left: 20px;">+ ${quarter.label} Net Balance</td>
+                        <td>+${quarter.netBalance.toFixed(2)}</td>
+                    `;
+                    previousQuartersContainer.appendChild(row);
+                });
+            }
+        }
+        
+        // Starting asset
+        const startingAssetEl = document.getElementById('starting-asset');
+        if (startingAssetEl) {
+            startingAssetEl.textContent = `${(cashFlow.startingBalance || 0).toFixed(2)}`;
+        }
+        
+        // Quarterly asset breakdown
+        const quarterlyAssetContainer = document.getElementById('quarterly-asset-breakdown');
+        if (quarterlyAssetContainer) {
+            quarterlyAssetContainer.innerHTML = '';
+            
+            if (cashFlow.previousQuarters && cashFlow.previousQuarters.length > 0) {
+                let cumulativeAsset = cashFlow.startingBalance || 0;
+                
+                cashFlow.previousQuarters.forEach(quarter => {
+                    cumulativeAsset += quarter.netBalance;
+                    const row = document.createElement('tr');
+                    row.style.backgroundColor = '#f8f9fa';
+                    row.innerHTML = `
+                        <td style="padding-left: 20px;">+ ${quarter.label} Net (${quarter.netBalance >= 0 ? '+' : ''}${quarter.netBalance.toFixed(2)})</td>
+                        <td>= ${cumulativeAsset.toFixed(2)}</td>
+                    `;
+                    quarterlyAssetContainer.appendChild(row);
+                });
+            }
+        }
+    }
+
+    async saveReportNotes() {
+        if (!this.currentReport) {
+            alert('No report selected. Please view a report first.');
+            return;
+        }
+
+        const notes = document.getElementById('report-notes').value;
+        
+        try {
+            const reportId = this.currentReport.id || this.currentReport._id;
+            
+            // Use authenticated API class instead of raw fetch
+            await API.put(`/reports/${reportId}/notes`, { notes });
+
+            this.currentReport.notes = notes;
+            alert('Notes saved successfully!');
+            
+            // Reload the reports list
+            await this.loadAllReports();
+            
+        } catch (error) {
+            console.error('Error saving notes:', error);
+            alert('Failed to save notes: ' + error.message);
+        }
+    }
+
+    printReport() {
+        if (!this.currentReport) {
+            alert('No report to print');
+            return;
+        }
+        window.print();
+    }
+
+    exportPDF() {
+        if (!this.currentReport) {
+            alert('No report to export');
+            return;
+        }
+
+        try {
+            // Check if jsPDF is available
+            if (typeof window.jspdf === 'undefined') {
+                alert('PDF library not loaded. Using print instead.');
+                this.printReport();
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            
+            // Add church header
+            pdf.setFontSize(16);
+            pdf.setFont(undefined, 'bold');
+            pdf.text('ST. MICHAEL ERITREAN ORTHODOX TEWAHEDO CHURCH', 20, 20);
+            
+            pdf.setFontSize(12);
+            pdf.setFont(undefined, 'normal');
+            pdf.text('Perth, Western Australia', 20, 30);
+            pdf.text('ABN: 80 798 549 161', 20, 40);
+            
+            // Add separator line
+            pdf.line(20, 45, 190, 45);
+            
+            // Add title with Australian FY format
+            pdf.setFontSize(14);
+            pdf.setFont(undefined, 'bold');
+            let title = `${this.currentReport.type.toUpperCase()} Financial Report`;
+            
+            // Handle both old format (year) and new format (financialYear)
+            let pdfFyYear = null;
+            let pdfFyLabel = '';
+            
+            if (this.currentReport.financialYear) {
+                pdfFyLabel = `FY ${this.currentReport.financialYear}`;
+                pdfFyYear = parseInt(this.currentReport.financialYear.split('-')[0]);
+            } else if (this.currentReport.year) {
+                pdfFyYear = this.currentReport.year;
+                pdfFyLabel = this.formatAustralianFY(this.currentReport.year);
+            }
+            
+            if (pdfFyYear) {
+                if (this.currentReport.type === 'quarterly' && this.currentReport.quarter) {
+                    title += ` - Q${this.currentReport.quarter} ${pdfFyLabel}`;
+                } else if (this.currentReport.type === 'annual') {
+                    title += ` - Annual ${pdfFyLabel}`;
+                }
+            }
+            
+            pdf.text(title, 20, 55);
+            
+            // Add period with Australian FY date range
+            pdf.setFontSize(12);
+            pdf.setFont(undefined, 'normal');
+            if (pdfFyYear) {
+                const dateRange = this.getAustralianFYDateRange(
+                    pdfFyYear, 
+                    this.currentReport.quarter
+                );
+                pdf.text(`Period: ${dateRange.start} to ${dateRange.end}`, 20, 65);
+            } else {
+                pdf.text(`Period: ${this.currentReport.dateRange || 'N/A'}`, 20, 65);
+            }
+            
+            // Add summary data
+            let yPos = 80;
+            pdf.text('Financial Summary:', 20, yPos);
+            yPos += 10;
+            
+            const totalIncome = this.currentReport.totalIncome || 0;
+            const totalExpenses = this.currentReport.totalExpenses || 0;
+            const netBalance = this.currentReport.netBalance || 0;
+            
+            pdf.text(`Total Income: $${totalIncome.toFixed(2)}`, 30, yPos);
+            yPos += 8;
+            pdf.text(`Total Expenses: $${totalExpenses.toFixed(2)}`, 30, yPos);
+            yPos += 8;
+            pdf.text(`Net Balance: $${netBalance.toFixed(2)}`, 30, yPos);
+            
+            // Generate filename with Australian FY format
+            let filename = 'Financial_Report.pdf';
+            
+            // Handle both old format (year) and new format (financialYear)
+            let filenameFyLabel = '';
+            if (this.currentReport.financialYear) {
+                filenameFyLabel = `FY_${this.currentReport.financialYear.replace('-', '_')}`;
+            } else if (this.currentReport.year) {
+                filenameFyLabel = this.formatAustralianFY(this.currentReport.year).replace(' ', '_');
+            }
+            
+            if (filenameFyLabel) {
+                if (this.currentReport.type === 'quarterly' && this.currentReport.quarter) {
+                    filename = `Q${this.currentReport.quarter}_${filenameFyLabel}_Report.pdf`;
+                } else if (this.currentReport.type === 'annual') {
+                    filename = `Annual_${filenameFyLabel}_Report.pdf`;
+                }
+            }
+            
+            pdf.save(filename);
+            alert('PDF exported successfully with Australian FY format!');
+            
+        } catch (error) {
+            console.error('PDF export error:', error);
+            alert('PDF export failed. Using print instead.');
+            this.printReport();
+        }
+    }
+
+    // Method to get report history
+    getReportHistory() {
+        return this.reportHistory;
+    }
+
+    // Method to get current Australian FY status
+    getAustralianFYStatus() {
+        const currentFY = this.getCurrentAustralianFY();
+        const currentQuarter = this.getCurrentAustralianQuarter();
+        
+        return {
+            currentFY: this.formatAustralianFY(currentFY),
+            currentQuarter: `Q${currentQuarter}`,
+            fyStart: `${currentFY}-07-01`,
+            fyEnd: `${currentFY + 1}-06-30`
+        };
+    }
+
+    // Method to render report history
+    renderReportHistory() {
+        const container = document.getElementById('report-history');
+        if (!container) return;
+
+        if (this.reportHistory.length === 0) {
+            container.innerHTML = '<p class="no-reports">Report history will appear here as you generate reports.</p>';
+            return;
+        }
+
+        container.innerHTML = '';
+
+        this.reportHistory.forEach((report, index) => {
+            const reportElement = document.createElement('div');
+            reportElement.className = 'report-item generated';
+            reportElement.style.opacity = '0.9';
+            
+            const generatedTime = new Date(report.generatedAt).toLocaleString('en-US', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            let reportLabel = 'Unknown Period';
+            
+            // Handle both old format (year/australianFY) and new format (financialYear)
+            if (report.financialYear) {
+                if (report.type === 'quarterly' && report.quarter) {
+                    reportLabel = `Q${report.quarter} FY ${report.financialYear}`;
+                } else if (report.type === 'annual') {
+                    reportLabel = `Annual FY ${report.financialYear}`;
+                }
+            } else if (report.australianFY) {
+                // Fallback to old format
+                if (report.type === 'quarterly' && report.quarter) {
+                    reportLabel = `Q${report.quarter} ${report.australianFY}`;
+                } else if (report.type === 'annual') {
+                    reportLabel = `Annual ${report.australianFY}`;
+                }
+            } else if (report.year) {
+                // Generate from year
+                const historyFyLabel = this.formatAustralianFY(report.year);
+                if (report.type === 'quarterly' && report.quarter) {
+                    reportLabel = `Q${report.quarter} ${historyFyLabel}`;
+                } else if (report.type === 'annual') {
+                    reportLabel = `Annual ${historyFyLabel}`;
+                }
+            }
+            
+            reportElement.innerHTML = `
+                <div class="report-item-header">
+                    <h4>${reportLabel} <span class="report-status generated">GENERATED</span></h4>
+                    <div class="report-dates">
+                        <span class="report-date"><strong>Generated:</strong> ${generatedTime}</span>
+                        <span class="report-date"><strong>Session:</strong> #${index + 1}</span>
+                    </div>
+                </div>
+                <div class="report-item-summary">
+                    <span>Income: $${(report.totalIncome || 0).toFixed(2)}</span>
+                    <span>Expenses: $${(report.totalExpenses || 0).toFixed(2)}</span>
+                    <span>Net: $${(report.netBalance || 0).toFixed(2)}</span>
+                </div>
+                <button class="btn btn-sm btn-secondary" onclick="reportsPage.viewHistoryReport(${index})">
+                    View Report
+                </button>
+            `;
+            container.appendChild(reportElement);
+        });
+    }
+
+    // Method to view a report from history
+    viewHistoryReport(index) {
+        if (index >= 0 && index < this.reportHistory.length) {
+            this.currentReport = this.reportHistory[index];
+            this.renderReport(this.currentReport);
+        }
+    }
+}
+
+// Make ReportsPage available globally
+window.ReportsPage = ReportsPage;
+
+// Initialize immediately and also on DOMContentLoaded for compatibility
+function initializeReportsPage() {
+    console.log("🧪 Initializing ReportsPage");
+    if (!window.reportsPage) {
+        window.reportsPage = new ReportsPage();
+    }
+}
+
+// Initialize when DOM is loaded (for direct page loads)
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("🧪 DOMContentLoaded");
+    initializeReportsPage();
+});
+
+// Also initialize immediately (for dynamic page loads)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeReportsPage);
+} else {
+    // DOM is already loaded, initialize immediately
+    initializeReportsPage();
+}
+
+// Loader function for dynamic loading
+window.loadReports = function() {
+    console.log("🚀 loadReports() function called");
+    initializeReportsPage();
+};
+
+})();
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Church Task Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/TaskManagement.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <div class="task-nav">
+        <div class="nav-left">
+            <h1><i class="fas fa-tasks"></i> Church Task Management</h1>
+        </div>
+        <div class="nav-right">
+            <div class="search-container">
+                <i class="fas fa-search"></i>
+                <input type="text" id="globalSearch" placeholder="Search tasks..." />
+            </div>
+            <button class="btn btn-primary" onclick="taskManager.openModal()">
+                <i class="fas fa-plus"></i> Add New Task
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters & Controls -->
+    <div class="control-panel">
+        <div class="filters-section">
+            <div class="filter-group">
+                <label>Category:</label>
+                <select id="filterCategory">
+                    <option value="">All Categories</option>
+                    <option value="events">Events</option>
+                    <option value="ministries">Ministries</option>
+                    <option value="administration">Administration</option>
+                    <option value="volunteers">Volunteers</option>
+                    <option value="worship">Worship</option>
+                    <option value="outreach">Outreach</option>
+                    <option value="finance">Finance</option>
+                    <option value="facilities">Facilities</option>
+                    <option value="youth">Youth</option>
+                    <option value="children">Children</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Assignee:</label>
+                <select id="filterAssignee">
+                    <option value="">All Members</option>
+                    <option value="chairperson">Chairperson</option>
+                    <option value="accountant">Accountant</option>
+                    <option value="secretary">Secretary</option>
+                    <option value="holder-of-goods">Holder of Goods</option>
+                    <option value="community-coordinator">Community Coordinator</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Priority:</label>
+                <select id="filterPriority">
+                    <option value="">All Priorities</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status:</label>
+                <select id="filterStatus">
+                    <option value="">All Statuses</option>
+                    <option value="not-started">Not Started</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="on-hold">On Hold</option>
+                </select>
+            </div>
+        </div>
+        <div class="actions-section">
+            <button class="btn btn-secondary" onclick="taskManager.clearFilters()">
+                <i class="fas fa-times"></i> Clear Filters
+            </button>
+            <button class="btn btn-secondary" onclick="taskManager.exportTasks()">
+                <i class="fas fa-download"></i> Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="stats-summary">
+        <div class="stat-item">
+            <span class="stat-number" id="totalTasks">0</span>
+            <span class="stat-label">Total Tasks</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number" id="completedTasks">0</span>
+            <span class="stat-label">Completed</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number" id="pendingTasks">0</span>
+            <span class="stat-label">Pending</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number" id="overdueTasks">0</span>
+            <span class="stat-label">Overdue</span>
+        </div>
+    </div>
+
+    <!-- Main Task Table -->
+    <div class="main-content">
+        <div class="task-table-container">
+            <table class="task-table">
+                <thead>
+                    <tr>
+                        <th class="col-select">
+                            <input type="checkbox" id="selectAll">
+                        </th>
+                        <th class="col-title sortable" onclick="taskManager.sortBy('title')">
+                            Task Title <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="col-assignee sortable" onclick="taskManager.sortBy('assignee')">
+                            Assigned To <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="col-category sortable" onclick="taskManager.sortBy('category')">
+                            Category <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="col-due sortable" onclick="taskManager.sortBy('deadline')">
+                            Due Date <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="col-priority sortable" onclick="taskManager.sortBy('priority')">
+                            Priority <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="col-status sortable" onclick="taskManager.sortBy('status')">
+                            Status <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="col-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="taskTableBody">
+                    <!-- Tasks will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Simple Task Modal -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add New Task</h3>
+                <button class="close-btn" onclick="taskManager.closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="taskForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="taskTitle">Task Title *</label>
+                            <input type="text" id="taskTitle" required placeholder="Enter task title">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="taskAssignee">Assign To</label>
+                            <select id="taskAssignee">
+                                <option value="">Select assignee</option>
+                                <option value="chairperson">Chairperson</option>
+                                <option value="accountant">Accountant</option>
+                                <option value="secretary">Secretary</option>
+                                <option value="holder-of-goods">Holder of Goods</option>
+                                <option value="community-coordinator">Community Coordinator</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="taskCategory">Category</label>
+                            <select id="taskCategory">
+                                <option value="">Select Category</option>
+                                <option value="events">Events</option>
+                                <option value="ministries">Ministries</option>
+                                <option value="administration">Administration</option>
+                                <option value="volunteers">Volunteers</option>
+                                <option value="worship">Worship</option>
+                                <option value="outreach">Outreach</option>
+                                <option value="finance">Finance</option>
+                                <option value="facilities">Facilities</option>
+                                <option value="youth">Youth</option>
+                                <option value="children">Children</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="taskDeadline">Due Date</label>
+                            <input type="date" id="taskDeadline">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="taskPriority">Priority</label>
+                            <select id="taskPriority">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="taskStatus">Status</label>
+                            <select id="taskStatus">
+                                <option value="not-started" selected>Not Started</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="on-hold">On Hold</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taskDescription">Description</label>
+                        <textarea id="taskDescription" placeholder="Add task details, notes, or instructions..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Subtasks / Action Items</label>
+                        <div class="subtasks-section">
+                            <div class="subtask-input">
+                                <input type="text" id="newSubtask" placeholder="Add action item (e.g., 'Beyene handover response', 'Bank updates')">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="taskManager.addSubtask()">
+                                    <i class="fas fa-plus"></i> Add
+                                </button>
+                            </div>
+                            <div class="subtasks-list" id="subtasksList">
+                                <div class="no-subtasks">No action items added</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taskAttachments">Attachments</label>
+                        <div class="attachment-section">
+                            <input type="file" id="taskAttachments" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.mp4,.mp3">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('taskAttachments').click()">
+                                <i class="fas fa-paperclip"></i> Add Files
+                            </button>
+                            <div class="attachment-list" id="attachmentList"></div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <div class="footer-left">
+                            <button type="button" class="btn btn-danger" id="deleteTaskBtn" style="display: none;">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                        <div class="footer-right">
+                            <button type="button" class="btn btn-secondary" onclick="taskManager.closeModal()">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Task
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Detail Modal -->
+    <div id="taskDetailModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="detailTaskTitle">Task Details</h3>
+                <div class="modal-actions">
+                    <button class="btn btn-sm btn-secondary" onclick="taskManager.editFromDetail()">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="close-btn" onclick="taskManager.closeDetailModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="modal-body">
+                <div class="task-detail-layout">
+                    <!-- Left Column - Task Info -->
+                    <div class="detail-column">
+                        <div class="detail-section">
+                            <h4>Task Information</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <label>Assigned To:</label>
+                                    <span id="detailAssignee">-</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Category:</label>
+                                    <span id="detailCategory">-</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Priority:</label>
+                                    <span id="detailPriority">-</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Status:</label>
+                                    <span id="detailStatus">-</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Due Date:</label>
+                                    <span id="detailDeadline">-</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Created:</label>
+                                    <span id="detailCreated">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h4>Description</h4>
+                            <div class="description-content" id="detailDescription">
+                                No description provided.
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h4>Action Items / Subtasks</h4>
+                            <div class="subtasks-progress">
+                                <div class="progress-summary">
+                                    <span id="subtaskProgress">0 of 0 completed</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="subtaskProgressBar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div class="subtasks-checklist" id="detailSubtasks">
+                                    <div class="no-subtasks">No action items</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h4>Attachments</h4>
+                            <div class="attachments-grid" id="detailAttachments">
+                                <div class="no-attachments">No attachments</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column - Comments -->
+                    <div class="detail-column">
+                        <div class="detail-section">
+                            <h4>Comments & Notes</h4>
+                            <div class="comments-section">
+                                <div class="add-comment">
+                                    <textarea id="newComment" placeholder="Add a comment or note..."></textarea>
+                                    <button class="btn btn-primary btn-sm" onclick="taskManager.addComment()">
+                                        <i class="fas fa-plus"></i> Add Comment
+                                    </button>
+                                </div>
+                                <div class="comments-list" id="commentsList">
+                                    <div class="no-comments">No comments yet</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/taskmanagement.js"></script>
+</body>
+</html>

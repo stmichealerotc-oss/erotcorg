@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Member Details - Saint Michael Eritrean Orthodox Church</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        .update-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .member-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #d4af37;
+        }
+        
+        .update-form {
+            display: grid;
+            gap: 1.5rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            padding: 0.75rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #d4af37;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #d4af37, #f1c40f);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 5px;
+            border: 1px solid #c3e6cb;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 5px;
+            border: 1px solid #f5c6cb;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #d4af37;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .invalid-token {
+            text-align: center;
+            padding: 2rem;
+            color: #721c24;
+        }
+        
+        .invalid-token i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #dc3545;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: flex-start;
+            cursor: pointer;
+            line-height: 1.5;
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 0.75rem;
+            margin-top: 0.25rem;
+            transform: scale(1.2);
+        }
+        
+        .declaration-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #d4af37;
+            margin: 2rem 0;
+        }
+        
+        .declaration-section h3 {
+            color: #d4af37;
+            margin-bottom: 1rem;
+        }
+        
+        .declaration-content {
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+            color: #555;
+        }
+        
+        .declaration-content ul {
+            margin: 1rem 0;
+            padding-left: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .update-container {
+                margin: 1rem;
+                padding: 1rem;
+            }
+            
+            .declaration-section {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="../index.html">
+                    <span>Saint Michael EOTC</span>
+                </a>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../index.html#about">About</a></li>
+                <li><a href="../index.html#services">Services</a></li>
+                <li><a href="../index.html#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="update-container">
+            <h1 style="text-align: center; color: #d4af37; margin-bottom: 2rem;">
+                <i class="fas fa-user-edit"></i> Update Member Details
+            </h1>
+            
+            <div class="loading" id="loadingMessage">
+                <div class="spinner"></div>
+                <p>Loading your details...</p>
+            </div>
+            
+            <div class="invalid-token" id="invalidToken" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h2>Invalid or Expired Link</h2>
+                <p>This update link is either invalid or has expired. Please contact the church office for assistance.</p>
+                <a href="../index.html#contact" class="submit-btn" style="display: inline-block; text-decoration: none; margin-top: 1rem;">
+                    Contact Us
+                </a>
+            </div>
+            
+            <div class="invalid-token" id="alreadyUsedToken" style="display: none;">
+                <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                <h2>Link Already Used</h2>
+                <p>This update link has already been used to update your member details.</p>
+                <p>If you need to make additional changes, please contact the church office to request a new update link.</p>
+                <a href="../index.html#contact" class="submit-btn" style="display: inline-block; text-decoration: none; margin-top: 1rem;">
+                    Request New Link
+                </a>
+            </div>
+            
+            <div id="updateSection" style="display: none;">
+                <div class="member-info" id="memberInfo">
+                    <h3><i class="fas fa-user"></i> Member Information</h3>
+                    <p><strong>Member ID:</strong> <span id="displayId"></span></p>
+                    <p><strong>Name:</strong> <span id="currentName"></span></p>
+                    <p><strong>Member Since:</strong> <span id="memberSince"></span></p>
+                </div>
+                
+                <div class="success-message" id="successMessage">
+                    <i class="fas fa-check-circle"></i>
+                    <strong>Update Successful!</strong>
+                    <p>Your member details have been updated successfully. Thank you for keeping your information current.</p>
+                </div>
+                
+                <div class="error-message" id="errorMessage">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Update Failed</strong>
+                    <p id="errorText">Please try again or contact us for assistance.</p>
+                </div>
+                
+                <form class="update-form" id="updateForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" name="firstName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" name="lastName">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone</label>
+                            <input type="tel" id="phone" name="phone">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="address">Address</label>
+                        <textarea id="address" name="address" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dob">Date of Birth</label>
+                            <input type="date" id="dob" name="dob">
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Membership Status</label>
+                            <select id="status" name="status">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="visitor">Visitor</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <h3 style="color: #d4af37; margin-top: 2rem;">Emergency Contact</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="emergencyContactName">Emergency Contact Name</label>
+                            <input type="text" id="emergencyContactName" name="emergencyContactName">
+                        </div>
+                        <div class="form-group">
+                            <label for="emergencyContactPhone">Emergency Contact Phone</label>
+                            <input type="tel" id="emergencyContactPhone" name="emergencyContactPhone">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea id="notes" name="notes" rows="3" placeholder="Any additional information you'd like to share..."></textarea>
+                    </div>
+                    
+                    <div class="declaration-section" style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #d4af37; margin: 2rem 0;">
+                        <h3 style="color: #d4af37; margin-bottom: 1rem;">
+                            <i class="fas fa-file-contract"></i> Update Declaration and Reaffirmation
+                        </h3>
+                        
+                        <div style="background: white; padding: 1.5rem; border-radius: 6px; margin-bottom: 1.5rem;">
+                            <p style="margin-bottom: 1rem; color: #555;">
+                                <strong>Before updating your information, please review our membership declaration which covers:</strong>
+                            </p>
+                            <ul style="color: #666; margin: 1rem 0; padding-left: 1.5rem;">
+                                <li>Information update accuracy and consent</li>
+                                <li>Continued Orthodox Tewahedo Church commitment</li>
+                                <li>Community participation reaffirmation</li>
+                                <li>Privacy policy and terms acknowledgment</li>
+                            </ul>
+                            
+                            <div style="text-align: center; margin: 1.5rem 0;">
+                                <a href="membership-declaration.html" 
+                                   target="_blank" 
+                                   style="display: inline-block; background: #d4af37; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 5px; font-weight: 600; transition: background 0.3s ease;">
+                                    <i class="fas fa-external-link-alt"></i> Read Full Declaration
+                                </a>
+                            </div>
+                            
+                            <p style="font-size: 0.9rem; color: #666; text-align: center; margin-bottom: 0;">
+                                <em>The declaration will open in a new window for your review</em>
+                            </p>
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="checkbox-label" style="display: flex; align-items: flex-start; cursor: pointer;">
+                                <input type="checkbox" id="updateDeclaration" name="updateDeclaration" required style="margin-right: 0.75rem; margin-top: 0.25rem; transform: scale(1.2);">
+                                <span style="flex: 1;">
+                                    <strong>I have read and reaffirm the Membership Declaration and Agreement.</strong> I confirm the accuracy of my updated information and reaffirm my continued faith and commitment to Saint Michael Eritrean Orthodox Tewahedo Church.
+                                    <span class="required" style="color: #e74c3c; margin-left: 0.25rem;">*</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        <i class="fas fa-save"></i> Update Details
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'https://church-management-vjfw.onrender.com/api';
+        let updateToken = null;
+        
+        // Get token from URL parameters
+        function getTokenFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('token');
+        }
+        
+        // Load member details
+        async function loadMemberDetails() {
+            updateToken = getTokenFromURL();
+            
+            if (!updateToken) {
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('invalidToken').style.display = 'block';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/members/update/${updateToken}`);
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    populateForm(result.member);
+                    document.getElementById('loadingMessage').style.display = 'none';
+                    document.getElementById('updateSection').style.display = 'block';
+                } else if (response.status === 410 && result.code === 'TOKEN_ALREADY_USED') {
+                    // Token has already been used
+                    document.getElementById('loadingMessage').style.display = 'none';
+                    document.getElementById('alreadyUsedToken').style.display = 'block';
+                } else {
+                    throw new Error(result.error || 'Failed to load member details');
+                }
+                
+            } catch (error) {
+                console.error('Error loading member details:', error);
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('invalidToken').style.display = 'block';
+            }
+        }
+        
+        // Populate form with member data
+        function populateForm(member) {
+            document.getElementById('displayId').textContent = member.displayId;
+            document.getElementById('currentName').textContent = `${member.firstName} ${member.lastName || ''}`.trim();
+            
+            // Format and display member since date
+            if (member.joinDate) {
+                const joinDate = new Date(member.joinDate);
+                const formattedDate = joinDate.toLocaleDateString('en-AU', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                document.getElementById('memberSince').textContent = formattedDate;
+            } else {
+                document.getElementById('memberSince').textContent = 'Not specified';
+            }
+            
+            // Populate form fields
+            document.getElementById('firstName').value = member.firstName || '';
+            document.getElementById('lastName').value = member.lastName || '';
+            document.getElementById('email').value = member.email || '';
+            document.getElementById('phone').value = member.phone || '';
+            document.getElementById('address').value = member.address || '';
+            document.getElementById('status').value = member.status || 'active';
+            document.getElementById('emergencyContactName').value = member.emergencyContactName || '';
+            document.getElementById('emergencyContactPhone').value = member.emergencyContactPhone || '';
+            document.getElementById('notes').value = member.notes || '';
+            
+            // Handle date of birth
+            if (member.dob) {
+                const date = new Date(member.dob);
+                const formattedDate = date.toISOString().split('T')[0];
+                document.getElementById('dob').value = formattedDate;
+            }
+        }
+        
+        // Handle form submission
+        document.getElementById('updateForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Show loading state
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/members/update/${updateToken}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // Success - hide form and show success message
+                    document.getElementById('updateForm').style.display = 'none';
+                    document.getElementById('successMessage').style.display = 'block';
+                    
+                    // Update member info display
+                    document.getElementById('currentName').textContent = `${result.member.firstName} ${result.member.lastName || ''}`.trim();
+                    
+                    // Scroll to success message
+                    document.getElementById('successMessage').scrollIntoView({ 
+                        behavior: 'smooth' 
+                    });
+                } else if (response.status === 410 && result.code === 'TOKEN_ALREADY_USED') {
+                    // Token has already been used - hide form and show already used message
+                    document.getElementById('updateForm').style.display = 'none';
+                    document.getElementById('updateSection').style.display = 'none';
+                    document.getElementById('alreadyUsedToken').style.display = 'block';
+                } else {
+                    throw new Error(result.error || 'Update failed');
+                }
+                
+            } catch (error) {
+                console.error('Update error:', error);
+                document.getElementById('errorText').textContent = error.message;
+                document.getElementById('errorMessage').style.display = 'block';
+            } finally {
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Update Details';
+            }
+        });
+        
+        // Load member details when page loads
+        document.addEventListener('DOMContentLoaded', loadMemberDetails);
+    </script>
+</body>
+</html>

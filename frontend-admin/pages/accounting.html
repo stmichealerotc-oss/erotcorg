@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accounting</title>
+    <link rel="stylesheet" href="css/mobile-date-input.css?v=1">
+    <style>
+        /* Add these styles for search and filters */
+        .search-container {
+            position: relative;
+        }
+        
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .search-result-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .search-result-item:hover {
+            background: #f5f5f5;
+        }
+        
+        .search-result-item i {
+            color: #666;
+        }
+        
+        .member-email {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .filters-container {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .filters-row {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .filter-group label {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .payee-options {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+        }
+        
+        .payee-options label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+        }
+        
+        .external-payee-fields {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: none;
+        }
+
+        /* Tab Navigation Styles */
+        .tab-navigation {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            background: #f5f5f5;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-button:hover {
+            background: #e8e8e8;
+            color: #333;
+        }
+
+        .tab-button.active {
+            background: white;
+            color: #4a6fa5;
+            border-bottom-color: #4a6fa5;
+        }
+
+        .tab-button i {
+            font-size: 16px;
+        }
+
+        /* Bank Statement Styles */
+        .debit-amount {
+            color: #dc3545;
+            font-weight: 600;
+            text-align: right;
+        }
+        
+        .credit-amount {
+            color: #28a745;
+            font-weight: 600;
+            text-align: right;
+        }
+        
+        .balance-amount {
+            font-weight: bold;
+            text-align: right;
+            background-color: #f8f9fa;
+        }
+        
+        #bank-statement-table th:nth-child(4),
+        #bank-statement-table th:nth-child(5),
+        #bank-statement-table th:nth-child(6) {
+            text-align: right;
+        }
+        
+        #bank-statement-table td:nth-child(4),
+        #bank-statement-table td:nth-child(5),
+        #bank-statement-table td:nth-child(6) {
+            text-align: right;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="accounting">
+        <div class="page-header">
+            <h2>Accounting</h2>
+            <button class="btn btn-primary" onclick="window.accountingPage.showAddTransactionForm()" id="add-transaction-btn">Add Transaction</button>
+        </div>
+
+        <!-- Clickable Stats Section - Starts Collapsed -->
+        <div class="stats-section" style="max-width: 100%; overflow: hidden;">
+            <div class="stats-header" onclick="toggleAccountingStats()">
+                <h3><i class="fas fa-chart-line"></i> Accounting Status</h3>
+                <i class="fas fa-chevron-right" id="accounting-stats-toggle"></i>
+            </div>
+            <div id="accounting-stats-content" style="display: none; max-width: 100%; overflow: hidden;">
+                <div class="stats-grid" style="max-width: 100%;">
+                    <div class="stat-card">
+                        <h3>This Month Income</h3>
+                        <div class="value income" id="month-income">$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>This Month Expenses</h3>
+                        <div class="value expense" id="month-expenses">$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Net Balance</h3>
+                        <div class="value" id="net-balance">$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Balance</h3>
+                        <div class="value" id="total-balance">$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Contributions</h3>
+                        <div class="value income" id="total-contributions">$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Cash Assets</h3>
+                        <div class="value" id="total-assets">$0.00</div>
+                    </div>
+                </div>
+                
+                <!-- Monthly Trend Chart inside collapsible section -->
+                <div class="content-section" style="margin-top: 20px; max-width: 100%;">
+                    <h3>Monthly Trend</h3>
+                    <div id="accounting-chart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB NAVIGATION -->
+        <div class="tab-navigation">
+            <button class="tab-button active" onclick="switchAccountingTab('transactions')">
+                <i class="fas fa-exchange-alt"></i> Transactions
+            </button>
+            <button class="tab-button" onclick="switchAccountingTab('contributions')">
+                <i class="fas fa-gift"></i> Contributions
+            </button>
+            <button class="tab-button" onclick="switchAccountingTab('promises')">
+                <i class="fas fa-handshake"></i> Promises
+            </button>
+            <button class="tab-button" onclick="switchAccountingTab('statement')">
+                <i class="fas fa-file-invoice-dollar"></i> Bank Statement
+            </button>
+        </div>
+
+        <!-- TAB: TRANSACTIONS -->
+        <div id="tab-transactions" class="tab-content active">
+
+      
+        <!-- FILTERS SECTION - EXPANDABLE -->
+        <div class="content-section">
+            <div class="filters-container" data-expandable="transaction-filters" data-title="Transaction Filters" data-start-collapsed>
+                <h3>Transaction History</h3>
+                <div class="filters-row">
+                    <div class="filter-group">
+                        <label>Date Range:</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="filter-date-from" class="mobile-date" placeholder="DD/MM/YYYY">
+                            <span>to</span>
+                            <input type="text" id="filter-date-to" class="mobile-date" placeholder="DD/MM/YYYY">
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label>Category:</label>
+                        <select id="filter-category">
+                            <option value="">All Categories</option>
+                            <option value="tithe">Tithe</option>
+                            <option value="offering">Offering</option>
+                            <option value="donation">Donation</option>
+                            <option value="building">Building Fund</option>
+                            <option value="missions">Missions</option>
+                            <option value="honorarium">Honorarium (Clergy)</option>
+                            <option value="utilities">Utilities</option>
+                            <option value="salaries">Salaries</option>
+                            <option value="supplies">Supplies</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Type:</label>
+                        <select id="filter-type">
+                            <option value="">All Types</option>
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <button class="btn btn-secondary" onclick="accountingPage.applyFilters()">Apply Filters</button>
+                        <button class="btn" onclick="accountingPage.clearFilters()" style="margin-top: 5px;">Clear</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="accounting-table-container">
+                <table class="data-table" id="transactions-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Payee/Recipient</th> <!-- NEW COLUMN -->
+                            <th>Category</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        </div>
+        <!-- END TAB: TRANSACTIONS -->
+
+        <!-- TAB: CONTRIBUTIONS -->
+        <div id="tab-contributions" class="tab-content">
+
+        <!-- Member Contributions Section -->
+        <div class="content-section">
+            <div class="section-header">
+                <h3><i class="fas fa-gift"></i> Member Contributions (Non-Cash)</h3>
+                <button class="btn btn-secondary" onclick="accountingPage.showAddContributionForm()">Add Contribution</button>
+            </div>
+            
+              <!-- Member Contributions Info -->
+        <div class="content-section" style="background: #e8f4f8; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #4a6fa5;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h4 style="margin: 0 0 5px 0; color: #4a6fa5;">
+                        <i class="fas fa-info-circle"></i> Member Contributions
+                    </h4>
+                    <p style="margin: 0; color: #666; font-size: 14px;">
+                        To record member contributions (cash, in-kind, or items), go to <strong>Members</strong> → Select a member → <strong>Add Contribution</strong> button.
+                        Alternatively, you can add a transaction here with a member as the payee.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        
+            <div class="contributions-filters" style="margin-bottom: 20px;">
+                <div class="filter-row">
+                    <select id="contribution-type-filter" onchange="accountingPage.filterContributions()">
+                        <option value="">All Types</option>
+                        <option value="in-kind">In-Kind</option>
+                        <option value="item">Item</option>
+                        <option value="cash">Cash</option>
+                    </select>
+                    <select id="contribution-category-filter" onchange="accountingPage.filterContributions()">
+                        <option value="">All Categories</option>
+                        <option value="tithe">Tithe</option>
+                        <option value="offering">Offering</option>
+                        <option value="donation">Donation</option>
+                        <option value="building">Building Fund</option>
+                        <option value="youth_activity">Youth Activity</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <input type="text" id="contribution-member-filter" placeholder="Search by member..." onkeyup="accountingPage.filterContributions()">
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="contributions-table" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Member</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Value</th>
+                            <th>Verified</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contributions-list">
+                        <!-- Contributions will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        </div>
+        <!-- END TAB: CONTRIBUTIONS -->
+
+        <!-- TAB: PROMISES -->
+        <div id="tab-promises" class="tab-content">
+            
+            <!-- Promise Stats -->
+            <div class="stats-grid" style="margin-bottom: 20px; max-width: 100%;">
+                <div class="stat-card">
+                    <h3>Total Promises</h3>
+                    <div class="value" id="total-promises">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Pending Amount</h3>
+                    <div class="value income" id="pending-amount">$0.00</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Fulfilled Amount</h3>
+                    <div class="value income" id="fulfilled-amount">$0.00</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Overdue</h3>
+                    <div class="value expense" id="overdue-count">0</div>
+                </div>
+            </div>
+
+            <!-- Promise Filters -->
+            <div class="filters-container" style="margin-bottom: 20px;">
+                <div class="filters-row">
+                    <div class="filter-group">
+                        <label>Status:</label>
+                        <select id="promise-status-filter" onchange="accountingPage.filterPromises()">
+                            <option value="all">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="fulfilled">Fulfilled</option>
+                            <option value="overdue">Overdue</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Category:</label>
+                        <select id="promise-category-filter" onchange="accountingPage.filterPromises()">
+                            <option value="all">All Categories</option>
+                            <option value="tithe">Tithe</option>
+                            <option value="offering">Offering</option>
+                            <option value="donation">Donation</option>
+                            <option value="building">Building Fund</option>
+                            <option value="missions">Missions</option>
+                            <option value="honorarium">Honorarium (Clergy)</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <button class="btn btn-secondary" onclick="accountingPage.exportPromises()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Promises Table -->
+            <div class="table-container promises-table-container">
+                <table class="data-table" id="promises-table">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Amount</th>
+                            <th>Category</th>
+                            <th>Promise Date</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="promises-tbody">
+                        <!-- Promises will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+        <!-- END TAB: PROMISES -->
+
+        <!-- TAB: BANK STATEMENT -->
+        <div id="tab-statement" class="tab-content">
+            
+            <!-- Statement Filters -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-file-invoice-dollar"></i> Bank Statement View</h3>
+                </div>
+                
+                <div class="filters-container">
+                    <div class="filter-group">
+                        <label for="statement-start-date">From Date</label>
+                        <input type="text" id="statement-start-date" class="mobile-date" placeholder="DD/MM/YYYY">
+                    </div>
+                    <div class="filter-group">
+                        <label for="statement-end-date">To Date</label>
+                        <input type="text" id="statement-end-date" class="mobile-date" placeholder="DD/MM/YYYY">
+                    </div>
+                    <div class="filter-group">
+                        <button class="btn btn-primary" onclick="accountingPage.loadBankStatement()">
+                            <i class="fas fa-search"></i> Generate Statement
+                        </button>
+                    </div>
+                    <div class="filter-group">
+                        <button class="btn btn-secondary" onclick="accountingPage.exportBankStatement()">
+                            <i class="fas fa-download"></i> Export PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statement Summary -->
+            <div class="content-section" id="statement-summary" style="display: none;">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Opening Balance</h3>
+                        <div class="value" id="opening-balance">$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Debits</h3>
+                        <div class="value expense" id="total-debits">$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Credits</h3>
+                        <div class="value income" id="total-credits">$0.00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Closing Balance</h3>
+                        <div class="value" id="closing-balance">$0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bank Statement Table -->
+            <div class="content-section" id="statement-table-section" style="display: none;">
+                <div class="table-container">
+                    <table class="data-table" id="bank-statement-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Reference</th>
+                                <th>Debit</th>
+                                <th>Credit</th>
+                                <th>Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statement-tbody">
+                            <!-- Statement entries will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+        <!-- END TAB: BANK STATEMENT -->
+
+    </div>
+    <!-- END #accounting -->
+
+    <!-- MODALS -->
+
+    <!-- UPDATED TRANSACTION MODAL WITH PAYEE TRACKING -->
+        <div id="transaction-modal" class="modal">
+            <div class="modal-content">
+                <h3>Add New Transaction</h3>
+                <form id="transaction-form">
+                    <div class="form-group">
+                        <label for="transaction-type">Type *</label>
+                        <select id="transaction-type" required onchange="accountingPage.togglePayeeFields()">
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                    </div>
+
+                    <!-- PAYEE/RECIPIENT SECTION - NEW -->
+                    <div class="form-group">
+                        <label id="payee-label">Payee *</label>
+                        <div class="search-container">
+                            <input type="text" id="payee-search" placeholder="Search members or enter name..." 
+                                   oninput="accountingPage.searchMembers(this.value)">
+                            <div id="member-search-results" class="search-results"></div>
+                        </div>
+                        <div class="payee-options">
+                            <label>
+                                <input type="radio" name="payee-type" value="member" checked> Member
+                            </label>
+                            <label>
+                                <input type="radio" name="payee-type" value="external"> External
+                            </label>
+                        </div>
+                        <input type="hidden" id="selected-member-id">
+                        
+                        <!-- External payee additional fields -->
+                        <div id="external-payee-fields" class="external-payee-fields">
+                            <div class="form-group">
+                                <label for="external-payee-email">Email (Optional)</label>
+                                <input type="email" id="external-payee-email">
+                            </div>
+                            <div class="form-group">
+                                <label for="external-payee-phone">Phone (Optional)</label>
+                                <input type="tel" id="external-payee-phone">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transaction-description">Description *</label>
+                        <select id="transaction-description" required onchange="accountingPage.handleDescriptionChange()">
+                            <option value="">Select or enter description...</option>
+                        </select>
+                        
+                        <!-- Custom description input for "Other" or custom descriptions -->
+                        <div id="custom-description-input" class="form-group" style="display: none; margin-top: 10px;">
+                            <label for="custom-description">Custom Description *</label>
+                            <input type="text" id="custom-description" placeholder="Enter custom description" maxlength="100">
+                            <small style="color: #666;">Maximum 100 characters</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="transaction-category">Category *</label>
+                        <select id="transaction-category" required onchange="accountingPage.handleCategoryChange()">
+                            <option value="">Select a category...</option>
+                            <!-- Income Categories -->
+                            <optgroup label="Income" id="income-categories">
+                                <option value="tithe">Tithe</option>
+                                <option value="offering">Offering</option>
+                                <option value="donation">Donation</option>
+                                <option value="pledge">Pledge</option>
+                                <option value="building">Building Fund</option>
+                                <option value="missions">Missions</option>
+                                <option value="youth_activity">Youth Activity Fees</option>
+                                <option value="cultural_events">Cultural / Community Events</option>
+                                <option value="fundraising">Fundraising Event</option>
+                                <option value="special_donations">Special Donations</option>
+                                <option value="membership">Membership Fees</option>
+                                <option value="other">Other (Specify)</option>
+                            </optgroup>
+                            <!-- Expense Categories -->
+                            <optgroup label="Expenses" id="expense-categories">
+                                <option value="honorarium">Honorarium (Clergy/Volunteers)</option>
+                                <option value="utilities">Utilities</option>
+                                <option value="salaries">Salaries</option>
+                                <option value="supplies">Supplies</option>
+                                <option value="benevolence">Benevolence / Aid</option>
+                                <option value="building">Building / Maintenance</option>
+                                <option value="youth_programs">Youth Program Expenses</option>
+                                <option value="cultural_events">Cultural / Community Expenses</option>
+                                <option value="maintenance">Maintenance & Repairs</option>
+                                <option value="office_expenses">Office / Admin Expenses</option>
+                                <option value="insurance">Insurance</option>
+                                <option value="technology">Technology / IT</option>
+                                <option value="training">Training / Workshops</option>
+                                <option value="volunteer_support">Volunteer Support</option>
+                                <option value="events">Events</option>
+                                <option value="other">Other (Specify)</option>
+                            </optgroup>
+                        </select>
+                        
+                        <!-- Custom category input for "Other" -->
+                        <div id="other-category-input" class="form-group" style="display: none; margin-top: 10px;">
+                            <label for="custom-category">Specify Category *</label>
+                            <input type="text" id="custom-category" placeholder="Enter custom category description" maxlength="50">
+                            <small style="color: #666;">Maximum 50 characters</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="transaction-amount">Amount *</label>
+                        <input type="number" id="transaction-amount" step="0.01" min="0.01" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="payment-method">Payment Method</label>
+                        <select id="payment-method">
+                            <option value="cash">Cash</option>
+                            <option value="check">Check</option>
+                            <option value="card">Card</option>
+                            <option value="online">Online</option>
+                            <option value="transfer">Transfer</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="transaction-reference">Reference</label>
+                        <input type="text" id="transaction-reference" placeholder="Check #, Transaction ID, etc.">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="transaction-note">Notes</label>
+                        <textarea id="transaction-note" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn" onclick="accountingPage.closeModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Transaction</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+   
+
+
+    <!-- MODALS -->
+
+<!-- Add Promise Modal -->
+<div id="promise-modal" class="modal">
+    <div class="modal-content">
+        <h3>Add Promise to Pay</h3>
+        <form id="promise-form">
+            <div class="form-group">
+                <label for="promise-member">Member *</label>
+                <div class="search-container">
+                    <input type="text" id="promise-member-search" placeholder="Search members..." 
+                           oninput="accountingPage.searchMembersForPromise(this.value)">
+                    <div id="promise-member-results" class="search-results"></div>
+                </div>
+                <input type="hidden" id="promise-member-id">
+            </div>
+
+            <div class="form-group">
+                <label for="promise-amount">Amount *</label>
+                <input type="number" id="promise-amount" step="0.01" min="0.01" required>
+            </div>
+
+            <div class="form-group">
+                <label for="promise-category">Category *</label>
+                <select id="promise-category" required>
+                    <option value="tithe">Tithe</option>
+                    <option value="offering">Offering</option>
+                    <option value="donation">Donation</option>
+                    <option value="building">Building Fund</option>
+                    <option value="missions">Missions</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="promise-description">Description</label>
+                <input type="text" id="promise-description" placeholder="Optional description">
+            </div>
+
+            <div class="form-group">
+                <label for="promise-due-date">Due Date *</label>
+                <input type="text" id="promise-due-date" class="mobile-date" placeholder="DD/MM/YYYY" required>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn" onclick="accountingPage.closePromiseModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Add Promise</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Fulfill Promise Modal -->
+<div id="fulfill-modal" class="modal">
+    <div class="modal-content">
+        <h3>Fulfill Promise</h3>
+        <div id="fulfill-promise-details" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+            <!-- Promise details will be shown here -->
+        </div>
+        <form id="fulfill-form">
+            <input type="hidden" id="fulfill-promise-id">
+            
+            <div class="form-group">
+                <label for="fulfill-amount">Amount Paid *</label>
+                <input type="number" id="fulfill-amount" step="0.01" min="0.01" required>
+            </div>
+
+            <div class="form-group">
+                <label for="fulfill-date">Payment Date *</label>
+                <input type="text" id="fulfill-date" class="mobile-date" placeholder="DD/MM/YYYY" required>
+            </div>
+
+            <div class="form-group">
+                <label for="fulfill-payment-method">Payment Method</label>
+                <select id="fulfill-payment-method">
+                    <option value="cash">Cash</option>
+                    <option value="check">Check</option>
+                    <option value="card">Card</option>
+                    <option value="online">Online</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="fulfill-notes">Notes</label>
+                <textarea id="fulfill-notes" rows="3" placeholder="Any additional notes..."></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn" onclick="accountingPage.closeFulfillModal()">Cancel</button>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-check"></i> Mark as Fulfilled
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Receipt Signature Management Modal -->
+<div id="signature-modal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <h3>Receipt Signature Management</h3>
+        <div id="signature-transaction-info" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+            <!-- Transaction details will be shown here -->
+        </div>
+        
+        <!-- Current Signature Status -->
+        <div id="current-signature-status" style="margin-bottom: 20px;">
+            <!-- Current signature info will be displayed here -->
+        </div>
+        
+        <!-- Digital Approval Section -->
+        <div id="digital-signature-tab">
+            <div class="form-group">
+                <label for="signature-title">Signature Title *</label>
+                <select id="signature-title">
+                    <option value="Administrator">Administrator</option>
+                    <option value="Chairperson">Chairperson</option>
+                    <option value="Secretary">Secretary</option>
+                    <option value="Accountant">Accountant</option>
+                    <option value="Treasurer">Treasurer</option>
+                    <option value="Financial Secretary">Financial Secretary</option>
+                    <option value="Community Coordinator">Community Coordinator</option>
+                    <option value="Pastor">Pastor</option>
+                    <option value="Authorized Signatory">Authorized Signatory</option>
+                </select>
+            </div>
+            
+            <div class="approval-info" style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+                <h4 style="margin: 0 0 10px 0; color: #155724;">
+                    <i class="fas fa-info-circle"></i> Digital Approval
+                </h4>
+                <p style="margin: 0 0 10px 0; color: #2d5a2d;">
+                    This will record your approval digitally with your name, role, and timestamp. 
+                    Your login credentials serve as authentication for this approval.
+                </p>
+                <div id="current-user-info" style="background: rgba(255,255,255,0.7); padding: 10px; border-radius: 4px; font-size: 12px;">
+                    <strong>Signing as:</strong> <span id="current-user-display">Loading...</span>
+                </div>
+            </div>
+            
+            <button class="btn btn-success" onclick="accountingPage.addDigitalApproval()" id="digital-approval-btn">
+                <i class="fas fa-check-circle"></i> Add Digital Approval
+            </button>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="form-actions" style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+            <button type="button" class="btn" onclick="accountingPage.closeSignatureModal()">Cancel</button>
+            <button type="button" class="btn btn-danger" onclick="accountingPage.removeSignature()" id="remove-signature-btn" style="display: none;">
+                <i class="fas fa-trash"></i> Remove Signature
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Signature Management Styles -->
+<style>
+
+.approval-info {
+    border-left: 4px solid #28a745;
+}
+
+.signature-status {
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+.signature-status.has-signature {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.signature-status.no-signature {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+}
+
+.signature-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.signature-detail {
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.signature-detail strong {
+    display: block;
+    color: #495057;
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.signature-image-display {
+    text-align: center;
+    margin: 15px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.signature-image-display img {
+    max-width: 200px;
+    max-height: 80px;
+    border: 1px solid #ddd;
+    background: white;
+    padding: 5px;
+}
+
+/* Contribution badges */
+.badge {
+    display: inline-block;
+    padding: 0.25em 0.6em;
+    font-size: 0.75em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+}
+
+.badge-success {
+    color: #fff;
+    background-color: #28a745;
+}
+
+.badge-info {
+    color: #fff;
+    background-color: #17a2b8;
+}
+
+.badge-warning {
+    color: #212529;
+    background-color: #ffc107;
+}
+
+.contributions-filters .filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.contributions-filters select,
+.contributions-filters input {
+    min-width: 150px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    border-radius: 0.2rem;
+}
+</style>
+    </div>
+
+    <!-- MEMBER CONTRIBUTION MODAL -->
+    <div id="contribution-modal" class="modal">
+        <div class="modal-content">
+            <h3>Add Member Contribution</h3>
+            <form id="contribution-form">
+                <div class="form-group">
+                    <label for="contribution-member">Member *</label>
+                    <div class="search-container">
+                        <input type="text" id="contribution-member-search" placeholder="Search members..." 
+                               oninput="accountingPage.searchMembersForContribution(this.value)">
+                        <div id="contribution-member-results" class="search-results"></div>
+                    </div>
+                    <input type="hidden" id="contribution-member-id">
+                </div>
+
+                <div class="form-group">
+                    <label for="contribution-type">Type *</label>
+                    <select id="contribution-type" required onchange="accountingPage.toggleContributionFields()">
+                        <option value="in-kind">In-Kind Donation (Consumable - food, flowers)</option>
+                        <option value="item">Physical Item (Storable - will auto-add to inventory)</option>
+                    </select>
+                    <small style="color: #666;">
+                        <strong>In-Kind:</strong> Immediate use items (food, flowers) - Income & Expense immediately<br>
+                        <strong>Physical Item:</strong> Storable items (Bibles, chairs) - Auto-adds to inventory for tracking
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="contribution-category">Category *</label>
+                    <select id="contribution-category" required>
+                        <option value="tithe">Tithe</option>
+                        <option value="offering">Offering</option>
+                        <option value="donation">Donation</option>
+                        <option value="pledge">Pledge</option>
+                        <option value="building">Building Fund</option>
+                        <option value="missions">Missions</option>
+                        <option value="youth_activity">Youth Activity Fees</option>
+                        <option value="cultural_events">Cultural / Community Events</option>
+                        <option value="fundraising">Fundraising Event</option>
+                        <option value="special_donations">Special Donations</option>
+                        <option value="membership">Membership Fees</option>
+                        <option value="other">Other (Specify)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="contribution-description">Description *</label>
+                    <input type="text" id="contribution-description" required placeholder="e.g., Bible donation, Food for Sunday service">
+                </div>
+
+                <div class="form-group">
+                    <label for="contribution-quantity">Quantity</label>
+                    <input type="number" id="contribution-quantity" min="1" value="1">
+                </div>
+
+                <div class="form-group">
+                    <label for="contribution-value">Estimated Value ($) *</label>
+                    <input type="number" id="contribution-value" step="0.01" min="0" required placeholder="0.00">
+                    <small style="color: #666;">For reporting purposes, even for non-cash items</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="contribution-date">Date</label>
+                    <input type="text" id="contribution-date" class="mobile-date" placeholder="DD/MM/YYYY">
+                </div>
+
+                <div class="form-group">
+                    <label for="contribution-notes">Notes</label>
+                    <textarea id="contribution-notes" rows="3" placeholder="Additional information..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="issue-receipt"> 
+                        Issue receipt to member
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="accountingPage.closeContributionModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Contribution</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/mobile-date-input.js?v=1"></script>
+    <script src="js/stats-utils.js"></script>
+    <script src="js/accounting.js"></script>
+</body>
+</html>

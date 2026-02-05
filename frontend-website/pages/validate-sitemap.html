@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sitemap Validator - Saint Michael EOTC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #d4af37;
+            text-align: center;
+        }
+        .test-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background: #d4af37;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background: #b8941f;
+        }
+        .url-list {
+            list-style: none;
+            padding: 0;
+        }
+        .url-list li {
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            background: #f8f9fa;
+            border-radius: 3px;
+        }
+        .url-status {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .status-ok { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-pending { background: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ Sitemap Validator</h1>
+        <p>This tool helps validate your sitemap and test URL accessibility.</p>
+        
+        <div class="test-section info">
+            <h3>📋 Sitemap Information</h3>
+            <p><strong>Sitemap URL:</strong> <a href="/sitemap.xml" target="_blank">https://erotc.org/sitemap.xml</a></p>
+            <p><strong>Last Updated:</strong> February 2, 2026</p>
+            <p><strong>Total URLs:</strong> <span id="urlCount">Loading...</span></p>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 URL Accessibility Test</h3>
+            <button onclick="testAllUrls()">Test All URLs</button>
+            <div id="testResults" style="margin-top: 1rem;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Google Search Console Tips</h3>
+            <ul>
+                <li><strong>Submit Sitemap:</strong> Go to Google Search Console → Sitemaps → Add new sitemap</li>
+                <li><strong>Enter URL:</strong> <code>sitemap.xml</code> (relative path)</li>
+                <li><strong>Check Status:</strong> Wait 24-48 hours for Google to process</li>
+                <li><strong>Resubmit if needed:</strong> If errors persist, delete and resubmit</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h3>🛠️ Troubleshooting</h3>
+            <ul>
+                <li><strong>Server Response:</strong> Ensure sitemap.xml returns HTTP 200</li>
+                <li><strong>Content-Type:</strong> Should be <code>application/xml</code> or <code>text/xml</code></li>
+                <li><strong>File Size:</strong> Keep under 50MB and 50,000 URLs</li>
+                <li><strong>Encoding:</strong> Use UTF-8 encoding</li>
+                <li><strong>Valid XML:</strong> Check for syntax errors</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // URLs from the sitemap
+        const sitemapUrls = [
+            'https://erotc.org/',
+            'https://www.erotc.org/',
+            'https://erotc.org/pages/member-registration.html',
+            'https://erotc.org/pages/member-update.html',
+            'https://erotc.org/pages/privacy-policy.html',
+            'https://erotc.org/pages/terms-of-service.html',
+            'https://erotc.org/pages/test-articles.html',
+            'https://erotc.org/pages/validate-sitemap.html',
+            'https://erotc.org/pages/membership-declaration.html',
+            'https://erotc.org/404.html'
+        ];
+        
+        document.getElementById('urlCount').textContent = sitemapUrls.length;
+        
+        async function testAllUrls() {
+            const resultsDiv = document.getElementById('testResults');
+            resultsDiv.innerHTML = '<p>Testing URLs...</p><ul class="url-list" id="urlResults"></ul>';
+            
+            const urlResults = document.getElementById('urlResults');
+            
+            for (const url of sitemapUrls) {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    <span class="url-status status-pending"></span>
+                    <span>${url}</span>
+                    <span style="float: right;">Testing...</span>
+                `;
+                urlResults.appendChild(listItem);
+                
+                try {
+                    const response = await fetch(url, { 
+                        method: 'HEAD',
+                        mode: 'no-cors' // Avoid CORS issues for external testing
+                    });
+                    
+                    // Since we're using no-cors, we can't read the actual status
+                    // But if the fetch doesn't throw, the URL is likely accessible
+                    listItem.innerHTML = `
+                        <span class="url-status status-ok"></span>
+                        <span>${url}</span>
+                        <span style="float: right; color: #28a745;">✓ Accessible</span>
+                    `;
+                } catch (error) {
+                    listItem.innerHTML = `
+                        <span class="url-status status-error"></span>
+                        <span>${url}</span>
+                        <span style="float: right; color: #dc3545;">✗ Error</span>
+                    `;
+                }
+                
+                // Small delay to avoid overwhelming the server
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        
+        // Auto-test on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(testAllUrls, 1000);
+        });
+    </script>
+</body>
+</html>

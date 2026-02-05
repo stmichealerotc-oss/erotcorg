@@ -1,0 +1,30 @@
+User-agent: *
+Allow: /
+
+# Disallow admin areas and backend for security
+Disallow: /admin/
+Disallow: /api/auth/
+Disallow: /uploads/private/
+Disallow: /backend/
+Disallow: /node_modules/
+
+# Allow important content
+Allow: /pages/privacy-policy.html
+Allow: /pages/terms-of-service.html
+Allow: /pages/member-registration.html
+
+# Sitemap locations (both domain variations)
+Sitemap: https://erotc.org/sitemap.xml
+Sitemap: https://www.erotc.org/sitemap.xml
+
+# Crawl delay (helps with server load)
+Crawl-delay: 1
+
+# Additional search engine directives
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /api/

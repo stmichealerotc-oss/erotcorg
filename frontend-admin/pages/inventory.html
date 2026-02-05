@@ -1,0 +1,446 @@
+ples<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management - Church System</title>
+    <link rel="stylesheet" href="css/style-organized.css">
+</head>
+<body>
+    <div class="page-header">
+        <h2>Inventory Management</h2>
+        <button class="btn btn-primary" onclick="inventoryPage.showAddItemForm()">
+            <i class="fas fa-plus"></i> Add New Item
+        </button>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Items</h3>
+            <div class="value" id="total-items-count">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>Low Stock Items</h3>
+            <div class="value warning" id="low-stock-count">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>Total Inventory Value</h3>
+            <div class="value" id="total-value">$0.00</div>
+        </div>
+        <div class="stat-card">
+            <h3>Items Need Reorder</h3>
+            <div class="value danger" id="reorder-count">0</div>
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h3>
+            <i class="fas fa-boxes"></i>
+            Inventory Items
+        </h3>
+        <div class="table-container">
+            <table class="data-table" id="inventory-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Donor</th>
+                        <th>Quantity</th>
+                        <th>Low Stock Threshold</th>
+                        <th>Price</th>
+                        <th>Total Value</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Inventory items will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Add/Edit Item Modal -->
+    <div id="item-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="item-modal-title">
+                    <i class="fas fa-box"></i>
+                    <span>Add New Item</span>
+                </h3>
+                <button class="modal-close" onclick="inventoryPage.closeModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="item-form">
+                    <input type="hidden" id="item-id">
+                    
+                    <div class="form-group">
+                        <label for="item-name">
+                            <i class="fas fa-tag"></i>
+                            Item Name *
+                        </label>
+                        <input type="text" id="item-name" required 
+                               placeholder="Enter item name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="item-category">
+                            <i class="fas fa-folder"></i>
+                            Category *
+                        </label>
+                        <select id="item-category" required>
+                            <option value="">Select Category</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Office">Office Supplies</option>
+                            <option value="Furniture">Furniture</option>
+                            <option value="Materials">Materials</option>
+                            <option value="Communion">Communion Supplies</option>
+                            <option value="Cleaning">Cleaning Supplies</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="item-donor-type">
+                            <i class="fas fa-user"></i>
+                            Donor Type
+                        </label>
+                        <select id="item-donor-type" onchange="inventoryPage.handleItemDonorTypeChange()">
+                            <option value="">No Donor (Purchased)</option>
+                            <option value="member">Church Member</option>
+                            <option value="external">External Donor</option>
+                            <option value="anonymous">Anonymous</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="item-member-select-group" style="display:none;">
+                        <label for="item-donor-member-search">
+                            <i class="fas fa-users"></i>
+                            Select Member
+                        </label>
+                        <div class="search-container">
+                            <input type="text" 
+                                   id="item-donor-member-search" 
+                                   placeholder="Search members..."
+                                   autocomplete="off"
+                                   oninput="inventoryPage.searchMembersForItem(this.value)">
+                            <div id="item-member-search-results" class="search-results"></div>
+                        </div>
+                        <input type="hidden" id="item-donor-member">
+                    </div>
+                    
+                    <div class="form-group" id="item-external-name-group" style="display:none;">
+                        <label for="item-donor-name">
+                            <i class="fas fa-user-tag"></i>
+                            Donor Name
+                        </label>
+                        <input type="text" id="item-donor-name" placeholder="Enter donor name">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="item-quantity">
+                                <i class="fas fa-cubes"></i>
+                                Quantity *
+                            </label>
+                            <input type="number" id="item-quantity" 
+                                   min="0" required placeholder="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="item-threshold">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Low Stock Threshold *
+                            </label>
+                            <input type="number" id="item-threshold" 
+                                   min="1" required placeholder="5">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="item-price">
+                            <i class="fas fa-dollar-sign"></i>
+                            Price *
+                        </label>
+                        <input type="number" id="item-price" 
+                               step="0.01" min="0" required placeholder="0.00">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="item-location">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Storage Location (Optional)
+                        </label>
+                        <input type="text" 
+                               id="item-location" 
+                               placeholder="e.g., Storage Room A, Shelf 3">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="item-note">
+                            <i class="fas fa-sticky-note"></i>
+                            Notes (Optional)
+                        </label>
+                        <textarea id="item-note" 
+                                  placeholder="Optional notes about this item"
+                                  rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <div class="form-actions">
+                    <button type="button" class="btn btn-danger" id="delete-item-btn" style="display: none;" onclick="inventoryPage.deleteItem()">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+
+                    <button type="button" class="btn btn-secondary" onclick="inventoryPage.closeModal()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+
+                    <button type="submit" class="btn btn-primary" form="item-form">
+                        <i class="fas fa-save"></i> Save Item
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Donation Modal -->
+    <div id="donate-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-gift"></i>
+                    Record Donation
+                </h3>
+                <button class="modal-close" onclick="inventoryPage.closeDonateModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="donate-form">
+                    <div class="form-group">
+                        <label for="donor-type">
+                            <i class="fas fa-user"></i>
+                            Donor Type *
+                        </label>
+                        <select id="donor-type" onchange="inventoryPage.handleDonorTypeChange()" required>
+                            <option value="member">Church Member</option>
+                            <option value="external">External Donor</option>
+                            <option value="anonymous">Anonymous</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="member-select-group">
+                        <label for="donor-member-search">
+                            <i class="fas fa-users"></i>
+                            Select Member *
+                        </label>
+                        <div class="search-container">
+                            <input type="text" 
+                                   id="donor-member-search" 
+                                   placeholder="Search members..."
+                                   autocomplete="off"
+                                   oninput="inventoryPage.searchMembersForDonation(this.value)">
+                            <div id="donate-member-search-results" class="search-results"></div>
+                        </div>
+                        <input type="hidden" id="donor-member">
+                    </div>
+                    
+                    <div class="form-group" id="external-name-group" style="display:none;">
+                        <label for="donor-name">
+                            <i class="fas fa-user-tag"></i>
+                            Donor Name *
+                        </label>
+                        <input type="text" id="donor-name" placeholder="Enter donor name">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="donate-quantity">
+                                <i class="fas fa-cubes"></i>
+                                Quantity *
+                            </label>
+                            <input type="number" id="donate-quantity" min="1" required placeholder="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="donate-value">
+                                <i class="fas fa-dollar-sign"></i>
+                                Estimated Value ($) *
+                            </label>
+                            <input type="number" id="donate-value" step="0.01" min="0.01" required placeholder="0.00">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="donate-notes">
+                            <i class="fas fa-sticky-note"></i>
+                            Notes
+                        </label>
+                        <textarea id="donate-notes" placeholder="Optional notes about this donation" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="inventoryPage.closeDonateModal()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="inventoryPage.submitDonation()">
+                        <i class="fas fa-check"></i> Record Donation
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Consumption Modal -->
+    <div id="consume-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-minus-circle"></i>
+                    Record Consumption
+                </h3>
+                <button class="modal-close" onclick="inventoryPage.closeConsumeModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="consume-form">
+                    <div class="form-group">
+                        <label for="consume-quantity">
+                            <i class="fas fa-cubes"></i>
+                            Quantity to Consume *
+                        </label>
+                        <input type="number" id="consume-quantity" min="1" required placeholder="0">
+                        <small>Available: <span id="available-quantity">0</span></small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="consume-purpose">
+                            <i class="fas fa-bullseye"></i>
+                            Purpose *
+                        </label>
+                        <select id="consume-purpose" required>
+                            <option value="Church service">Church Service</option>
+                            <option value="Community program">Community Program</option>
+                            <option value="Kids program">Kids Program</option>
+                            <option value="Charity">Charity</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="consume-category">
+                            <i class="fas fa-folder"></i>
+                            Expense Category *
+                        </label>
+                        <select id="consume-category" required>
+                            <option value="supplies">Supplies</option>
+                            <option value="hospitality">Hospitality</option>
+                            <option value="charity">Charity</option>
+                            <option value="maintenance">Maintenance</option>
+                            <option value="program-expenses">Program Expenses</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="consume-notes">
+                            <i class="fas fa-sticky-note"></i>
+                            Notes
+                        </label>
+                        <textarea id="consume-notes" placeholder="Optional notes about this consumption" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="inventoryPage.closeConsumeModal()">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="inventoryPage.submitConsumption()">
+                        <i class="fas fa-check"></i> Record Consumption
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="history-modal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-history"></i>
+                    Item History
+                </h3>
+                <button class="modal-close" onclick="inventoryPage.closeHistoryModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="content-section">
+                    <h4>
+                        <i class="fas fa-gift"></i>
+                        Donations Received
+                    </h4>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Donor</th>
+                                    <th>Quantity</th>
+                                    <th>Value</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="donations-history">
+                                <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="content-section" style="margin-top: 20px;">
+                    <h4>
+                        <i class="fas fa-minus-circle"></i>
+                        Consumption History
+                    </h4>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Quantity</th>
+                                    <th>Purpose</th>
+                                    <th>Value</th>
+                                    <th>Consumed By</th>
+                                </tr>
+                            </thead>
+                            <tbody id="consumption-history">
+                                <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="inventoryPage.closeHistoryModal()">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/inventory.js"></script>
+</body>
+</html>

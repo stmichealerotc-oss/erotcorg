@@ -1,0 +1,1221 @@
+[
+  {
+    "id": "1762233466617",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 1370,
+      "tithe": 320
+    },
+    "expensesByCategory": {},
+    "totalIncome": 1690,
+    "totalExpenses": 0,
+    "netBalance": 1690,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 1690,
+        "expenses": 0,
+        "net": 1690,
+        "transactionCount": 13
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      }
+    ],
+    "transactionCount": 13,
+    "generatedAt": "2025-11-04T05:17:46.618Z"
+  },
+  {
+    "id": "1762244157237",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 1370,
+      "tithe": 320
+    },
+    "expensesByCategory": {},
+    "totalIncome": 1690,
+    "totalExpenses": 0,
+    "netBalance": 1690,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 1690,
+        "expenses": 0,
+        "net": 1690,
+        "transactionCount": 13
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      }
+    ],
+    "transactionCount": 13,
+    "generatedAt": "2025-11-04T08:15:57.237Z"
+  },
+  {
+    "id": "1762265683907",
+    "type": "annual",
+    "year": 2025,
+    "quarter": null,
+    "period": "Annual Report 2025",
+    "dateRange": "Jan 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 1370,
+      "tithe": 320
+    },
+    "expensesByCategory": {},
+    "totalIncome": 1690,
+    "totalExpenses": 0,
+    "netBalance": 1690,
+    "monthlyOverview": [
+      {
+        "month": "Jan 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Feb 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Mar 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Apr 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "May 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Jun 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Jul 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Aug 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Sep 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 1690,
+        "expenses": 0,
+        "net": 1690,
+        "transactionCount": 13
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      }
+    ],
+    "transactionCount": 13,
+    "generatedAt": "2025-11-04T14:14:43.907Z"
+  },
+  {
+    "id": "1762421458735",
+    "type": "annual",
+    "year": 2025,
+    "quarter": null,
+    "period": "Annual Report 2025",
+    "dateRange": "Jan 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 1542
+    },
+    "expensesByCategory": {},
+    "totalIncome": 1542,
+    "totalExpenses": 0,
+    "netBalance": 1542,
+    "monthlyOverview": [
+      {
+        "month": "Jan 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Feb 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Mar 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Apr 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "May 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Jun 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Jul 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Aug 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Sep 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 1542,
+        "expenses": 0,
+        "net": 1542,
+        "transactionCount": 14
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      }
+    ],
+    "transactionCount": 14,
+    "generatedAt": "2025-11-06T09:30:58.735Z"
+  },
+  {
+    "id": "1762533450392",
+    "type": "annual",
+    "year": 2025,
+    "quarter": null,
+    "period": "Annual Report 2025",
+    "dateRange": "Jan 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 1640
+    },
+    "expensesByCategory": {},
+    "totalIncome": 1640,
+    "totalExpenses": 0,
+    "netBalance": 1640,
+    "monthlyOverview": [
+      {
+        "month": "Jan 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Feb 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Mar 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Apr 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "May 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Jun 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Jul 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Aug 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Sep 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 1640,
+        "expenses": 0,
+        "net": 1640,
+        "transactionCount": 13
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      }
+    ],
+    "transactionCount": 13,
+    "generatedAt": "2025-11-07T16:37:30.393Z"
+  },
+  {
+    "id": "1762673760965",
+    "type": "annual",
+    "year": 2025,
+    "quarter": null,
+    "period": "Annual Report 2025",
+    "dateRange": "Jan 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 1740
+    },
+    "expensesByCategory": {},
+    "totalIncome": 1740,
+    "totalExpenses": 0,
+    "netBalance": 1740,
+    "monthlyOverview": [
+      {
+        "month": "Jan 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Feb 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Mar 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Apr 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "May 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Jun 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Jul 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Aug 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Sep 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 1740,
+        "expenses": 0,
+        "net": 1740,
+        "transactionCount": 14
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      }
+    ],
+    "transactionCount": 14,
+    "generatedAt": "2025-11-09T07:36:00.965Z"
+  },
+  {
+    "id": "1762870138869",
+    "type": "annual",
+    "year": 2025,
+    "quarter": null,
+    "period": "Annual Report 2025",
+    "dateRange": "Jan 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 1740
+    },
+    "expensesByCategory": {},
+    "totalIncome": 1740,
+    "totalExpenses": 0,
+    "netBalance": 1740,
+    "monthlyOverview": [
+      {
+        "month": "Jan 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Feb 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Mar 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Apr 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "May 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Jun 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Jul 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Aug 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Sep 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 1740,
+        "expenses": 0,
+        "net": 1740,
+        "transactionCount": 14
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      }
+    ],
+    "transactionCount": 14,
+    "generatedAt": "2025-11-11T14:08:58.869Z"
+  },
+  {
+    "id": "1762871514349",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 1740
+    },
+    "expensesByCategory": {},
+    "totalIncome": 1740,
+    "totalExpenses": 0,
+    "netBalance": 1740,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 1740,
+        "expenses": 0,
+        "net": 1740,
+        "transactionCount": 14
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      }
+    ],
+    "transactionCount": 14,
+    "generatedAt": "2025-11-11T14:31:54.349Z"
+  },
+  {
+    "id": "1763612559542",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 2240,
+      "offering": 225
+    },
+    "expensesByCategory": {},
+    "totalIncome": 2465,
+    "totalExpenses": 0,
+    "netBalance": 2465,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 2465,
+        "expenses": 0,
+        "net": 2465,
+        "transactionCount": 16
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      }
+    ],
+    "transactionCount": 16,
+    "generatedAt": "2025-11-20T04:22:39.543Z"
+  },
+  {
+    "id": "1764733972092",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 2440,
+      "offering": 2585
+    },
+    "expensesByCategory": {
+      "utilities": 75,
+      "supplies": 440,
+      "salaries": 600
+    },
+    "totalIncome": 5025,
+    "totalExpenses": 1115,
+    "netBalance": 3910,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 4825,
+        "expenses": 1040,
+        "net": 3785,
+        "transactionCount": 23
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 75,
+        "net": -75,
+        "transactionCount": 1
+      }
+    ],
+    "transactionCount": 25,
+    "generatedAt": "2025-12-03T03:52:52.092Z"
+  },
+  {
+    "id": "1764735985876",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 2540,
+      "offering": 2685
+    },
+    "expensesByCategory": {
+      "utilities": 75,
+      "supplies": 440,
+      "salaries": 600
+    },
+    "totalIncome": 5225,
+    "totalExpenses": 1115,
+    "netBalance": 4110,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 4825,
+        "expenses": 1040,
+        "net": 3785,
+        "transactionCount": 23
+      },
+      {
+        "month": "Dec 2025",
+        "income": 200,
+        "expenses": 75,
+        "net": 125,
+        "transactionCount": 3
+      }
+    ],
+    "transactionCount": 27,
+    "generatedAt": "2025-12-03T04:26:25.876Z"
+  },
+  {
+    "id": "1764815508734",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 2540,
+      "offering": 2685
+    },
+    "expensesByCategory": {
+      "utilities": 75,
+      "supplies": 440,
+      "salaries": 600
+    },
+    "totalIncome": 5225,
+    "totalExpenses": 1115,
+    "netBalance": 4110,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 4825,
+        "expenses": 1040,
+        "net": 3785,
+        "transactionCount": 23
+      },
+      {
+        "month": "Dec 2025",
+        "income": 200,
+        "expenses": 75,
+        "net": 125,
+        "transactionCount": 3
+      }
+    ],
+    "transactionCount": 27,
+    "generatedAt": "2025-12-04T02:31:48.734Z"
+  },
+  {
+    "id": "1764858180815",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 2540,
+      "offering": 2685
+    },
+    "expensesByCategory": {
+      "utilities": 75,
+      "supplies": 440,
+      "salaries": 600
+    },
+    "totalIncome": 5225,
+    "totalExpenses": 1115,
+    "netBalance": 4110,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 4825,
+        "expenses": 1040,
+        "net": 3785,
+        "transactionCount": 23
+      },
+      {
+        "month": "Dec 2025",
+        "income": 200,
+        "expenses": 75,
+        "net": 125,
+        "transactionCount": 3
+      }
+    ],
+    "transactionCount": 27,
+    "generatedAt": "2025-12-04T14:23:00.815Z"
+  },
+  {
+    "id": "1764902558065",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 2440,
+      "offering": 2585
+    },
+    "expensesByCategory": {
+      "utilities": 75,
+      "supplies": 440,
+      "salaries": 600
+    },
+    "totalIncome": 5025,
+    "totalExpenses": 1115,
+    "netBalance": 3910,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 4825,
+        "expenses": 1040,
+        "net": 3785,
+        "transactionCount": 23
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 75,
+        "net": -75,
+        "transactionCount": 1
+      }
+    ],
+    "transactionCount": 25,
+    "generatedAt": "2025-12-05T02:42:38.065Z"
+  },
+  {
+    "id": "1764902610170",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 2440,
+      "offering": 2585
+    },
+    "expensesByCategory": {
+      "utilities": 75,
+      "supplies": 440,
+      "salaries": 600
+    },
+    "totalIncome": 5025,
+    "totalExpenses": 1115,
+    "netBalance": 3910,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 4825,
+        "expenses": 1040,
+        "net": 3785,
+        "transactionCount": 23
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 75,
+        "net": -75,
+        "transactionCount": 1
+      }
+    ],
+    "transactionCount": 25,
+    "generatedAt": "2025-12-05T02:43:30.171Z"
+  },
+  {
+    "id": "1764904760239",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 2440,
+      "offering": 2585
+    },
+    "expensesByCategory": {
+      "utilities": 75,
+      "supplies": 440,
+      "salaries": 600
+    },
+    "totalIncome": 5025,
+    "totalExpenses": 1115,
+    "netBalance": 3910,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 4825,
+        "expenses": 1040,
+        "net": 3785,
+        "transactionCount": 23
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 75,
+        "net": -75,
+        "transactionCount": 1
+      }
+    ],
+    "transactionCount": 25,
+    "generatedAt": "2025-12-05T03:19:20.240Z"
+  },
+  {
+    "id": "1765012009230",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 2440,
+      "offering": 2585
+    },
+    "expensesByCategory": {
+      "utilities": 75,
+      "supplies": 440,
+      "salaries": 600
+    },
+    "totalIncome": 5025,
+    "totalExpenses": 1115,
+    "netBalance": 3910,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 4825,
+        "expenses": 1040,
+        "net": 3785,
+        "transactionCount": 23
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 75,
+        "net": -75,
+        "transactionCount": 1
+      }
+    ],
+    "transactionCount": 25,
+    "generatedAt": "2025-12-06T09:06:49.230Z"
+  },
+  {
+    "id": "1765012290670",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 2440,
+      "offering": 2585
+    },
+    "expensesByCategory": {
+      "utilities": 75,
+      "supplies": 440,
+      "salaries": 600
+    },
+    "totalIncome": 5025,
+    "totalExpenses": 1115,
+    "netBalance": 3910,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 4825,
+        "expenses": 1040,
+        "net": 3785,
+        "transactionCount": 23
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 75,
+        "net": -75,
+        "transactionCount": 1
+      }
+    ],
+    "transactionCount": 25,
+    "generatedAt": "2025-12-06T09:11:30.670Z"
+  },
+  {
+    "id": "1765012695878",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 2440,
+      "offering": 2585
+    },
+    "expensesByCategory": {
+      "utilities": 75,
+      "supplies": 440,
+      "salaries": 600
+    },
+    "totalIncome": 5025,
+    "totalExpenses": 1115,
+    "netBalance": 3910,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 4825,
+        "expenses": 1040,
+        "net": 3785,
+        "transactionCount": 23
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 75,
+        "net": -75,
+        "transactionCount": 1
+      }
+    ],
+    "transactionCount": 25,
+    "generatedAt": "2025-12-06T09:18:15.878Z"
+  },
+  {
+    "id": "1765012838470",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 2440,
+      "offering": 2585
+    },
+    "expensesByCategory": {
+      "utilities": 75,
+      "supplies": 440,
+      "salaries": 600
+    },
+    "totalIncome": 5025,
+    "totalExpenses": 1115,
+    "netBalance": 3910,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 4825,
+        "expenses": 1040,
+        "net": 3785,
+        "transactionCount": 23
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 75,
+        "net": -75,
+        "transactionCount": 1
+      }
+    ],
+    "transactionCount": 25,
+    "generatedAt": "2025-12-06T09:20:38.470Z"
+  },
+  {
+    "id": "1765012981412",
+    "type": "quarterly",
+    "year": 2025,
+    "quarter": "4",
+    "period": "Q4 Report 2025",
+    "dateRange": "Oct 1, 2025 - Dec 31, 2025",
+    "incomeByCategory": {
+      "donation": 2440,
+      "offering": 2585
+    },
+    "expensesByCategory": {
+      "utilities": 75,
+      "supplies": 440,
+      "salaries": 600
+    },
+    "totalIncome": 5025,
+    "totalExpenses": 1115,
+    "netBalance": 3910,
+    "monthlyOverview": [
+      {
+        "month": "Oct 2025",
+        "income": 0,
+        "expenses": 0,
+        "net": 0,
+        "transactionCount": 0
+      },
+      {
+        "month": "Nov 2025",
+        "income": 4825,
+        "expenses": 1040,
+        "net": 3785,
+        "transactionCount": 23
+      },
+      {
+        "month": "Dec 2025",
+        "income": 0,
+        "expenses": 75,
+        "net": -75,
+        "transactionCount": 1
+      }
+    ],
+    "transactionCount": 25,
+    "generatedAt": "2025-12-06T09:23:01.412Z"
+  }
+]

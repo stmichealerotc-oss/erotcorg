@@ -1,0 +1,219 @@
+<div class="user-management-container">
+    <div class="page-header">
+        <h2><i class="fas fa-users-cog"></i> User Management</h2>
+        <p>Manage system users, roles, and permissions</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Total Users</h3>
+                <div class="stat-value" id="total-users">0</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Active Users</h3>
+                <div class="stat-value" id="active-users">0</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Pending Users</h3>
+                <div class="stat-value" id="pending-users">0</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Admins</h3>
+                <div class="stat-value" id="admin-users">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-section">
+        <div class="search-filters">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="user-search" placeholder="Search users by name, username, or email...">
+            </div>
+            <select id="role-filter">
+                <option value="">All Roles</option>
+                <option value="super-admin">Super Admin</option>
+                <option value="admin">Admin</option>
+                <option value="chairperson">Chairperson</option>
+                <option value="secretary">Secretary</option>
+                <option value="accountant">Accountant</option>
+                <option value="holder-of-goods">Holder of Goods</option>
+                <option value="community-coordinator">Community Coordinator</option>
+                <option value="member">Member</option>
+                <option value="visitor">Visitor (Read-Only)</option>
+            </select>
+            <select id="status-filter">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="inactive">Inactive</option>
+                <option value="suspended">Suspended</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" id="add-user-btn">
+            <i class="fas fa-user-plus"></i> Add New User
+        </button>
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-container">
+        <table class="data-table" id="users-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Last Login</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="users-table-body">
+                <tr>
+                    <td colspan="6" class="text-center">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i> Loading users...
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" id="pagination-container">
+        <!-- Pagination will be inserted here -->
+    </div>
+</div>
+
+<!-- Add/Edit User Modal -->
+<div class="modal" id="user-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-title">Add New User</h3>
+            <button class="modal-close" id="modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="user-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="user-name">Full Name *</label>
+                        <input type="text" id="user-name" name="name" required placeholder="e.g. John Smith">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-username">Username *</label>
+                        <input type="text" id="user-username" name="username" required placeholder="e.g. jsmith (letters, numbers, - and _ only)">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="user-email">Email Address *</label>
+                        <input type="email" id="user-email" name="email" required placeholder="e.g. john.smith@stmichaelerotc.org">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-role">Role *</label>
+                        <select id="user-role" name="role" required>
+                            <option value="">Select Role</option>
+                            <option value="admin">Admin</option>
+                            <option value="chairperson">Chairperson</option>
+                            <option value="secretary">Secretary</option>
+                            <option value="accountant">Accountant</option>
+                            <option value="holder-of-goods">Holder of Goods</option>
+                            <option value="community-coordinator">Community Coordinator</option>
+                            <option value="member">Member</option>
+                            <option value="visitor">Visitor (Read-Only)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group" id="status-group" style="display: none;">
+                    <label for="user-status">Account Status</label>
+                    <select id="user-status" name="accountStatus">
+                        <option value="active">Active</option>
+                        <option value="pending">Pending</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="user-active" name="isActive" checked>
+                        Account is active
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancel-btn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="save-user-btn">
+                <i class="fas fa-save"></i> Save User
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Password Reset Modal -->
+<div class="modal" id="password-reset-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Send Password Reset</h3>
+            <button class="modal-close" id="reset-modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Send a password reset email to <strong id="reset-user-name"></strong>?</p>
+            <p class="text-muted">The user will receive an email with instructions to reset their password.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="reset-cancel-btn">Cancel</button>
+            <button type="button" class="btn btn-danger" id="send-reset-btn">
+                <i class="fas fa-envelope"></i> Send Reset Email
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete User Modal -->
+<div class="modal" id="delete-user-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Delete User</h3>
+            <button class="modal-close" id="delete-modal-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete <strong id="delete-user-name"></strong>?</p>
+            <p class="text-danger">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="delete-cancel-btn">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirm-delete-btn">
+                <i class="fas fa-trash"></i> Delete User
+            </button>
+        </div>
+    </div>
+</div>

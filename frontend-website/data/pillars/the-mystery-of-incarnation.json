@@ -1,0 +1,157 @@
+{
+  "title": "The Mystery of the Incarnation",
+  "lead": "God becoming man for our salvation and the inseparable union of Word and flesh",
+  "sections": [
+    {
+      "title": "Five Pillars of Mystery",
+      "content": [
+        "The Eritrean Orthodox Tewaḥdo Church teaches its faith through the **Five Pillars of Mystery**. Like pillars supporting a roof, these uphold and strengthen the faith of believers. They are called mysteries because they are divine truths revealed by God and rooted in Scripture (1 Corinthians 14:19)."
+      ],
+      "list": [
+        "The Mystery of the Trinity",
+        "The Mystery of the Incarnation",
+        "The Mystery of Baptism", 
+        "The Mystery of Communion",
+        "The Mystery of the Resurrection"
+      ]
+    },
+    {
+      "title": "The Mystery of the Incarnation",
+      "content": [
+        "The Mystery of the Incarnation is the mystery of **God the Son**, one of the Trinity, descending from heaven and taking flesh and a rational soul from the Holy Virgin Mary. This is the mystery of **God becoming man so that man may become god by grace**. *\"And the Word became flesh and dwelt among us\" (John 1:14)*."
+      ],
+      "subsections": [
+        {
+          "title": "Why Did God Become Man?",
+          "content": [
+            "Adam and Eve were created without sin and death. Through disobedience, humanity brought upon itself sin, suffering, and death. Yet God, seeing humanity's repentance, gave a covenant and promised redemption: *\"For God has not appointed us to wrath, but to obtain salvation by our Lord Jesus Christ\" (1 Thessalonians 5:9)*."
+          ]
+        },
+        {
+          "title": "The Fulfillment of the Promise", 
+          "content": [
+            "When the appointed time came, God sent His only Begotten Son, born of the Holy Virgin Mary. In Christ, divinity and humanity were united perfectly, fulfilling the words of the prophets: *Isaiah 7:14, 9:6; Micah 5:2; Galatians 4:4*."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Tewaḥdo: Unification of Word and Flesh",
+      "content": [
+        "In Ge'ez, **Tewaḥdo** (ጥዋሕዶ) means \"to make one\" or \"to unify\". It expresses the core Eritrean Orthodox teaching: the perfect, inseparable union of the **Divine Word (Logos)** and human flesh. Christ is one person, fully God and fully man, united in a single incarnate reality."
+      ],
+      "subsections": [
+        {
+          "title": "Why Separation Destroys Salvation",
+          "content": [
+            "If the Word and the flesh were divided:",
+            "- Death would be only a human death",
+            "- Resurrection would not heal human nature",
+            "- Humanity would not be permanently united to God",
+            "Because the union is real and eternal, God truly conquered death in the flesh. St. Cyril of Alexandria said, *\"Christ did not save what He was not incarnate\" (1)*."
+          ]
+        },
+        {
+          "title": "Logic of One Incarnate Reality",
+          "content": [
+            "Christ's divinity does not change into humanity, nor does humanity dissolve into divinity. They are united in one living reality, inseparable and complete. Just as the soul gives life to the body but remains distinct, the Word gives existence to His humanity without division."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Metaphors to Understand Tewaḥdo",
+      "list": [
+        "**Human Person:** Body and soul are inseparable; so is Christ's humanity and divinity.",
+        "**Burning Coal:** Coal = humanity; Fire = divinity; burning coal = humanity filled with divinity.",
+        "**Sun and Light:** Sun = divinity; Light = humanity united to Word, inseparable.",
+        "**Seed and Tree:** Seed contains all potential; tree grows fully. Christ's divinity contains and nurtures His humanity."
+      ],
+      "subsections": [
+        {
+          "title": "Visual Union Diagram: One Nature, Two Aspects",
+          "content": [
+            "The following diagram illustrates how divinity and humanity unite in Christ without confusion, change, division, or separation:"
+          ],
+          "diagram": {
+            "type": "union_diagram",
+            "title": "The Tewaḥdo Union",
+            "elements": [
+              {
+                "id": "divinity",
+                "label": "Divine Nature",
+                "properties": ["Eternal", "Uncreated", "Omnipotent", "Unchanging"],
+                "color": "gold"
+              },
+              {
+                "id": "humanity", 
+                "label": "Human Nature",
+                "properties": ["Temporal", "Created", "Limited", "Changeable"],
+                "color": "blue"
+              },
+              {
+                "id": "union",
+                "label": "One Christ",
+                "properties": ["Without Confusion", "Without Change", "Without Division", "Without Separation"],
+                "color": "purple"
+              }
+            ]
+          },
+          "content_after": [
+            "This union is **permanent** and **complete**. Just as you cannot separate your soul from your body while remaining a living person, Christ's divinity and humanity cannot be separated while He remains the one Savior.",
+            "**Key Teaching:** The two natures work together as one unified reality. When Christ suffered, God experienced it. When Christ rose, humanity was elevated. This is the mystery of our salvation."
+          ]
+        },
+        {
+          "title": "Practical Meaning",
+          "content": [
+            "**For Salvation:** Our humanity is united with divinity; Christ's resurrection and ascension become ours.",
+            "**For Worship:** We honor one Christ. Mary is Theotokos because she bore God in flesh.",
+            "**For Daily Life:** Christ understands our struggles and transforms them; our suffering can be holy in union with Him."
+          ]
+        },
+        {
+          "title": "Deepest Truth",
+          "content": [
+            "Wherever Jesus the man was, God was there. Whatever He suffered, God experienced. When He rose, death was conquered. In Communion, we receive God-in-flesh."
+          ],
+          "quote": "\"Like the soul giving life to the body is one person with it, so the Word of God giving existence to His humanity is one Christ with it. From conception, they were one.\""
+        }
+      ]
+    },
+    {
+      "title": "Frequently Asked Questions",
+      "subsections": [
+        {
+          "title": "Why does Tewaḥdo emphasize one nature?",
+          "content": [
+            "We confess that the Word and the flesh are united inseparably. Speaking of 'two natures' can suggest division, which would imply that Christ's death and resurrection do not fully save humanity."
+          ]
+        },
+        {
+          "title": "Does Christ remain fully human and fully divine?",
+          "content": [
+            "Yes. In Tewaḥdo teaching, the humanity of Christ is real, and the divinity of Christ is real. They are united into one reality, inseparable, without confusion or change."
+          ]
+        },
+        {
+          "title": "Why are the Fathers quoted inline?",
+          "content": [
+            "To make it easy for readers to see the teaching directly, without needing to check cross references. For example, St. Cyril says: *'Christ did not save what He was not incarnate'* — which explains the necessity of the union for salvation."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Cross References (Ḥaymanotä Abäw)",
+      "content": [
+        "1. St. Cyril of Alexandria — On the Unity of Christ",
+        "2. St. Cyril of Alexandria — Third Letter to Nestorius",
+        "3. Council of Ephesus (431) — Acts and Definitions",
+        "4. St. Gregory of Nazianzus — Theological Orations",
+        "5. St. Athanasius — On the Incarnation of the Word",
+        "6. St. John Chrysostom — Homilies on the Gospel of John"
+      ]
+    }
+  ]
+}

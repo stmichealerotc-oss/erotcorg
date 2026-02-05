@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Articles System Test</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Articles System Test</h1>
+        
+        <!-- Recent Articles Test -->
+        <section>
+            <h2>Recent Articles (Home Page)</h2>
+            <div id="recent-articles" class="articles-grid">
+                <div class="loading-articles">
+                    <p>Loading recent articles...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Full Articles Page Test -->
+        <section style="margin-top: 3rem;">
+            <h2>All Articles with Filters</h2>
+            
+            <!-- Article Categories Filter -->
+            <div class="article-filters">
+                <button class="filter-btn active" data-category="all">All Articles</button>
+                <button class="filter-btn" data-category="church-history">Church History</button>
+                <button class="filter-btn" data-category="liturgy">Liturgy & Worship</button>
+                <button class="filter-btn" data-category="community">Community</button>
+                <button class="filter-btn" data-category="theology">Theology</button>
+                <button class="filter-btn" data-category="announcements">Announcements</button>
+            </div>
+
+            <!-- Articles Grid -->
+            <div id="articles-container" class="articles-grid">
+                <div class="loading-articles">
+                    <p>Loading articles...</p>
+                </div>
+            </div>
+
+            <!-- Individual Article View -->
+            <div id="article-view" class="article-view" style="display: none;">
+                <button class="back-to-articles"><i class="fas fa-arrow-left"></i> Back to Articles</button>
+                <div id="article-content"></div>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script src="articles.js"></script>
+    <script>
+        // Initialize articles system and render all articles for testing
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (window.articleSystem) {
+                    window.articleSystem.renderArticles();
+                    
+                    // Test loading the comprehensive two-part series
+                    setTimeout(() => {
+                        console.log('Testing comprehensive Christianity series (2 parts)...');
+                        // Load Part II (most recent comprehensive article)
+                        window.articleSystem.showArticle('medieval-monastic-flourishing-modern-struggles');
+                    }, 2000);
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+{
+  "pillars": {
+    "trinity": {
+      "title": "The Mystery of the Holy Trinity",
+      "lead": "Five Pillars of Mystery: The mystery of the Trinity",
+      "sections": [
+        {
+          "title": "Introduction to the Five Pillars",
+          "content": [
+            "The Eritrean Orthodox Tewahdo Church has Five Pillars of Mysteries through which it teaches and demonstrates its basic religious belief. They are called Pillars of Mystery due to the fact that they support and strengthen the belief of the faithful in religious teachings just as a pillar supports a roof; These mysteries have Biblical foundation (1 Cor. 14:19).",
+            "Accordingly, the five pillars of mystery are expressed in the Orthodox Tewahdo Creed, which is the confession of our faith. The five mysteries of the church are as follows:"
+          ],
+          "list": [
+            "The mystery of the Trinity",
+            "The mystery of the Incarnation", 
+            "The mystery of Baptism",
+            "The mystery of Communion",
+            "The mystery of Resurrection"
+          ]
+        },
+        {
+          "title": "Mystery of the Holy Trinity",
+          "content": [
+            "In this section the mystery of Unity and Trinity of the Triune God is described. The Holy Trinity is three in name, in person, in deed and one in essence, in divinity, in existence, in will."
+          ],
+          "subsections": [
+            {
+              "title": "Three in Name:",
+              "list": ["The Father", "The Son", "The Holy Spirit"]
+            },
+            {
+              "title": "Three in Deed:",
+              "list": [
+                "The Father is the begetter",
+                "The Son is begotten", 
+                "The Holy Spirit is the one who proceeds"
+              ]
+            },
+            {
+              "title": "Three in Person:",
+              "list": [
+                "The Father has a perfect person",
+                "The Son has a perfect person",
+                "The Holy Spirit has a perfect person"
+              ]
+            }
+          ],
+          "content_after": [
+            "The Father is the heart, the Son is the word and the Holy Spirit is the life (breath). The Father is the heart for Himself, and He is the heart for the Son and for the Holy Spirit. The Son is the word for Himself, and He is the word for the Father, and for the Holy Spirit. And finally, the Holy Spirit is the life (breath) for Himself, and He is the life (breath) for the Father and the Son."
+          ]
+        },
+        {
+          "title": "The Oneness of the Trinity",
+          "content": [
+            "Even though we say the Trinity are three in name, in deed and in person; the Holy Trinity is also One as well. They are:"
+          ],
+          "list": [
+            "One in essence",
+            "One in divinity", 
+            "One in existence",
+            "One in will"
+          ],
+          "content_after": [
+            "When an Orthodox Tewahdo believer says they believe in the Holy Trinity, it is not to say they believe in three Gods but one God. While the Father and the Son and the Holy Spirit exist in their own perfect person, they are one in existence."
+          ]
+        },
+        {
+          "title": "Biblical Foundation",
+          "bible_references": {
+            "Old Testament References:": [
+              "Genesis 1:26; 2:18; 3:22; 11:7; 18:1-8",
+              "Psalm 33:6; 146:5",
+              "Isaiah 6:3,8"
+            ],
+            "New Testament References:": [
+              "Matthew 3:16-17; 28:19",
+              "John 14:26",
+              "2 Corinthians 14:13",
+              "1 Peter 1:2",
+              "1 John 5:7-8"
+            ]
+          }
+        },
+        {
+          "title": "Symbolic Metaphor: The Sun",
+          "content": [
+            "There are many ways that the mystery of the Holy Trinity can be symbolized. For example, often times The Sun is used as metaphor to explain Qiddus Selassie or the Holy Trinity. The Sun can be described in three ways: its form, Light and warmth (heat).",
+            "Our fathers explain that its form is like the Father, the Light being the Son and the Warmth (heat) being the Holy Spirit. Just as one cannot separate the physical form of the Sun away from the light or warmth it gives, the same can be said of the Holy Trinity. The Holy Trinity describes the Father, the Son and the Spirit as being three while also being One. One cannot exist without the other two."
+          ]
+        }
+      ]
+    },
+    "incarnation": {
+      "title": "The Mystery of the Incarnation",
+      "lead": "God becoming man for our salvation and the unification of Word and flesh",
+      "sections": [
+        {
+          "title": "Five Pillars of Mystery",
+          "content": [
+            "The Eritrean Orthodox Tewaḥdo Church teaches its faith through the **Five Pillars of Mystery**. They are called \"pillars\" because, like pillars supporting a roof, these mysteries support the faith of believers. They are called \"mysteries\" because they are divine truths revealed by God and rooted in Scripture (1 Corinthians 14:19)."
+          ],
+          "list": [
+            "The Mystery of the Trinity",
+            "The Mystery of the Incarnation",
+            "The Mystery of Baptism", 
+            "The Mystery of Communion",
+            "The Mystery of the Resurrection"
+          ]
+        },
+        {
+          "title": "The Mystery of the Incarnation",
+          "content": [
+            "The Mystery of the Incarnation is the mystery of **God the Son**, one of the Trinity, descending from heaven and taking flesh and a rational soul from the Holy Virgin Mary. This is the mystery of **God becoming man so that man may become god by grace**. *\"And the Word became flesh and dwelt among us\" (John 1:14)*."
+          ],
+          "subsections": [
+            {
+              "title": "Why Did God Become Man?",
+              "content": [
+                "Adam and Eve were created without sin and death. Through disobedience, humanity brought upon itself sin, suffering, and death. Yet God, seeing humanity's repentance, gave a covenant and promised redemption: *\"For God has not appointed us to wrath, but to obtain salvation by our Lord Jesus Christ\" (1 Thessalonians 5:9)*."
+              ]
+            },
+            {
+              "title": "The Fulfillment of the Promise", 
+              "content": [
+                "When the appointed time came, God sent His only Begotten Son, born of the Holy Virgin Mary. In Christ, divinity and humanity were united perfectly, fulfilling the words of the prophets: *Isaiah 7:14, 9:6; Micah 5:2; Galatians 4:4*."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "The Logic and Philosophy of Tewaḥdo: Unification of Word and Flesh",
+          "content": [
+            "In Ge'ez, **Tewaḥdo** (ጥዋሕዶ) means \"to make one\" or \"to unify\". It expresses the core Eritrean Orthodox teaching: the perfect, inseparable union of the **Divine Word (Logos)** and human flesh."
+          ],
+          "subsections": [
+            {
+              "title": "Logic: One Reality, Two Natures",
+              "content": ["Christ is one person with two natures:"],
+              "list": [
+                "**Divine Nature:** Eternal, uncreated, omnipotent",
+                "**Human Nature:** Temporal, created, limited"
+              ],
+              "content_after": [
+                "They act together in one unified reality. Just as a human person is one being with body and soul, Christ is one person with divinity and humanity united."
+              ]
+            },
+            {
+              "title": "Philosophy: Why \"Without Separation\" Matters",
+              "content": ["The union is:"],
+              "list": [
+                "**Without Confusion:** Divinity does not mix with humanity",
+                "**Without Change:** God remains God; humanity remains human",
+                "**Without Division:** Not two separate persons",
+                "**Without Separation:** Permanent, eternal, unbreakable"
+              ],
+              "content_after": [
+                "If divinity and humanity could separate, Christ's death and resurrection would not fully save humanity."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Metaphors to Understand Tewaḥdo",
+          "list": [
+            "**Human Person:** Body and soul are inseparable; so is Christ's humanity and divinity.",
+            "**Burning Coal:** Coal = humanity; Fire = divinity; burning coal = humanity filled with divinity.",
+            "**The Sun:** Sun = divinity; light = Word; warmth = humanity united to Word.",
+            "**Anointed King:** Man = humanity; anointing = divinity; anointed king = one unified reality."
+          ],
+          "subsections": [
+            {
+              "title": "Practical Meaning",
+              "content": [
+                "**For Salvation:** Our humanity is united with divinity; Christ's resurrection and ascension become ours.",
+                "**For Worship:** We honor one Christ. Mary is Theotokos because she bore God in flesh.",
+                "**For Daily Life:** Christ understands our struggles and transforms them; our suffering can be holy in union with Him."
+              ]
+            },
+            {
+              "title": "Deepest Truth",
+              "content": [
+                "Wherever Jesus the man was, God was there. Whatever He suffered, God experienced. When He rose, death was conquered. In Communion, we receive God-in-flesh."
+              ],
+              "quote": "\"Like the soul giving life to the body is one person with it, so the Word of God giving existence to His humanity is one Christ with it. From conception, they were one.\""
+            }
+          ]
+        }
+      ]
+    },
+    "baptism": {
+      "title": "The Mystery of Baptism",
+      "lead": "Spiritual rebirth through water and the Spirit",
+      "sections": [
+        {
+          "title": "Coming Soon",
+          "content": ["Content about the Mystery of Baptism coming soon..."]
+        }
+      ]
+    },
+    "communion": {
+      "title": "The Mystery of Communion", 
+      "lead": "The Holy Eucharist - Body and Blood of Christ",
+      "sections": [
+        {
+          "title": "Coming Soon",
+          "content": ["Content about the Mystery of Communion coming soon..."]
+        }
+      ]
+    },
+    "resurrection": {
+      "title": "The Mystery of Resurrection",
+      "lead": "Christ's victory over death and our hope", 
+      "sections": [
+        {
+          "title": "Coming Soon",
+          "content": ["Content about the Mystery of Resurrection coming soon..."]
+        }
+      ]
+    }
+  },
+  "sacraments": {
+    "baptism": {
+      "title": "Baptism",
+      "lead": "Spiritual rebirth",
+      "sections": [
+        {
+          "title": "Coming Soon",
+          "content": ["Content about Baptism coming soon..."]
+        }
+      ]
+    },
+    "confirmation": {
+      "title": "Confirmation", 
+      "lead": "Receiving the Holy Spirit",
+      "sections": [
+        {
+          "title": "Coming Soon",
+          "content": ["Content about Confirmation coming soon..."]
+        }
+      ]
+    },
+    "eucharist": {
+      "title": "Eucharist",
+      "lead": "Holy Communion",
+      "sections": [
+        {
+          "title": "Coming Soon", 
+          "content": ["Content about Eucharist coming soon..."]
+        }
+      ]
+    },
+    "penance": {
+      "title": "Penance",
+      "lead": "Confession and forgiveness",
+      "sections": [
+        {
+          "title": "Coming Soon",
+          "content": ["Content about Penance coming soon..."]
+        }
+      ]
+    },
+    "unction": {
+      "title": "Holy Unction",
+      "lead": "Healing sacrament", 
+      "sections": [
+        {
+          "title": "Coming Soon",
+          "content": ["Content about Holy Unction coming soon..."]
+        }
+      ]
+    },
+    "matrimony": {
+      "title": "Holy Matrimony",
+      "lead": "Sacrament of marriage",
+      "sections": [
+        {
+          "title": "Coming Soon",
+          "content": ["Content about Holy Matrimony coming soon..."]
+        }
+      ]
+    },
+    "orders": {
+      "title": "Holy Orders",
+      "lead": "Ordination to ministry",
+      "sections": [
+        {
+          "title": "Coming Soon", 
+          "content": ["Content about Holy Orders coming soon..."]
+        }
+      ]
+    }
+  }
+}

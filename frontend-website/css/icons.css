@@ -1,0 +1,49 @@
+/* Minimal Icon Set - Replaces Font Awesome to save bandwidth */
+/* Uses Unicode symbols instead of loading 900KB+ font file */
+
+.fa, .fas, .fab {
+  font-style: normal;
+  font-weight: normal;
+  display: inline-block;
+}
+
+/* Navigation Icons */
+.fa-home::before { content: "🏠"; }
+.fa-info-circle::before { content: "ℹ️"; }
+.fa-church::before { content: "⛪"; }
+.fa-child::before { content: "👶"; }
+.fa-cross::before { content: "✝️"; }
+.fa-envelope::before { content: "✉️"; }
+.fa-heart::before { content: "❤️"; }
+.fa-calendar-alt::before { content: "📅"; }
+.fa-book::before { content: "📖"; }
+.fa-cog::before { content: "⚙️"; }
+
+/* Contact Icons */
+.fa-map-marker-alt::before { content: "📍"; }
+.fa-phone::before { content: "📞"; }
+.fa-whatsapp::before { content: "💬"; }
+
+/* Social Media */
+.fa-facebook::before { content: "📘"; }
+.fa-instagram::before { content: "📷"; }
+.fa-youtube::before { content: "▶️"; }
+.fa-google::before { content: "🔍"; }
+
+/* UI Icons */
+.fa-bars::before { content: "☰"; }
+.fa-chevron-down::before { content: "▼"; }
+.fa-chevron-up::before { content: "▲"; }
+.fa-chevron-left::before { content: "◀"; }
+.fa-chevron-right::before { content: "▶"; }
+.fa-map::before { content: "🗺️"; }
+
+/* Content Icons */
+.fa-history::before { content: "📜"; }
+.fa-bullseye::before { content: "🎯"; }
+.fa-certificate::before { content: "📜"; }
+.fa-donate::before { content: "💰"; }
+.fa-hands-helping::before { content: "🤝"; }
+.fa-info-circle::before { content: "ℹ️"; }
+.fa-bullhorn::before { content: "📢"; }
+.fa-clock::before { content: "🕐"; }

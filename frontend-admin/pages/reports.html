@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Reports - Church Management</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+</head>
+<body>
+
+  <!-- Main Container -->
+  <div class="reports-container">
+    
+    <!-- Page Header -->
+    <div class="page-header">
+      <h2>Financial Reports</h2>
+    </div>
+
+    <!-- Report Generation Controls -->
+    <div class="glass-card">
+      <div class="report-controls">
+        <div class="form-group">
+          <label for="report-type" class="form-label">Report Type</label>
+          <select id="report-type" class="form-control">
+            <option value="quarterly">Quarterly Report</option>
+            <option value="annual">Annual Report</option>
+          </select>
+        </div>
+        
+        <!-- Dynamic Year/Quarter Container -->
+        <div id="period-container" class="form-group"></div>
+        
+        <button id="generate-report-btn" class="btn btn-primary">
+          <i class="fas fa-chart-bar"></i> Generate Report
+        </button>
+        <a href="/pages/financialreports-2018-2025.html" class="btn btn-secondary">
+          <i class="fas fa-archive"></i> Historical Reports
+        </a>
+      </div>
+    </div>
+
+    <!-- Reports List Screen -->
+    <div id="reports-list-screen" class="screen active">
+      <div class="reports-list-screen">
+        <div class="screen-header">
+          <h3><i class="fas fa-file-alt"></i> Annual Reporting</h3>
+          <div class="screen-actions">
+            <button id="refresh-reports-btn" class="btn btn-sm btn-outline-primary">
+              <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+          </div>
+        </div>
+        
+        <div class="screen-content">
+          <table class="reports-table" id="previous-reports-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Due Date</th>
+                <th>Date Received</th>
+                <th>Status</th>
+                <th>Download</th>
+              </tr>
+            </thead>
+            <tbody id="previous-reports">
+              <!-- Reports will be injected here by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report Detail Screen -->
+    <div id="report-detail-screen" class="screen">
+      <div class="report-detail-screen">
+        <div class="screen-header">
+          <h3><i class="fas fa-chart-pie"></i> Report Details</h3>
+          <button id="back-to-list-btn" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to List
+          </button>
+        </div>
+        
+        <div id="report-content">
+          <!-- Report content will be injected here by JS -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="js/reports.js"></script>
+
+</body>
+</html>
