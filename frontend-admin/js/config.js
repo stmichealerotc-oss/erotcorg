@@ -19,7 +19,7 @@ class Config {
         // Production environment - Azure Static Web Apps
         if (hostname.includes('azurestaticapps.net') || hostname.includes('lemon-rock-09193a31e')) {
             // Azure Static Web Apps - point to your Azure App Service backend
-            return 'https://crotc.azurewebsites.net/api';
+            return 'https://cms-system.azurewebsites.net/api';
         }
         
         // Production environment - Render (both frontend and backend working)
