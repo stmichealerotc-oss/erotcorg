@@ -41,7 +41,14 @@ const allowedOrigins = [
 'https://churchmanagement.erotc.org',
 'https://admin-erotc.netlify.app',
 'https://church-management-vjfw.onrender.com',
-'https://my-church.onrender.com'
+'https://my-church.onrender.com',
+// Azure Static Web Apps domains
+'https://lemon-rock-09193a31e.azurestaticapps.net',
+'https://lemon-rock-09193a31e-1.azurestaticapps.net',
+'https://lemon-rock-09193a31e-2.azurestaticapps.net',
+'https://lemon-rock-09193a31e-3.azurestaticapps.net',
+'https://lemon-rock-09193a31e-4.azurestaticapps.net',
+'https://lemon-rock-09193a31e-5.azurestaticapps.net'
 ];
 
 console.log('🔄 Allowed CORS origins (explicit):', allowedOrigins);
