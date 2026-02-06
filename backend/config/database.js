@@ -34,7 +34,7 @@ class DatabaseService {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         retryWrites: false, // Recommended for Azure Cosmos MongoDB
-        serverSelectionTimeoutMS: 5000 // Fail fast in development
+        serverSelectionTimeoutMS: process.env.NODE_ENV === 'production' ? 30000 : 5000 // 30s for production, 5s for dev
       });
 
       this.isConnected = true;
@@ -66,7 +66,13 @@ class DatabaseService {
         return;
       }
       
-      throw error;
+      // In production, log the error but don't crash the server
+      // This allows the health endpoint to report the issue
+      console.error('⚠️  Server will continue running without database connection');
+      console.error('⚠️  API endpoints requiring database will fail until connection is restored');
+      
+      // Don't throw - let the server start anyway
+      return;
     }
   }
 
