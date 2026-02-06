@@ -37,12 +37,14 @@ databaseService.connect();
 const allowedOrigins = [
 'https://erotc.org',
 'https://www.erotc.org',
+'https://cms.erotc.org',
 'https://erotc.netlify.app',
 'https://churchmanagement.erotc.org',
 'https://admin-erotc.netlify.app',
 'https://church-management-vjfw.onrender.com',
 'https://my-church.onrender.com',
 // Azure Static Web Apps domains
+'https://zealous-desert-0db98b100.6.azurestaticapps.net',
 'https://lemon-rock-09193a31e.azurestaticapps.net',
 'https://lemon-rock-09193a31e-1.azurestaticapps.net',
 'https://lemon-rock-09193a31e-2.azurestaticapps.net',
