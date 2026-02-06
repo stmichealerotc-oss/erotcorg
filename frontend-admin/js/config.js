@@ -18,7 +18,7 @@ class Config {
         
         // 2. Production - Azure Static Web Apps (front-admin)
         // This targets your Azure Frontend and points it to your Azure Backend
-        if (hostname.includes('azurestaticapps.net')) {
+        if (hostname.includes('azurestaticapps.net') || hostname.includes('cms.erotc.org')) {
             return 'https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net/api';
         }
         
