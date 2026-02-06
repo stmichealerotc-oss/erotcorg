@@ -35,6 +35,7 @@ databaseService.connect();
 
 // CORS configuration
 const allowedOrigins = [
+// Production domains
 'https://erotc.org',
 'https://www.erotc.org',
 'https://cms.erotc.org',
@@ -50,29 +51,55 @@ const allowedOrigins = [
 'https://lemon-rock-09193a31e-2.azurestaticapps.net',
 'https://lemon-rock-09193a31e-3.azurestaticapps.net',
 'https://lemon-rock-09193a31e-4.azurestaticapps.net',
-'https://lemon-rock-09193a31e-5.azurestaticapps.net'
+'https://lemon-rock-09193a31e-5.azurestaticapps.net',
+// Local development
+'http://localhost:3000',
+'http://localhost:5500',
+'http://localhost:8080',
+'http://127.0.0.1:3000',
+'http://127.0.0.1:5500',
+'http://127.0.0.1:8080'
 ];
 
-console.log('🔄 Allowed CORS origins (explicit):', allowedOrigins);
+console.log('🔄 Environment:', process.env.NODE_ENV);
+console.log('🔄 Allowed CORS origins:', allowedOrigins);
 
 app.use(cors({
 origin: function(origin, callback) {
-if (!origin) return callback(null, true);
+console.log('🔍 CORS request from origin:', origin);
+    
+// Allow requests with no origin (like mobile apps, Postman, or same-origin)
+if (!origin) {
+console.log('✅ CORS: Allowing request with no origin');
+return callback(null, true);
+}
 
+// Allow localhost in development
 if (isDevelopment && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+console.log('✅ CORS: Allowing localhost in development');
 return callback(null, true);
 }
 
+// Check if origin is in allowed list
 if (allowedOrigins.includes(origin)) {
+console.log('✅ CORS: Origin is in allowed list');
 return callback(null, true);
 }
 
-console.log('❌ CORS blocked for origin:', origin);
+// Also allow any azurestaticapps.net domain (for staging environments)
+if (origin.includes('azurestaticapps.net')) {
+console.log('✅ CORS: Allowing Azure Static Web Apps domain');
+return callback(null, true);
+}
+
+console.log('❌ CORS: Blocked origin:', origin);
 callback(new Error('CORS policy does not allow access from origin: ' + origin), false);
 },
 credentials: true,
 methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+exposedHeaders: ['Content-Length', 'X-Request-Id'],
+maxAge: 86400 // 24 hours
 }));
 
 // Security middleware
