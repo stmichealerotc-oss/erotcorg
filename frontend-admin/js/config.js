@@ -19,7 +19,7 @@ class Config {
         // 2. Production - Azure Static Web Apps (front-admin)
         // This targets your Azure Frontend and points it to your Azure Backend
         if (hostname.includes('azurestaticapps.net')) {
-            return 'https://cms-system.azurewebsites.net/api';
+            return 'https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net/api';
         }
         
         // 3. Fallback (If frontend and backend are on the same domain)
