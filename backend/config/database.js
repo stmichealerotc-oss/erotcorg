@@ -14,6 +14,14 @@ class DatabaseService {
       }
 
       if (!this.connectionString) {
+        console.warn('⚠️  MongoDB connection string not found in environment variables');
+        
+        // In development with BYPASS_AUTH, allow server to run without DB
+        if (process.env.NODE_ENV === 'development' && process.env.BYPASS_AUTH === 'true') {
+          console.log('🔓 Development mode with BYPASS_AUTH - server will run without database');
+          return;
+        }
+        
         throw new Error('MongoDB connection string not found in environment variables');
       }
 
@@ -25,7 +33,8 @@ class DatabaseService {
         // Simplified settings for Azure Cosmos DB
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        retryWrites: false // Recommended for Azure Cosmos MongoDB
+        retryWrites: false, // Recommended for Azure Cosmos MongoDB
+        serverSelectionTimeoutMS: 5000 // Fail fast in development
       });
 
       this.isConnected = true;
@@ -50,6 +59,13 @@ class DatabaseService {
     } catch (error) {
       console.error('❌ MongoDB connection failed:', error.message);
       this.isConnected = false;
+      
+      // In development with BYPASS_AUTH, allow server to continue
+      if (process.env.NODE_ENV === 'development' && process.env.BYPASS_AUTH === 'true') {
+        console.log('🔓 Development mode with BYPASS_AUTH - continuing without database');
+        return;
+      }
+      
       throw error;
     }
   }

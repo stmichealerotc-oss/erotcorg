@@ -68,9 +68,9 @@ app.use(cors({
 origin: function(origin, callback) {
 console.log('🔍 CORS request from origin:', origin);
     
-// Allow requests with no origin (like mobile apps, Postman, or same-origin)
-if (!origin) {
-console.log('✅ CORS: Allowing request with no origin');
+// Allow requests with no origin (like mobile apps, Postman, same-origin, or file://)
+if (!origin || origin === 'null') {
+console.log('✅ CORS: Allowing request with no/null origin');
 return callback(null, true);
 }
 
