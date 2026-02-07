@@ -8,9 +8,22 @@
 - CORS configuration cleaned up (removed old domains)
 - Code pushed to GitHub
 
-## 🔧 Manual Steps Required in Azure Portal
+## 🔧 Manual Steps Required
 
-### Step 1: Fix SMTP Settings
+### Step 1: Add GitHub Secrets (IMPORTANT!)
+
+The deployment is failing because GitHub Actions needs Azure credentials.
+
+**Follow the guide:** `GITHUB_SECRETS_SETUP.md`
+
+Quick steps:
+1. Get deployment token from Azure Static Web App: **agreeable-plant-06f731700**
+2. Add to GitHub: https://github.com/stmichealerotc-oss/erotcorg/settings/secrets/actions
+3. Secret name: `AZURE_STATIC_WEB_APPS_API_TOKEN_AGREEABLE_PLANT_06F731700`
+4. Get publish profile from Azure App Service: **cms-system**
+5. Add to GitHub with name: `AZUREAPPSERVICE_PUBLISHPROFILE_CMS_SYSTEM`
+
+### Step 2: Fix SMTP Settings
 
 Go to: Azure Portal → **cms-system** → **Configuration**
 
@@ -21,19 +34,25 @@ Fix these 2 typos:
 
 Click **Save** → **Continue**
 
-### Step 2: Wait for Deployment
+### Step 3: Re-run Failed Deployments
+
+After adding secrets, go to: https://github.com/stmichealerotc-oss/erotcorg/actions
+
+Click **Re-run all jobs** on the failed workflows.
+
+### Step 4: Wait for Deployment
 
 GitHub Actions will automatically deploy the updated code to Azure.
 
 Check: https://github.com/stmichealerotc-oss/erotcorg/actions
 
-### Step 3: Verify Database Connection
+### Step 5: Verify Database Connection
 
 Test: `https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net/api/health`
 
 Should show: `"db": {"status": "healthy"}`
 
-### Step 4: Create Admin User in Azure
+### Step 6: Create Admin User in Azure
 
 In Azure Portal → **cms-system** → **Console**:
 
@@ -42,7 +61,7 @@ cd site/wwwroot
 node create-admin-azure.js
 ```
 
-### Step 5: Test Login
+### Step 7: Test Login
 
 - URL: https://cms.erotc.org/login.html
 - Or: https://agreeable-plant-06f731700.2.azurestaticapps.net/login.html
