@@ -2,26 +2,23 @@
 
 ## ✅ Completed Locally
 
-- Database connection working with new Cosmos DB: `stmichael-db`
+- Database connection working with Cosmos DB: `stmichael-db`
 - Admin user created successfully
 - Login tested and working: `admin` / `admin123`
-- CORS configuration cleaned up (removed old domains)
+- CORS configuration cleaned up
+- GitHub workflows fixed to use correct resource names
+- GitHub secrets already configured ✅
 - Code pushed to GitHub
 
 ## 🔧 Manual Steps Required
 
-### Step 1: Add GitHub Secrets (IMPORTANT!)
+### Step 1: Get Frontend URL
 
-The deployment is failing because GitHub Actions needs Azure credentials.
+Go to Azure Portal → **front-admin** → **Overview**
 
-**Follow the guide:** `GITHUB_SECRETS_SETUP.md`
+Copy the URL (should be like `https://[something].azurestaticapps.net`)
 
-Quick steps:
-1. Get deployment token from Azure Static Web App: **agreeable-plant-06f731700**
-2. Add to GitHub: https://github.com/stmichealerotc-oss/erotcorg/settings/secrets/actions
-3. Secret name: `AZURE_STATIC_WEB_APPS_API_TOKEN_AGREEABLE_PLANT_06F731700`
-4. Get publish profile from Azure App Service: **cms-system**
-5. Add to GitHub with name: `AZUREAPPSERVICE_PUBLISHPROFILE_CMS_SYSTEM`
+We need this to update CORS configuration.
 
 ### Step 2: Fix SMTP Settings
 
@@ -34,11 +31,13 @@ Fix these 2 typos:
 
 Click **Save** → **Continue**
 
-### Step 3: Re-run Failed Deployments
+### Step 3: Re-run Failed Deployment
 
-After adding secrets, go to: https://github.com/stmichealerotc-oss/erotcorg/actions
+After I add the frontend URL to CORS, the deployment should work.
 
-Click **Re-run all jobs** on the failed workflows.
+Go to: https://github.com/stmichealerotc-oss/erotcorg/actions
+
+Click **Re-run all jobs** on the failed workflow.
 
 ### Step 4: Wait for Deployment
 
@@ -63,22 +62,27 @@ node create-admin-azure.js
 
 ### Step 7: Test Login
 
-- URL: https://cms.erotc.org/login.html
-- Or: https://agreeable-plant-06f731700.2.azurestaticapps.net/login.html
+- URL: Get from Step 1 (front-admin URL)
+- Or custom domain: https://cms.erotc.org/login.html (if configured)
 - Username: `admin`
 - Password: `admin123`
 
 ## 📋 Current Configuration
 
-### Database
-- Cosmos DB Account: `stmichael-db`
-- Database Name: `church_db`
-- Connection: Working ✅
+### Azure Resources
+- **Backend App Service:** `cms-system`
+- **Frontend Static Web App:** `front-admin`
+- **Database:** `stmichael-db` (Cosmos DB for MongoDB RU)
+- **Database Name:** `church_db`
 
-### Domains
-- Backend: `cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net`
-- Frontend: `agreeable-plant-06f731700.2.azurestaticapps.net`
-- Custom Domain: `cms.erotc.org`
+### URLs
+- **Backend API:** `https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net`
+- **Frontend:** (Need to get URL from Azure Portal → front-admin → Overview)
+- **Custom Domain:** `cms.erotc.org` (if configured)
+
+### GitHub Secrets (Already Configured ✅)
+- `AZUREAPPSERVICE_PUBLISHPROFILE_CMS_SYSTEM` - Backend deployment
+- `AZURE_STATIC_WEB_APPS_API_TOKEN_FRONT_ADMIN` - Frontend deployment
 
 ### Admin Credentials
 - Username: `admin`
