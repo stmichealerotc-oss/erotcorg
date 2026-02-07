@@ -15,7 +15,11 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '22.x'
-      - name: Upload artifact
+      - name: Install dependencies
+        # This ensures all modules (like dotenv) are present in the artifact
+        run: |
+          npm install
+      - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
