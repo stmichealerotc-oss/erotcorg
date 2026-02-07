@@ -39,7 +39,7 @@ const allowedOrigins = [
 'https://erotc.org',
 'https://www.erotc.org',
 'https://cms.erotc.org',
-// Azure Static Web Apps domain (current)
+// Azure Static Web Apps domain (front-admin)
 'https://agreeable-plant-06f731700.2.azurestaticapps.net',
 // Local development
 'http://localhost:3000',
