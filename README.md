@@ -70,25 +70,46 @@ st-michael-church/
 │   ├── routes/             # API endpoints
 │   ├── models/             # Database models
 │   ├── middleware/         # Authentication & validation
-│   └── server.js           # Main server file
-├── frontend-admin/         # Admin panel
+│   ├── config/             # Database configuration
+│   ├── server.js           # Main server file
+│   ├── export-local-data.js # Data migration tool
+│   └── import-to-azure.js  # Azure import tool
+├── frontend-admin/         # Admin panel (CMS)
 │   ├── css/               # Stylesheets
 │   ├── js/                # JavaScript modules
 │   ├── pages/             # HTML pages
-│   └── index.html         # Main admin page
-├── frontend-website/       # Public website
+│   ├── images/            # Images and assets
+│   ├── index.html         # Main admin dashboard
+│   └── login.html         # Admin login page
+├── frontend-website/       # Public church website
+│   ├── css/               # Website styles
 │   └── index.html         # Public homepage
-└── staticwebapp.config.json # Azure SWA configuration
+├── .github/workflows/      # GitHub Actions
+│   ├── main_cms_system.yml              # Backend deployment
+│   └── azure-static-web-apps-front-admin.yml  # Frontend deployment
+├── staticwebapp.config.json # Azure Static Web Apps config
+├── AZURE_SETUP_CHECKLIST.md # Deployment guide
+├── DATA_MIGRATION_GUIDE.md  # Database migration guide
+└── README.md               # This file
 ```
+
+## 🌐 URLs
+
+- **Public Website**: https://agreeable-plant-06f731700.2.azurestaticapps.net/
+- **Admin Panel**: https://agreeable-plant-06f731700.2.azurestaticapps.net/admin
+- **Backend API**: https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net/api
+- **Custom Domain**: https://cms.erotc.org (if configured)
 
 ## 🎯 Recent Updates
 
+- ✅ Public website created and deployed
+- ✅ Data migration tools for MongoDB → Azure Cosmos DB
+- ✅ Fixed backend deployment with npm install
+- ✅ CORS configuration for Azure Static Web Apps
+- ✅ GitHub Actions workflows for automated deployment
 - ✅ Fixed logout functionality (real auth vs dev bypass)
-- ✅ Resolved Azure Cosmos DB sorting issues (18+ fixes)
-- ✅ Fixed static file serving (CSS/JS MIME types)
-- ✅ Corrected relative paths in SPA pages
+- ✅ Resolved Azure Cosmos DB sorting issues
 - ✅ Production-ready authentication system
-- ✅ Azure deployment configuration
 
 ## 🔗 Links
 
