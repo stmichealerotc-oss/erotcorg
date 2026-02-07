@@ -97,14 +97,17 @@ Check:
 Required settings for `cms-system`:
 
 ```
-MONGODB_URI = [Your Cosmos DB connection string]
+MONGODB_URI = [Your Cosmos DB connection string from Azure Portal]
 NODE_ENV = production
-JWT_SECRET = [Your JWT secret]
+JWT_SECRET = [Generate a secure random string]
 SMTP_HOST = smtp.gmail.com
 SMTP_PORT = 587
-SMTP_USER = debesay304@gmail.com
-SMTP_PASS = [Your app password]
+SMTP_USER = [your-email]@gmail.com
+SMTP_PASS = [Your Gmail app password]
+ADMIN_EMAIL = [admin-email]@gmail.com
 ```
+
+**Note:** Never commit these values to git! Use Azure Portal to configure them.
 
 ---
 
