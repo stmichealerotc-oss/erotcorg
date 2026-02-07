@@ -39,19 +39,7 @@ const allowedOrigins = [
 'https://erotc.org',
 'https://www.erotc.org',
 'https://cms.erotc.org',
-'https://erotc.netlify.app',
-'https://churchmanagement.erotc.org',
-'https://admin-erotc.netlify.app',
-'https://church-management-vjfw.onrender.com',
-'https://my-church.onrender.com',
-// Azure Static Web Apps domains
-'https://zealous-desert-0db98b100.6.azurestaticapps.net',
-'https://lemon-rock-09193a31e.azurestaticapps.net',
-'https://lemon-rock-09193a31e-1.azurestaticapps.net',
-'https://lemon-rock-09193a31e-2.azurestaticapps.net',
-'https://lemon-rock-09193a31e-3.azurestaticapps.net',
-'https://lemon-rock-09193a31e-4.azurestaticapps.net',
-'https://lemon-rock-09193a31e-5.azurestaticapps.net',
+// Azure Static Web Apps domain (current)
 'https://agreeable-plant-06f731700.2.azurestaticapps.net',
 // Local development
 'http://localhost:3000',
