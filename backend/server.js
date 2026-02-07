@@ -33,7 +33,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Connect to MongoDB
 databaseService.connect();
 
-// CORS configuration
+// CORS configuration - Updated for front-admin Static Web App
 const allowedOrigins = [
 // Production domains
 'https://erotc.org',
