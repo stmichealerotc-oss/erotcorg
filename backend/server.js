@@ -52,6 +52,7 @@ const allowedOrigins = [
 'https://lemon-rock-09193a31e-3.azurestaticapps.net',
 'https://lemon-rock-09193a31e-4.azurestaticapps.net',
 'https://lemon-rock-09193a31e-5.azurestaticapps.net',
+'https://agreeable-plant-06f731700.2.azurestaticapps.net',
 // Local development
 'http://localhost:3000',
 'http://localhost:5500',
