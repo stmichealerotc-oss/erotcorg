@@ -1,3 +1,4 @@
+// Kids Program - UTF-8 Encoded for proper emoji display
 class KidsProgram {
     constructor() {
         this.currentProgram = null;
