@@ -582,11 +582,6 @@ tr:hover {
   color: white;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
-  background: var(--kid-blue);
-  color: white;
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(77, 139, 244, 0.3);
-}
 
 .week-nav-btn.active {
   background: var(--kid-blue);
