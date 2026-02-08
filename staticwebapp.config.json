@@ -18,12 +18,14 @@
     "exclude": ["/admin/*", "/api/*", "/css/*", "/js/*", "/images/*", "/*.{css,js,png,jpg,jpeg,gif,ico,svg,woff,woff2,ttf,eot}"]
   },
   "mimeTypes": {
-    ".css": "text/css",
-    ".js": "application/javascript",
-    ".json": "application/json"
+    ".css": "text/css; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".html": "text/html; charset=utf-8"
   },
   "globalHeaders": {
-    "Cache-Control": "public, max-age=3600"
+    "Cache-Control": "public, max-age=3600",
+    "Content-Type": "text/html; charset=utf-8"
   },
   "responseOverrides": {
     "404": {
