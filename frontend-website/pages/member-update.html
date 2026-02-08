@@ -369,7 +369,7 @@
         // Dynamic API base URL - local development or production
         const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? 'http://localhost:3001/api'
-            : window.location.origin + '/api';
+            : 'https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net/api';
         let updateToken = null;
         
         // Get token from URL parameters
