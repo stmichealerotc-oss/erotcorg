@@ -39,8 +39,9 @@ const allowedOrigins = [
 'https://erotc.org',
 'https://www.erotc.org',
 'https://cms.erotc.org',
-// Azure Static Web Apps domain (front-admin)
-'https://agreeable-plant-06f731700.2.azurestaticapps.net',
+// Azure Static Web Apps domains
+'https://agreeable-plant-06f731700.2.azurestaticapps.net', // Admin panel
+'https://ashy-cliff-058ad9c00.1.azurestaticapps.net', // Public website
 // Local development
 'http://localhost:3000',
 'http://localhost:5500',
