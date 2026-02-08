@@ -1,6 +1,10 @@
 /* ============================================================================
    CSS Reset and Base Styles
    ============================================================================ */
+
+/* Import Noto Sans Ethiopic for Tigrinya/Ge'ez script support */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -38,7 +42,7 @@
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Noto Sans Ethiopic', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.6;
   color: var(--dark);
   background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
@@ -874,13 +878,13 @@ tr:hover {
 }
 
 .lang.geez {
-  font-family: 'Nyala', 'Abyssinica SIL', serif;
+  font-family: 'Noto Sans Ethiopic', 'Nyala', 'Abyssinica SIL', serif;
   font-size: 1.3rem;
   line-height: 1.8;
 }
 
 .lang.ti {
-  font-family: 'Nyala', 'Abyssinica SIL', serif;
+  font-family: 'Noto Sans Ethiopic', 'Nyala', 'Abyssinica SIL', serif;
 }
 
 /* Empty States */
