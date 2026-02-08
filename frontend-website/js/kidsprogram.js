@@ -16,13 +16,13 @@ class KidsProgram {
     getApiBaseUrl() {
         const hostname = window.location.hostname;
         
-        // Local development
+        // Local development - point to st-michael-church backend
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
-            return 'http://localhost:3000';
+            return 'http://localhost:3001';
         }
         
-        // Production - point to Azure backend
-        return 'https://crotc-dbcyfqdshgdvcxgp.australiaeast-01.azurewebsites.net';
+        // Production - use same origin (Azure backend)
+        return window.location.origin;
     }
 
  async loadProgram(year, month) {

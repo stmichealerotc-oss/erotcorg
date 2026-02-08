@@ -500,6 +500,86 @@ tr:hover {
 .week-nav-btn:hover {
   background: var(--kid-blue);
   color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.week-nav-btn.active {
+  background: var(--kid-blue);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Week Selector (for kids program section) */
+.week-selector {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 2rem 0;
+}
+
+.week-btn {
+  padding: 1rem 1.5rem;
+  border: 3px solid var(--kid-blue);
+  background: white;
+  color: var(--kid-blue);
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: var(--transition);
+  min-width: 80px;
+  font-size: 1rem;
+}
+
+.week-btn:hover {
+  background: var(--kid-blue);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.week-btn.active {
+  background: var(--kid-blue);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Article Categories */
+.article-categories {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 2rem 0;
+}
+
+.category-btn {
+  padding: 0.75rem 1.25rem;
+  border: 2px solid var(--primary);
+  background: white;
+  color: var(--primary);
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
+  font-size: 0.95rem;
+}
+
+.category-btn:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.category-btn.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+  background: var(--kid-blue);
+  color: white;
   transform: translateY(-3px);
   box-shadow: 0 5px 15px rgba(77, 139, 244, 0.3);
 }

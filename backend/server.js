@@ -297,7 +297,7 @@ next();
 
 // ================= PUBLIC API ROUTES =================
 app.use('/api/auth', authRoutes);
-app.use('/api/kids-program-cms', kidsProgram2Routes);
+app.use('/api/kids-program', kidsProgram2Routes);
 
 // ================= PROTECTED CMS API ROUTES =================
 // All these routes require authentication (temporarily disabled auth middleware)

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - St. Michael Church</title>
+  <link rel="stylesheet" href="../admin/admin.css">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <header>
+    <h1>Admin Panel - St. Michael Church</h1>
+    <p>Manage Kids Program Content</p>
+  </header>
+
+  <nav>
+    <div class="nav-container">
+      <div class="logo">Admin Panel</div>
+      <div class="nav-links">
+        <a href="../index.html"><i class="fas fa-arrow-left"></i> Back to Site</a>
+        <a href="#" data-section="dashboard" class="active-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="#" data-section="kids-program"><i class="fas fa-child"></i> Kids Program</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="admin-main">
+    <!-- Dashboard Section -->
+    <section id="admin-dashboard" class="admin-section active">
+      <h2>Dashboard</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3><i class="fas fa-child"></i> Kids Program</h3>
+          <p>Manage weekly kids program content including mezmur, prayers, Bible study, and liturgy responses.</p>
+          <button class="btn-primary manage-program-btn">Manage Program</button>
+        </div>
+        <div class="card">
+          <h3><i class="fas fa-calendar"></i> Calendar</h3>
+          <p>Manage church calendar and events.</p>
+          <button class="btn-secondary">Coming Soon</button>
+        </div>
+        <div class="card">
+          <h3><i class="fas fa-book"></i> Books</h3>
+          <p>Manage church books and resources.</p>
+          <button class="btn-secondary">Coming Soon</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kids Program Management Section -->
+    <section id="admin-kids-program" class="admin-section">
+      <h2>Kids Program Management</h2>
+      
+      <div class="card">
+        <h3>Select Month and Year</h3>
+        <div class="program-header">
+          <div class="date-selector">
+            <label for="programMonth">Month:</label>
+            <select id="programMonth">
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </div>
+          <div class="date-selector">
+            <label for="programYear">Year:</label>
+            <input type="number" id="programYear" value="2024" min="2020" max="2030">
+          </div>
+          <button id="loadProgramBtn" class="btn-primary">
+            <i class="fas fa-sync"></i> Load Program
+          </button>
+          <button id="newProgramBtn" class="btn-secondary">
+            <i class="fas fa-plus"></i> New Program
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Select Week to Edit</h3>
+        <div class="week-selector">
+          <button class="week-btn active" data-week="1">Week 1</button>
+          <button class="week-btn" data-week="2">Week 2</button>
+          <button class="week-btn" data-week="3">Week 3</button>
+          <button class="week-btn" data-week="4">Week 4</button>
+        </div>
+      </div>
+
+      <form id="kids-program-form">
+        <div class="card">
+          <h3>Basic Information</h3>
+          <div class="form-group">
+            <label for="week-theme">Theme:</label>
+            <input type="text" id="week-theme" name="theme" required>
+          </div>
+          <div class="form-group">
+            <label for="week-memory-verse">Memory Verse:</label>
+            <textarea id="week-memory-verse" name="memoryVerse" rows="3" required></textarea>
+          </div>
+        </div>
+
+        <!-- Mezmur Section -->
+        <div class="card">
+          <h3><i class="fas fa-music"></i> Mezmur (Hymns)</h3>
+          <div id="mezmur-container">
+            <!-- Dynamic mezmur fields will be added here -->
+          </div>
+          <button type="button" id="btn-add-mezmur" class="btn-secondary">
+            <i class="fas fa-plus"></i> Add Mezmur
+          </button>
+        </div>
+
+        <!-- Prayer Section -->
+        <div class="card">
+          <h3><i class="fas fa-pray"></i> Prayer</h3>
+          <div id="prayer-container">
+            <!-- Dynamic prayer fields will be added here -->
+          </div>
+          <button type="button" id="btn-add-prayer" class="btn-secondary">
+            <i class="fas fa-plus"></i> Add Prayer
+          </button>
+        </div>
+
+        <!-- Bible Study Section -->
+        <div class="card">
+          <h3><i class="fas fa-bible"></i> Bible Study</h3>
+          <div id="bible-study-container">
+            <!-- Dynamic bible study fields will be added here -->
+          </div>
+          <button type="button" id="btn-add-bible" class="btn-secondary">
+            <i class="fas fa-plus"></i> Add Bible Study
+          </button>
+        </div>
+
+        <!-- Divine Liturgy Section -->
+        <div class="card">
+          <h3><i class="fas fa-church"></i> Divine Liturgy Responses</h3>
+          <div id="liturgy-container">
+            <!-- Dynamic liturgy fields will be added here -->
+          </div>
+          <button type="button" id="btn-add-liturgy" class="btn-secondary">
+            <i class="fas fa-plus"></i> Add Liturgy Response
+          </button>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">
+            <i class="fas fa-save"></i> Save Changes
+          </button>
+          <button type="button" id="btn-reload-week" class="btn-secondary">
+            <i class="fas fa-sync"></i> Reload Data
+          </button>
+        </div>
+      </form>
+
+      <div id="admin-message" class="message"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Saint Michael Eritrean Orthodox Tewahdo Church WA - Admin Panel</p>
+  </footer>
+
+  <script src="admin.js"></script>
+</body>
+</html>
