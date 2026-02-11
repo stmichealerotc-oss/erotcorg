@@ -12,6 +12,7 @@ const bcrypt = require('bcryptjs');
 // Import routes
 const authRoutes = require('./routes/auth');
 const kidsProgram2Routes = require('./routes/kidsProgram');
+const contactRoutes = require('./routes/contact');
 // CMS routes
 const membersRoutes = require('./routes/members');
 const accountingRoutes = require('./routes/accounting');
@@ -299,6 +300,7 @@ next();
 // ================= PUBLIC API ROUTES =================
 app.use('/api/auth', authRoutes);
 app.use('/api/kids-program', kidsProgram2Routes);
+app.use('/api/contact', contactRoutes);
 
 // ================= PROTECTED CMS API ROUTES =================
 // All these routes require authentication (temporarily disabled auth middleware)
