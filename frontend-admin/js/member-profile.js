@@ -16,6 +16,7 @@
                 await this.loadMemberProfile();
                 this.setupEventListeners();
                 this.setupActivityFilters();
+                this.setupTabs(); // Add tab switching
             } else {
                 this.showError('No member selected. Please select a member from the Members page.');
             }
@@ -255,6 +256,267 @@
             if (paymentMethodFilter) paymentMethodFilter.addEventListener('change', () => this.applyActivityFilters());
         }
 
+        // Tab switching functionality with dropdown
+        setupTabs() {
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                const profileMenu = document.getElementById('profile-menu');
+                const avatarSection = document.querySelector('.profile-avatar-section');
+                
+                if (profileMenu && avatarSection && 
+                    !profileMenu.contains(e.target) && 
+                    !avatarSection.contains(e.target)) {
+                    profileMenu.style.display = 'none';
+                    avatarSection.classList.remove('active');
+                }
+            });
+        }
+
+        toggleProfileMenu() {
+            const menu = document.getElementById('profile-menu');
+            const avatarSection = document.querySelector('.profile-avatar-section');
+            
+            if (menu.style.display === 'none' || menu.style.display === '') {
+                menu.style.display = 'block';
+                avatarSection.classList.add('active');
+            } else {
+                menu.style.display = 'none';
+                avatarSection.classList.remove('active');
+            }
+        }
+
+        switchTab(tabName) {
+            console.log('🔄 Switching to tab:', tabName);
+            
+            // Hide dropdown menu
+            const menu = document.getElementById('profile-menu');
+            const avatarSection = document.querySelector('.profile-avatar-section');
+            if (menu) menu.style.display = 'none';
+            if (avatarSection) avatarSection.classList.remove('active');
+            
+            // Remove active class from all menu items and tab contents
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+                console.log('  Hiding tab:', content.id);
+            });
+            
+            // Add active class to selected menu item and tab content
+            const menuItem = document.querySelector(`.menu-item[data-tab="${tabName}"]`);
+            if (menuItem) {
+                menuItem.classList.add('active');
+                console.log('  ✅ Activated menu item for:', tabName);
+            } else {
+                console.warn('  ⚠️ Menu item not found for:', tabName);
+            }
+            
+            const tabContent = document.getElementById(`tab-${tabName}`);
+            if (tabContent) {
+                tabContent.classList.add('active');
+                console.log('  ✅ Showing tab:', `tab-${tabName}`);
+            } else {
+                console.warn('  ⚠️ Tab content not found:', `tab-${tabName}`);
+            }
+            
+            // Load tab-specific content
+            if (tabName === 'qrcode' && this.currentMemberId) {
+                console.log('  📱 Loading QR code...');
+                this.loadQRCode(this.currentMemberId);
+            }
+        }
+
+        // Load tithe status
+        async loadTitheStatus(memberId) {
+            try {
+                console.log('📊 Loading tithe status for member:', memberId);
+                
+                const response = await API.get(`/member-contributions/member/${memberId}/tithe-status`);
+                
+                if (response.success && response.titheStatus) {
+                    const status = response.titheStatus;
+                    
+                    // Update status badge
+                    const statusBadge = document.getElementById('tithe-status-badge');
+                    if (statusBadge) {
+                        statusBadge.className = `status-badge status-${status.status}`;
+                        statusBadge.innerHTML = this.formatTitheStatus(status.status);
+                    }
+                    
+                    // Update last payment
+                    if (status.lastPayment) {
+                        this.setTextContent('last-payment-info', 
+                            `$${status.lastPayment.amount.toFixed(2)} on ${new Date(status.lastPayment.date).toLocaleDateString()}`);
+                    } else {
+                        this.setTextContent('last-payment-info', 'No payments recorded');
+                    }
+                    
+                    // Update next due
+                    this.setTextContent('next-due-date', new Date(status.nextDue).toLocaleDateString());
+                    
+                    // Show overdue months if any
+                    const overdueSection = document.getElementById('overdue-section');
+                    if (status.overdueMonths && status.overdueMonths.length > 0) {
+                        if (overdueSection) overdueSection.style.display = 'flex';
+                        this.setTextContent('overdue-months', status.overdueMonths.join(', '));
+                    } else {
+                        if (overdueSection) overdueSection.style.display = 'none';
+                    }
+                    
+                    // Render payment history
+                    this.renderTitheHistory(status.paymentHistory);
+                    
+                    console.log('✅ Tithe status loaded successfully');
+                } else {
+                    console.warn('⚠️ No tithe status data received');
+                    this.showTitheError('No tithe data available');
+                }
+            } catch (error) {
+                console.error('❌ Error loading tithe status:', error);
+                this.showTitheError('Failed to load tithe status');
+            }
+        }
+
+        formatTitheStatus(status) {
+            const statusMap = {
+                'paid': '<i class="fas fa-check-circle"></i> Paid',
+                'overdue': '<i class="fas fa-exclamation-triangle"></i> Overdue',
+                'paid-in-advance': '<i class="fas fa-star"></i> Paid in Advance',
+                'not-paid': '<i class="fas fa-clock"></i> Not Paid'
+            };
+            return statusMap[status] || status;
+        }
+
+        renderTitheHistory(history) {
+            const tbody = document.getElementById('tithe-history-body');
+            if (!tbody) return;
+            
+            if (!history || history.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center">No payment history available</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = history.map(h => `
+                <tr class="${h.paid ? 'paid' : 'not-paid'}">
+                    <td>${h.monthLabel}</td>
+                    <td>
+                        ${h.paid ? 
+                            '<span class="badge badge-success"><i class="fas fa-check"></i> Paid</span>' : 
+                            '<span class="badge badge-danger"><i class="fas fa-times"></i> Not Paid</span>'}
+                    </td>
+                    <td>${h.paid ? `$${h.amount.toFixed(2)}` : '-'}</td>
+                    <td>${h.paid ? new Date(h.date).toLocaleDateString() : '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        showTitheError(message) {
+            const statusBadge = document.getElementById('tithe-status-badge');
+            if (statusBadge) {
+                statusBadge.className = 'status-badge';
+                statusBadge.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            }
+            
+            const tbody = document.getElementById('tithe-history-body');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-danger">${message}</td>
+                    </tr>
+                `;
+            }
+        }
+
+        recordTithePayment() {
+            if (!this.currentMemberId) {
+                alert('No member selected');
+                return;
+            }
+            
+            // Open the add contribution modal with tithe pre-selected
+            this.showAddContributionForm();
+            
+            // Pre-fill with tithe category
+            setTimeout(() => {
+                const categorySelect = document.getElementById('contribution-category');
+                if (categorySelect) {
+                    categorySelect.value = 'tithe';
+                }
+            }, 100);
+        }
+
+        async loadQRCode(memberId) {
+            const qrDisplay = document.getElementById('qr-code-display');
+            const qrActions = document.getElementById('qr-code-actions');
+            
+            if (!qrDisplay) return;
+            
+            try {
+                // Show loading
+                qrDisplay.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Generating QR Code...</div>';
+                if (qrActions) qrActions.style.display = 'none';
+                
+                // Get member data
+                const member = await API.get(`/members/${memberId}`);
+                
+                // Generate QR code data
+                const qrData = JSON.stringify({
+                    id: member._id,
+                    name: `${member.firstName} ${member.lastName}`,
+                    email: member.email,
+                    phone: member.phone,
+                    memberSince: member.memberSince
+                });
+                
+                // Use QR code API
+                qrDisplay.innerHTML = `
+                    <div style="padding: 20px;">
+                        <h4 style="margin-bottom: 15px;">${member.firstName} ${member.lastName}</h4>
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(qrData)}" 
+                             alt="Member QR Code" 
+                             style="border: 2px solid #ddd; padding: 10px; border-radius: 8px;">
+                        <p style="margin-top: 15px; color: #666; font-size: 14px;">
+                            Scan this QR code to view member information
+                        </p>
+                    </div>
+                `;
+                
+                if (qrActions) qrActions.style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error generating QR code:', error);
+                qrDisplay.innerHTML = '<div class="text-danger"><i class="fas fa-exclamation-circle"></i> Failed to generate QR code</div>';
+            }
+        }
+
+        downloadQRCode() {
+            const img = document.querySelector('#qr-code-display img');
+            if (img) {
+                const link = document.createElement('a');
+                link.download = `member-qr-${this.currentMemberId}.png`;
+                link.href = img.src;
+                link.click();
+            }
+        }
+
+        printQRCode() {
+            const qrContent = document.getElementById('qr-code-display').innerHTML;
+            const printWindow = window.open('', '', 'height=600,width=800');
+            printWindow.document.write('<html><head><title>Member QR Code</title>');
+            printWindow.document.write('<style>body{text-align:center;padding:20px;font-family:Arial,sans-serif;}</style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(qrContent);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+
         async loadMemberProfile() {
             try {
                 const memberData = await API.get(`/members/${this.currentMemberId}`);
@@ -288,20 +550,44 @@
                 this.renderContributionChart(this.allActivity, memberContributions);
                 this.renderInventorySection(inventoryItems);
                 
+                // Load tithe status
+                await this.loadTitheStatus(this.currentMemberId);
+                
             } catch (error) {
                 console.error('Error loading member profile:', error);
             }
         }
 
         renderMemberInfo(member) {
-            this.setTextContent('profile-name', `${member.firstName || 'Unknown'} ${member.lastName || ''}`.trim());
-            this.setTextContent('profile-email', member.email || 'No email provided');
-            this.setTextContent('profile-phone', member.phone || 'No phone provided');
+            const fullName = `${member.firstName || 'Unknown'} ${member.lastName || ''}`.trim();
+            const status = member.status || 'unknown';
+            
+            // Update main profile header (visible on desktop)
+            this.setTextContent('profile-name', fullName);
             
             const statusBadge = document.getElementById('profile-status-badge');
             if (statusBadge) {
-                statusBadge.textContent = member.status || 'unknown';
-                statusBadge.className = `member-status status-${member.status || 'active'}`;
+                statusBadge.textContent = status;
+                statusBadge.className = `member-status status-${status}`;
+            }
+            
+            // Update mobile dropdown header
+            this.setTextContent('mobile-profile-name', fullName);
+            const mobileStatusBadge = document.getElementById('mobile-profile-status');
+            if (mobileStatusBadge) {
+                mobileStatusBadge.textContent = status;
+                mobileStatusBadge.className = `member-status status-${status}`;
+            }
+            
+            // Update Personal Details tab with all info
+            this.setTextContent('profile-full-name', fullName);
+            this.setTextContent('profile-email', member.email || 'No email provided');
+            this.setTextContent('profile-phone', member.phone || 'No phone provided');
+            
+            const statusDisplay = document.getElementById('profile-status-display');
+            if (statusDisplay) {
+                statusDisplay.textContent = status;
+                statusDisplay.className = `member-status status-${status}`;
             }
             
             const joinDate = member.joinDate ? new Date(member.joinDate).toLocaleDateString() : 'N/A';
@@ -1378,7 +1664,7 @@
                         <div class="receipt-header-row">
                             <span><strong>Receipt Date:</strong> ${receiptDate}</span>
                             <span><strong>Transaction Date:</strong> ${transactionDate}</span>
-                            <span><strong>Receipt #:</strong> ${transaction._id.substring(18)}</span>
+                            <span><strong>Receipt #:</strong> ${transaction.transactionNumber || transaction._id.substring(18)}</span>
                         </div>
                         <div class="info-row">
                             <span><strong>Donor Name:</strong></span>

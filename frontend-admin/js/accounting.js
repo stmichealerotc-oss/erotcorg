@@ -1302,8 +1302,10 @@ showAddContributionForm() {
         form.reset();
     }
     
-    // Set default values
-    document.getElementById('contribution-date').valueAsDate = new Date();
+    // Set default values - format date as DD/MM/YYYY for mobile-date input
+    const today = new Date();
+    const formattedDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+    document.getElementById('contribution-date').value = formattedDate;
     document.getElementById('contribution-member-id').value = '';
     document.getElementById('contribution-member-search').value = '';
     document.getElementById('contribution-quantity').value = '1';
@@ -1464,11 +1466,67 @@ async addContribution() {
 
 async loadContributions() {
     try {
-        const response = await API.get('/member-contributions?limit=50');
-        this.displayContributions(response.contributions || []);
+        const response = await API.get('/member-contributions?limit=1000'); // Get more for statistics
+        const contributions = response.contributions || [];
+        
+        // Calculate tithe statistics
+        await this.calculateTitheStatistics(contributions);
+        
+        // Display contributions table
+        this.displayContributions(contributions);
     } catch (error) {
         console.error('Error loading contributions:', error);
         document.getElementById('contributions-list').innerHTML = '<tr><td colspan="8">Error loading contributions</td></tr>';
+    }
+}
+
+async calculateTitheStatistics(contributions) {
+    try {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        
+        // Filter contributions for current month
+        const monthContributions = contributions.filter(c => {
+            const date = new Date(c.date);
+            return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+        });
+        
+        // Filter tithes for current month
+        const monthTithes = monthContributions.filter(c => c.category === 'tithe');
+        const monthTithesTotal = monthTithes.reduce((sum, c) => sum + c.value, 0);
+        
+        // Year total
+        const yearContributions = contributions.filter(c => {
+            const date = new Date(c.date);
+            return date.getFullYear() === currentYear;
+        });
+        const yearTotal = yearContributions.reduce((sum, c) => sum + c.value, 0);
+        
+        // Get active members count
+        const membersResponse = await API.get('/members');
+        const totalActiveMembers = (membersResponse.list || []).filter(m => m.status === 'active').length;
+        
+        // Members who paid tithes this month (unique member IDs)
+        const membersPaidThisMonth = new Set(monthTithes.map(c => c.memberId?._id || c.memberId)).size;
+        
+        // Average tithe
+        const avgTithe = membersPaidThisMonth > 0 ? monthTithesTotal / membersPaidThisMonth : 0;
+        
+        // Update UI
+        document.getElementById('month-tithes-total').textContent = `$${monthTithesTotal.toFixed(2)}`;
+        document.getElementById('month-tithes-count').textContent = `${monthTithes.length} contributions`;
+        
+        document.getElementById('year-contributions-total').textContent = `$${yearTotal.toFixed(2)}`;
+        document.getElementById('year-contributions-count').textContent = `${yearContributions.length} contributions`;
+        
+        document.getElementById('members-paid-count').textContent = membersPaidThisMonth;
+        document.getElementById('members-total-count').textContent = `of ${totalActiveMembers} active members`;
+        
+        document.getElementById('avg-tithe-amount').textContent = `$${avgTithe.toFixed(2)}`;
+        
+    } catch (error) {
+        console.error('Error calculating tithe statistics:', error);
     }
 }
 
@@ -2157,7 +2215,7 @@ closeModal() {
 
 // Post-Transaction Actions Dialog
 showPostTransactionActions(transaction) {
-    const receiptNumber = transaction._id.substring(18);
+    const receiptNumber = transaction.transactionNumber || transaction._id.substring(18);
     const payeeName = transaction.payee?.name || 'Unknown';
     const amount = transaction.amount.toFixed(2);
     
@@ -3052,7 +3110,11 @@ updatePromiseStats() {
 // Promise Modal Methods
 showAddPromiseForm() {
     document.getElementById('promise-form').reset();
-    document.getElementById('promise-due-date').valueAsDate = new Date();
+    // Set default due date - format as DD/MM/YYYY for mobile-date input
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1); // Default to tomorrow
+    const formattedDate = `${tomorrow.getDate().toString().padStart(2, '0')}/${(tomorrow.getMonth() + 1).toString().padStart(2, '0')}/${tomorrow.getFullYear()}`;
+    document.getElementById('promise-due-date').value = formattedDate;
     document.getElementById('promise-modal').style.display = 'block';
     this.setFormToAddMode();
 }
@@ -3241,7 +3303,10 @@ showFulfillPromiseModal(promiseId) {
 
     document.getElementById('fulfill-promise-id').value = promiseId;
     document.getElementById('fulfill-amount').value = promise.amount;
-    document.getElementById('fulfill-date').valueAsDate = new Date();
+    // Set default payment date - format as DD/MM/YYYY for mobile-date input
+    const today = new Date();
+    const formattedDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+    document.getElementById('fulfill-date').value = formattedDate;
     
     // Show promise details
     document.getElementById('fulfill-promise-details').innerHTML = `
@@ -3708,7 +3773,7 @@ async createReceiptHTML(transaction) {
                 <div class="receipt-header-row">
                     <span><strong>Receipt Date:</strong> ${receiptDate}</span>
                     <span><strong>Transaction Date:</strong> ${transactionDate}</span>
-                    <span><strong>Receipt #:</strong> ${transaction._id.substring(18)}</span>
+                    <span><strong>Receipt #:</strong> ${transaction.transactionNumber || transaction._id.substring(18)}</span>
                 </div>
                 <div class="info-row">
                     <span><strong>Donor Name:</strong></span>

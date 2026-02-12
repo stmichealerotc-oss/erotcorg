@@ -94,7 +94,7 @@ isValidPage(page) {
         'memberProfile': 'member-profile',
         'accounting': 'accounting',
         'inventory': 'inventory', 
-        'reports': 'generatereport',  // Use the restored generatereport files
+        'reports': 'generatereport',
         'taskmanagement': 'taskmanagement',
         'userManagement': 'user-management',
         'financailreo2018-2025' : 'financailreo2018-2025'

@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
+const Counter = require('./Counter');
 
 const inventoryItemSchema = new mongoose.Schema({
+  // Inventory Number (sequential: INV0001, INV0002, etc.)
+  inventoryNumber: { type: String, unique: true, sparse: true },
+  
   name: { type: String, required: true },
   category: String,
   quantity: { type: Number, default: 0 },
@@ -74,10 +78,25 @@ inventoryItemSchema.methods.calculateCurrentValue = function() {
 };
 
 // Update totals when donations or consumption changes
-inventoryItemSchema.pre('save', function() {
+inventoryItemSchema.pre('save', async function(next) {
+  // Calculate totals
   this.totalDonatedValue = this.donations.reduce((sum, donation) => sum + donation.estimatedValue, 0);
   this.totalConsumedValue = this.consumption.reduce((sum, consumption) => sum + consumption.value, 0);
   this.calculateCurrentValue();
+  
+  // Generate inventory number for new items
+  if (this.isNew && !this.inventoryNumber) {
+    try {
+      const seq = await Counter.getNextSequence('inventoryNumber');
+      this.inventoryNumber = `INV${seq.toString().padStart(4, '0')}`;
+      console.log(`✅ Generated inventory number: ${this.inventoryNumber}`);
+    } catch (error) {
+      console.error('❌ Error generating inventory number:', error);
+      return next(error);
+    }
+  }
+  
+  next();
 });
 
 module.exports = mongoose.model('InventoryItem', inventoryItemSchema);

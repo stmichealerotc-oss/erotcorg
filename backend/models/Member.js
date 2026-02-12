@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Counter = require('./Counter');
 
 const memberSchema = new mongoose.Schema({
   // Personal Information
@@ -17,6 +18,9 @@ const memberSchema = new mongoose.Schema({
   
   // Additional Information
   notes: String,
+  
+  // Member Number (sequential format: M0001, M0002, etc.)
+  memberNumber: { type: String, unique: true, sparse: true },
   
   // Verification and Approval Process
   verificationStatus: { 
@@ -46,6 +50,24 @@ const memberSchema = new mongoose.Schema({
 memberSchema.index({ firstName: 1, lastName: 1 });
 memberSchema.index({ email: 1 });
 memberSchema.index({ phone: 1 });
+memberSchema.index({ memberNumber: 1 });
+
+// Pre-save hook to generate sequential member number
+memberSchema.pre('save', async function(next) {
+  // Only generate memberNumber if it doesn't exist (for new members)
+  if (this.isNew && !this.memberNumber) {
+    try {
+      const seq = await Counter.getNextSequence('memberNumber');
+      // Format: M0001, M0002, etc. (4 digits with leading zeros)
+      this.memberNumber = `M${seq.toString().padStart(4, '0')}`;
+      console.log(`✅ Generated member number: ${this.memberNumber}`);
+    } catch (error) {
+      console.error('❌ Error generating member number:', error);
+      return next(error);
+    }
+  }
+  next();
+});
 
 // Virtual for full name
 memberSchema.virtual('fullName').get(function() {
@@ -59,20 +81,24 @@ memberSchema.virtual('displayId').get(function() {
   return `M${this._id.toString().slice(-6).toUpperCase()}`;
 });
 
-// Virtual for member number (based on creation order)
-memberSchema.virtual('memberNumber').get(function() {
-  // Extract timestamp from MongoDB _id (first 4 bytes represent timestamp)
-  const timestamp = this._id.getTimestamp();
-  // Create a simple number based on creation time
-  return Math.floor(timestamp.getTime() / 1000) % 100000; // Last 5 digits of timestamp
-});
-
 // Static method to find member by any ID format
 memberSchema.statics.findByAnyId = async function(id) {
   try {
     // If it's a valid MongoDB ObjectId, search by _id
     if (mongoose.Types.ObjectId.isValid(id)) {
       const member = await this.findById(id);
+      if (member) return member;
+    }
+    
+    // If it looks like a sequential member number (M0001, M0002, etc.)
+    if (typeof id === 'string' && id.match(/^M\d{4,}$/i)) {
+      const member = await this.findOne({ memberNumber: id.toUpperCase() });
+      if (member) return member;
+    }
+    
+    // If it looks like old format member number (M + 7 chars), search by memberNumber field
+    if (typeof id === 'string' && id.match(/^M[A-F0-9]{7}$/i)) {
+      const member = await this.findOne({ memberNumber: id.toUpperCase() });
       if (member) return member;
     }
     
@@ -110,19 +136,20 @@ memberSchema.statics.searchMembers = async function(query) {
     
     const searchTerm = query.trim();
     
-    // Try to find by display ID first
+    // Try to find by member number or display ID first
     const memberById = await this.findByAnyId(searchTerm);
     if (memberById) {
       return [memberById];
     }
     
-    // Search by name, email, or phone
+    // Search by name, email, phone, or memberNumber
     const searchCriteria = {
       $or: [
         { firstName: { $regex: searchTerm, $options: 'i' } },
         { lastName: { $regex: searchTerm, $options: 'i' } },
         { email: { $regex: searchTerm, $options: 'i' } },
-        { phone: { $regex: searchTerm.replace(/\D/g, ''), $options: 'i' } } // Remove non-digits for phone search
+        { phone: { $regex: searchTerm.replace(/\D/g, ''), $options: 'i' } }, // Remove non-digits for phone search
+        { memberNumber: { $regex: searchTerm, $options: 'i' } } // Search by member number
       ]
     };
     

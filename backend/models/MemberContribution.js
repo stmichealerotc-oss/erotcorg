@@ -1,7 +1,11 @@
 // backend/models/MemberContribution.js
 const mongoose = require('mongoose');
+const Counter = require('./Counter');
 
 const memberContributionSchema = new mongoose.Schema({
+  // Contribution Number (sequential: C0001, C0002, etc.)
+  contributionNumber: { type: String, unique: true, sparse: true },
+  
   memberId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Member',
@@ -127,6 +131,24 @@ memberContributionSchema.index({ memberId: 1, date: -1 });
 memberContributionSchema.index({ category: 1, date: -1 });
 memberContributionSchema.index({ type: 1, date: -1 });
 memberContributionSchema.index({ receiptNumber: 1 }, { sparse: true });
+memberContributionSchema.index({ contributionNumber: 1 });
+
+// Pre-save hook to generate sequential contribution number
+memberContributionSchema.pre('save', async function(next) {
+  // Only generate contributionNumber if it doesn't exist (for new contributions)
+  if (this.isNew && !this.contributionNumber) {
+    try {
+      const seq = await Counter.getNextSequence('contributionNumber');
+      // Format: C0001, C0002, etc. (4 digits with leading zeros)
+      this.contributionNumber = `C${seq.toString().padStart(4, '0')}`;
+      console.log(`✅ Generated contribution number: ${this.contributionNumber}`);
+    } catch (error) {
+      console.error('❌ Error generating contribution number:', error);
+      return next(error);
+    }
+  }
+  next();
+});
 
 // Virtual for member details
 memberContributionSchema.virtual('member', {

@@ -131,7 +131,8 @@ nav {
   background: white;
   box-shadow: var(--shadow-lg);
   border-radius: 0 0 var(--border-radius) var(--border-radius);
-  overflow: hidden;
+  overflow-y: auto;
+  max-height: calc(100vh - 80px);
 }
 
 .nav-links.active {

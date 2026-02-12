@@ -172,6 +172,65 @@ router.post('/', async (req, res) => {
 
     await contribution.save();
 
+    // Automatically create income + expense transactions for "In-Kind" type
+    if (type === 'in-kind') {
+      try {
+        console.log('🎁 Creating in-kind income/expense transactions...');
+        console.log('Member:', member.firstName, member.lastName, 'ID:', memberId);
+        console.log('Description:', description, 'Value:', value);
+        
+        // Create income transaction (donation received)
+        const incomeTransaction = new Transaction({
+          type: 'income',
+          description: `In-Kind Donation: ${description} - ${member.firstName} ${member.lastName}`,
+          category: 'donation',
+          amount: value,
+          paymentMethod: 'in-kind', // Mark as in-kind to exclude from cash reports
+          payee: {
+            type: 'member',
+            memberId: memberId,
+            name: `${member.firstName} ${member.lastName}`,
+            email: member.email,
+            phone: member.phone
+          },
+          date: contribution.date,
+          notes: `In-kind contribution - ${notes || 'Donated and consumed'}`
+        });
+        
+        await incomeTransaction.save();
+        console.log(`✅ Created in-kind income transaction ${incomeTransaction._id}`);
+        
+        // Create expense transaction (consumed immediately)
+        const expenseTransaction = new Transaction({
+          type: 'expense',
+          description: `In-Kind Expense: ${description} (Consumed)`,
+          category: 'supplies', // or appropriate expense category
+          amount: value,
+          paymentMethod: 'in-kind', // Mark as in-kind to exclude from cash reports
+          payee: {
+            type: 'external',
+            name: 'In-Kind Consumption'
+          },
+          date: contribution.date,
+          notes: `In-kind contribution consumed - ${notes || 'Used at church'}`
+        });
+        
+        await expenseTransaction.save();
+        console.log(`✅ Created in-kind expense transaction ${expenseTransaction._id}`);
+        
+        // Link the income transaction to the contribution
+        contribution.transactionId = incomeTransaction._id;
+        await contribution.save();
+        
+        console.log(`✅ Auto-created in-kind transactions for contribution ${contribution._id}`);
+      } catch (inKindError) {
+        console.error('❌ Error creating in-kind transactions:', inKindError);
+        console.error('Error details:', inKindError.message);
+        console.error('Stack:', inKindError.stack);
+        // Don't fail the whole request if transaction creation fails
+      }
+    }
+
     // Automatically create inventory item for "Physical Item" type
     if (type === 'item') {
       try {
@@ -388,6 +447,108 @@ router.get('/member/:memberId', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch member contributions',
+      details: error.message
+    });
+  }
+});
+
+// GET /api/member-contributions/member/:memberId/tithe-status - Get tithe payment status
+router.get('/member/:memberId/tithe-status', async (req, res) => {
+  try {
+    const memberId = req.params.memberId;
+    
+    // Get all tithe contributions for this member
+    const titheContributions = await MemberContribution.find({
+      memberId: memberId,
+      category: 'tithe'
+    }).sort({ _id: -1 }).limit(12); // Last 12 months
+    
+    // Calculate payment status
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    // Build payment history for last 6 months
+    const paymentHistory = [];
+    for (let i = 0; i < 6; i++) {
+      const monthDate = new Date(currentYear, currentMonth - i, 1);
+      const month = monthDate.getMonth();
+      const year = monthDate.getFullYear();
+      
+      // Find payments for this month
+      const monthPayments = titheContributions.filter(c => {
+        const paymentDate = new Date(c.date);
+        return paymentDate.getMonth() === month && paymentDate.getFullYear() === year;
+      });
+      
+      const totalPaid = monthPayments.reduce((sum, c) => sum + c.value, 0);
+      const paid = monthPayments.length > 0;
+      
+      paymentHistory.push({
+        month: `${year}-${String(month + 1).padStart(2, '0')}`,
+        monthLabel: monthDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        paid: paid,
+        amount: totalPaid,
+        date: paid ? monthPayments[0].date : null,
+        count: monthPayments.length
+      });
+    }
+    
+    // Determine current status
+    const currentMonthPayment = paymentHistory[0];
+    let status = 'not-paid';
+    let overdueMonths = [];
+    let nextDue = new Date(currentYear, currentMonth + 1, 1);
+    
+    if (currentMonthPayment.paid) {
+      // Check if paid in advance (multiple months covered)
+      const futurePayments = titheContributions.filter(c => {
+        const paymentDate = new Date(c.date);
+        return paymentDate > now;
+      });
+      
+      if (futurePayments.length > 0) {
+        status = 'paid-in-advance';
+        // Calculate next due date based on advance payments
+        const monthsAdvance = futurePayments.length;
+        nextDue = new Date(currentYear, currentMonth + monthsAdvance + 1, 1);
+      } else {
+        status = 'paid';
+      }
+    } else {
+      // Check for overdue months
+      overdueMonths = paymentHistory
+        .filter(h => !h.paid && new Date(h.month + '-01') < now)
+        .map(h => h.monthLabel);
+      
+      if (overdueMonths.length > 0) {
+        status = 'overdue';
+        nextDue = new Date(); // Immediately due
+      }
+    }
+    
+    // Get last payment info
+    const lastPayment = titheContributions.length > 0 ? {
+      date: titheContributions[0].date,
+      amount: titheContributions[0].value
+    } : null;
+    
+    res.json({
+      success: true,
+      titheStatus: {
+        status: status,
+        lastPayment: lastPayment,
+        nextDue: nextDue,
+        overdueMonths: overdueMonths,
+        paymentHistory: paymentHistory
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching tithe status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch tithe status',
       details: error.message
     });
   }

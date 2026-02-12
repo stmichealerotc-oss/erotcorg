@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
+const Counter = require('./Counter');
 
 const promiseSchema = new mongoose.Schema({
+  // Promise Number (sequential: P0001, P0002, etc.)
+  promiseNumber: { type: String, unique: true, sparse: true },
+  
   memberId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Member',
@@ -65,6 +69,24 @@ const promiseSchema = new mongoose.Schema({
 promiseSchema.index({ memberId: 1, status: 1 });
 promiseSchema.index({ dueDate: 1 });
 promiseSchema.index({ status: 1 });
+promiseSchema.index({ promiseNumber: 1 });
+
+// Pre-save hook to generate sequential promise number
+promiseSchema.pre('save', async function(next) {
+  // Only generate promiseNumber if it doesn't exist (for new promises)
+  if (this.isNew && !this.promiseNumber) {
+    try {
+      const seq = await Counter.getNextSequence('promiseNumber');
+      // Format: P0001, P0002, etc. (4 digits with leading zeros)
+      this.promiseNumber = `P${seq.toString().padStart(4, '0')}`;
+      console.log(`✅ Generated promise number: ${this.promiseNumber}`);
+    } catch (error) {
+      console.error('❌ Error generating promise number:', error);
+      return next(error);
+    }
+  }
+  next();
+});
 
 // Virtual for overdue status
 promiseSchema.virtual('isOverdue').get(function() {

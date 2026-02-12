@@ -343,21 +343,20 @@ class MembersPage {
     if (!tbody) return;
 
     tbody.innerHTML = members.map(member => {
-        // Use the display ID (user-friendly version of MongoDB _id)
-        const displayId = member.displayId || 
-                         (member._id ? `M${member._id.toString().slice(-6).toUpperCase()}` : 'N/A');
+        // Use the memberNumber field from database (sequential format: M0001, M0002, etc.)
+        const memberNumber = member.memberNumber || 'Pending';
         
         const totalContributions = member.totalContributions || 0;
         const joinDate = member.joinDate ? new Date(member.joinDate).toLocaleDateString() : 'N/A';
 
         return `
             <tr>
-                <td class="mobile-hide"><strong>${displayId}</strong></td>
+                <td class="mobile-hide"><strong>${memberNumber}</strong></td>
                 <td>
                     <div class="member-name">
                         <strong>${member.firstName} ${member.lastName}</strong>
                         <div class="member-details mobile-only">
-                            <small class="member-id">ID: ${displayId}</small>
+                            <small class="member-id">ID: ${memberNumber}</small>
                         </div>
                     </div>
                 </td>
@@ -379,7 +378,7 @@ class MembersPage {
                                 <i class="fas fa-info-circle"></i>
                                 <div class="member-info">
                                     <strong>Member Info</strong>
-                                    <div>ID: ${displayId}</div>
+                                    <div>ID: ${memberNumber}</div>
                                     <div>Contributions: $${totalContributions.toFixed(2)}</div>
                                     <div>Joined: ${joinDate}</div>
                                 </div>
@@ -397,7 +396,7 @@ class MembersPage {
                                 <i class="fas fa-link"></i>
                                 <span>Generate Update Link</span>
                             </div>
-                            <div class="action-item" onclick="membersPage.quickLookup('${displayId}')">
+                            <div class="action-item" onclick="membersPage.quickLookup('${memberNumber}')">
                                 <i class="fas fa-search"></i>
                                 <span>Quick Lookup</span>
                             </div>

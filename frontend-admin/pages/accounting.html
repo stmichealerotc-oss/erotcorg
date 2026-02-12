@@ -132,6 +132,91 @@
             font-size: 16px;
         }
 
+        /* Mobile Responsive Tabs */
+        @media (max-width: 768px) {
+            .tab-navigation {
+                position: relative;
+                display: block;
+                margin-bottom: 20px;
+            }
+
+            /* Hide all tabs except active on mobile */
+            .tab-button {
+                display: none;
+                width: 100%;
+                justify-content: center;
+                padding: 15px;
+                font-size: 16px;
+            }
+
+            /* Show only active tab */
+            .tab-button.active {
+                display: flex;
+                background: #4a6fa5;
+                color: white;
+                border-radius: 8px;
+                position: relative;
+            }
+
+            /* Add dropdown indicator */
+            .tab-button.active::after {
+                content: '\f078';
+                font-family: 'Font Awesome 5 Free';
+                font-weight: 900;
+                margin-left: auto;
+                font-size: 14px;
+            }
+
+            /* Show all tabs when navigation is open */
+            .tab-navigation.open .tab-button {
+                display: flex;
+            }
+
+            .tab-navigation.open .tab-button.active::after {
+                content: '\f077';
+            }
+
+            /* Non-active tabs in dropdown */
+            .tab-navigation.open .tab-button:not(.active) {
+                background: white;
+                border: 1px solid #e0e0e0;
+                border-top: none;
+                border-radius: 0;
+            }
+
+            .tab-navigation.open .tab-button:not(.active):last-child {
+                border-radius: 0 0 8px 8px;
+            }
+        }
+
+        /* Text truncation for long descriptions */
+        .truncate-text {
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 1200px) {
+            .truncate-text {
+                max-width: 150px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .truncate-text {
+                max-width: 120px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .truncate-text {
+                max-width: 80px;
+            }
+        }
+
         /* Bank Statement Styles */
         .debit-amount {
             color: #dc3545;
@@ -319,6 +404,32 @@
 
         <!-- TAB: CONTRIBUTIONS -->
         <div id="tab-contributions" class="tab-content">
+
+        <!-- Tithe & Contribution Statistics -->
+        <div class="content-section" style="margin-bottom: 20px;">
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                <div class="stat-card">
+                    <h3>This Month's Tithes</h3>
+                    <div class="value income" id="month-tithes-total">$0.00</div>
+                    <small id="month-tithes-count">0 contributions</small>
+                </div>
+                <div class="stat-card">
+                    <h3>Total This Year</h3>
+                    <div class="value income" id="year-contributions-total">$0.00</div>
+                    <small id="year-contributions-count">0 contributions</small>
+                </div>
+                <div class="stat-card">
+                    <h3>Members Paid (This Month)</h3>
+                    <div class="value" id="members-paid-count">0</div>
+                    <small id="members-total-count">of 0 active members</small>
+                </div>
+                <div class="stat-card">
+                    <h3>Average Tithe</h3>
+                    <div class="value" id="avg-tithe-amount">$0.00</div>
+                    <small>per member this month</small>
+                </div>
+            </div>
+        </div>
 
         <!-- Member Contributions Section -->
         <div class="content-section">
@@ -1051,5 +1162,154 @@
     <script src="js/mobile-date-input.js?v=1"></script>
     <script src="js/stats-utils.js"></script>
     <script src="js/accounting.js"></script>
+    <script>
+        // Mobile tab dropdown functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabNav = document.querySelector('.tab-navigation');
+            if (!tabNav) return;
+
+            // Make the entire active tab clickable on mobile
+            function setupMobileDropdown() {
+                if (window.innerWidth <= 768) {
+                    const activeTab = tabNav.querySelector('.tab-button.active');
+                    if (activeTab) {
+                        activeTab.style.cursor = 'pointer';
+                    }
+                }
+            }
+
+            // Toggle dropdown on mobile when clicking active tab
+            tabNav.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768) {
+                    const clickedButton = e.target.closest('.tab-button');
+                    const activeTab = tabNav.querySelector('.tab-button.active');
+                    
+                    // If clicking the active tab, toggle dropdown and prevent tab switch
+                    if (clickedButton === activeTab) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        tabNav.classList.toggle('open');
+                        return false;
+                    } 
+                    // If clicking another tab, close dropdown and let the tab switch happen
+                    else if (clickedButton) {
+                        tabNav.classList.remove('open');
+                    }
+                }
+            }, true); // Use capture phase to intercept before onclick handlers
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768 && !tabNav.contains(e.target)) {
+                    tabNav.classList.remove('open');
+                }
+            });
+
+            // Close dropdown and reset on window resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 768) {
+                    tabNav.classList.remove('open');
+                }
+                setupMobileDropdown();
+            });
+
+            setupMobileDropdown();
+        });
+
+        // Override the switchAccountingTab function to handle stats visibility
+        const originalSwitchTab = window.switchAccountingTab;
+        window.switchAccountingTab = function(tabName) {
+            // Call original function if it exists
+            if (originalSwitchTab) {
+                originalSwitchTab(tabName);
+            }
+
+            // Hide/show stats section based on active tab
+            const statsSection = document.querySelector('.stats-section');
+            const accountingStatsContent = document.getElementById('accounting-stats-content');
+            
+            if (statsSection) {
+                // Only show stats on transactions tab
+                if (tabName === 'transactions') {
+                    statsSection.style.display = 'block';
+                } else {
+                    statsSection.style.display = 'none';
+                    // Also collapse it when hiding
+                    if (accountingStatsContent) {
+                        accountingStatsContent.style.display = 'none';
+                    }
+                    const toggle = document.getElementById('accounting-stats-toggle');
+                    if (toggle) {
+                        toggle.className = 'fas fa-chevron-right';
+                    }
+                }
+            }
+
+            // Close mobile dropdown after switching
+            const tabNav = document.querySelector('.tab-navigation');
+            if (tabNav && window.innerWidth <= 768) {
+                tabNav.classList.remove('open');
+            }
+
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.display = 'none';
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            const selectedTab = document.getElementById(`tab-${tabName}`);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+                selectedTab.style.display = 'block';
+            }
+            
+            // Activate button
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => {
+                const btnText = btn.textContent.toLowerCase();
+                if (btnText.includes(tabName) || 
+                    (tabName === 'statement' && btnText.includes('bank'))) {
+                    btn.classList.add('active');
+                }
+            });
+        };
+
+        // Text truncation helper
+        function truncateText(text, maxLength = 30) {
+            if (!text) return '';
+            if (text.length <= maxLength) return text;
+            return text.substring(0, maxLength) + '...';
+        }
+
+        // Add truncation to existing text elements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-truncate long text in tables
+            const tables = document.querySelectorAll('table');
+            tables.forEach(table => {
+                const cells = table.querySelectorAll('td');
+                cells.forEach(cell => {
+                    const text = cell.textContent.trim();
+                    if (text.length > 50 && !cell.querySelector('a') && !cell.querySelector('button')) {
+                        cell.innerHTML = `<span class="truncate-text" title="${text}">${text}</span>`;
+                    }
+                });
+            });
+
+            // Initially hide stats section if not on transactions tab
+            const activeTab = document.querySelector('.tab-button.active');
+            if (activeTab && !activeTab.textContent.toLowerCase().includes('transaction')) {
+                const statsSection = document.querySelector('.stats-section');
+                if (statsSection) {
+                    statsSection.style.display = 'none';
+                }
+            }
+        });
+    </script>
 </body>
 </html>

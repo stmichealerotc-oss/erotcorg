@@ -1,5 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
+const emailService = require('../utils/emailService');
 const router = express.Router();
 
 // Contact form validation rules
@@ -80,26 +81,43 @@ router.post('/', contactValidation, async (req, res) => {
       createdAt: new Date()
     };
 
-    // Log the submission (in production, you would save to database and send emails)
+    // Log the submission
+    const submissionId = generateSubmissionId();
     console.log('✅ Contact submission processed:', {
-      submissionId: generateSubmissionId(),
+      submissionId,
       name: contactSubmission.name,
       email: contactSubmission.email,
       subject: contactSubmission.subject
     });
 
-    // TODO: In production, implement:
+    // Send email notification to church admin
+    try {
+      await emailService.sendContactFormNotification(contactSubmission, submissionId);
+      console.log('✅ Contact form notification email sent to admin');
+    } catch (emailError) {
+      console.error('❌ Failed to send notification email:', emailError.message);
+      // Don't fail the request if email fails - submission is still logged
+    }
+
+    // Send auto-reply to user
+    try {
+      await emailService.sendContactFormAutoReply(contactSubmission);
+      console.log('✅ Auto-reply email sent to user');
+    } catch (emailError) {
+      console.error('❌ Failed to send auto-reply email:', emailError.message);
+      // Don't fail the request if email fails
+    }
+
+    // TODO: In production, also implement:
     // 1. Save to database (ContactSubmission model)
-    // 2. Send email notification to church admin
-    // 3. Send auto-reply to user
-    // 4. Add to newsletter list if requested
+    // 2. Add to newsletter list if requested
 
     // Send success response
     res.status(200).json({
       status: 'success',
       message: 'Thank you for your message! We will get back to you within 24 hours.',
       data: {
-        submissionId: generateSubmissionId(),
+        submissionId,
         timestamp: contactSubmission.timestamp
       }
     });
