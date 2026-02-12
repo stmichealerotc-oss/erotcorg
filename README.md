@@ -1,118 +1,123 @@
-# St. Michael Church Management System
+# St. Michael EROTC Church Management System
 
-A comprehensive church management system built with Node.js, Express, and Azure Cosmos DB.
+A comprehensive church management system for St. Michael Eritrean Orthodox Tewahedo Church, built with Node.js, Express, and Azure Cosmos DB.
+
+## 🌐 Live URLs
+
+- **Public Website**: https://erotc.org
+- **Admin Panel**: https://agreeable-plant-06f731700.2.azurestaticapps.net/admin
+- **Backend API**: https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net/api
 
 ## 🏗️ Architecture
 
-- **Frontend Admin**: Church management admin panel (`/admin`)
-- **Frontend Website**: Public church website (`/`)
-- **Backend API**: Node.js/Express server (deployed separately)
-- **Database**: Azure Cosmos DB (MongoDB API)
+### Frontend
+- **Public Website** (`frontend-website/`) - Church information, kids program, member registration
+- **Admin Panel** (`frontend-admin/`) - Church management system with authentication
 
-## 🚀 Deployment
+### Backend
+- **API Server** (`backend/`) - Node.js/Express REST API
+- **Database** - Azure Cosmos DB (MongoDB API)
 
-### Azure Static Web Apps (Frontend)
-- **Admin Panel**: Deployed to `/admin` route
-- **Public Website**: Deployed to `/` route
-- **Configuration**: `staticwebapp.config.json`
-
-### Azure App Service (Backend)
-- **API Server**: Node.js/Express on port 3001
-- **Database**: Connected to Azure Cosmos DB
-- **Environment**: Production-ready with JWT authentication
-
-## 🔧 Local Development
-
-```bash
-# Install dependencies
-npm run install-all
-
-# Start backend server
-cd backend
-npm start
-
-# Access admin panel
-http://localhost:3001/admin
-
-# Access public website
-http://localhost:3001/
-```
+### Deployment
+- **Frontend**: Azure Static Web Apps (ashy-cliff-058ad9c00 for public, agreeable-plant-06f731700 for admin)
+- **Backend**: Azure App Service (cms-system)
+- **CI/CD**: GitHub Actions
 
 ## 📋 Features
 
-- ✅ **Authentication**: JWT-based with real user management
-- ✅ **Members Management**: Complete member lifecycle
-- ✅ **Financial Tracking**: Accounting and contributions
-- ✅ **Inventory Management**: Church assets tracking
-- ✅ **Reports**: Financial and operational reports
-- ✅ **Task Management**: Church operations planning
-- ✅ **Mobile Responsive**: Works on all devices
+- Member management and registration
+- Financial tracking and accounting
+- Inventory management
+- Kids program with weekly lessons
+- Task and promise tracking
+- Reports and analytics
+- Email notifications
+- Multi-language support (English, Tigrinya)
 
-## 🔐 Authentication
+## 🚀 Quick Start
 
-- **Admin Credentials**: `admin / admin123`
-- **Database**: Azure Cosmos DB `church_db`
-- **Security**: JWT tokens with role-based access
+### Local Development
 
-## 🛠️ Technical Stack
+```bash
+# Install dependencies
+npm install
+cd backend && npm install
+cd ../frontend-admin && npm install
 
-- **Backend**: Node.js, Express.js, Mongoose
-- **Frontend**: Vanilla JavaScript, HTML5, CSS3
-- **Database**: Azure Cosmos DB (MongoDB API)
-- **Deployment**: Azure Static Web Apps + App Service
-- **Authentication**: JWT with bcrypt password hashing
+# Start backend
+cd backend
+npm start
+
+# Access locally
+# Public website: http://localhost:3001/
+# Admin panel: http://localhost:3001/admin
+```
+
+### Environment Variables
+
+Create `backend/.env`:
+```
+MONGODB_URI=your_cosmos_db_connection_string
+JWT_SECRET=your_jwt_secret
+NODE_ENV=development
+PORT=3001
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email
+SMTP_PASS=your_app_password
+```
+
+## 🔐 Admin Access
+
+- Username: `admin`
+- Password: `admin123`
+- Change these credentials after first login!
 
 ## 📁 Project Structure
 
 ```
-st-michael-church/
 ├── backend/                 # API server
 │   ├── routes/             # API endpoints
 │   ├── models/             # Database models
-│   ├── middleware/         # Authentication & validation
-│   ├── config/             # Database configuration
-│   ├── server.js           # Main server file
-│   ├── export-local-data.js # Data migration tool
-│   └── import-to-azure.js  # Azure import tool
-├── frontend-admin/         # Admin panel (CMS)
-│   ├── css/               # Stylesheets
+│   ├── middleware/         # Auth & validation
+│   └── server.js           # Main server
+├── frontend-admin/         # Admin CMS
+│   ├── pages/             # Admin pages
 │   ├── js/                # JavaScript modules
-│   ├── pages/             # HTML pages
-│   ├── images/            # Images and assets
-│   ├── index.html         # Main admin dashboard
-│   └── login.html         # Admin login page
-├── frontend-website/       # Public church website
-│   ├── css/               # Website styles
-│   └── index.html         # Public homepage
-├── .github/workflows/      # GitHub Actions
-│   ├── main_cms_system.yml              # Backend deployment
-│   └── azure-static-web-apps-front-admin.yml  # Frontend deployment
-├── staticwebapp.config.json # Azure Static Web Apps config
-├── AZURE_SETUP_CHECKLIST.md # Deployment guide
-├── DATA_MIGRATION_GUIDE.md  # Database migration guide
-└── README.md               # This file
+│   └── index.html         # Dashboard
+├── frontend-website/       # Public website
+│   ├── pages/             # Public pages
+│   ├── js/                # JavaScript modules
+│   └── index.html         # Homepage
+└── .github/workflows/      # CI/CD pipelines
 ```
 
-## 🌐 URLs
+## 🔧 Azure Resources
 
-- **Public Website**: https://agreeable-plant-06f731700.2.azurestaticapps.net/
-- **Admin Panel**: https://agreeable-plant-06f731700.2.azurestaticapps.net/admin
-- **Backend API**: https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net/api
-- **Custom Domain**: https://cms.erotc.org (if configured)
+- **cms-system** - Backend App Service
+- **ashy-cliff-058ad9c00** - Public website Static Web App
+- **agreeable-plant-06f731700** - Admin panel Static Web App
+- **stmichael-db** - Cosmos DB for MongoDB (RU)
 
-## 🎯 Recent Updates
+## 📖 Documentation
 
-- ✅ Public website created and deployed
-- ✅ Data migration tools for MongoDB → Azure Cosmos DB
-- ✅ Fixed backend deployment with npm install
-- ✅ CORS configuration for Azure Static Web Apps
-- ✅ GitHub Actions workflows for automated deployment
-- ✅ Fixed logout functionality (real auth vs dev bypass)
-- ✅ Resolved Azure Cosmos DB sorting issues
-- ✅ Production-ready authentication system
+- `SECURITY.md` - Security guidelines
+- `backend/DATA_MIGRATION_GUIDE.md` - Database migration instructions
+- `backend/ADMIN_SETUP.md` - Admin user setup
 
-## 🔗 Links
+## 🛠️ Tech Stack
 
-- **GitHub**: https://github.com/stmichealerotc-oss/erotcorg
-- **Admin Panel**: `/admin`
-- **Public Website**: `/`
+- **Backend**: Node.js, Express.js, Mongoose
+- **Frontend**: Vanilla JavaScript, HTML5, CSS3
+- **Database**: Azure Cosmos DB (MongoDB API)
+- **Authentication**: JWT with bcrypt
+- **Deployment**: Azure Static Web Apps + App Service
+- **CI/CD**: GitHub Actions
+
+## 📞 Support
+
+For issues or questions, contact: stmichealerotc@gmail.com
+
+## 📄 License
+
+Copyright © 2026 St. Michael EROTC. All rights reserved.
