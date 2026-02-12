@@ -21,7 +21,7 @@
   <meta name="geo.placename" content="Perth, Western Australia">
   <meta name="geo.position" content="-31.9505;115.8605">
   <meta name="ICBM" content="-31.9505, 115.8605">
-<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src *; img-src * data: blob:; style-src * 'unsafe-inline'; font-src *;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' https://www.googletagmanager.com https://cdnjs.cloudflare.com; connect-src 'self' https://my-church.onrender.com https://www.google-analytics.com; img-src 'self' data: blob: https:; style-src 'self' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com data:; frame-src 'self'">
   <title>Saint Michael Eritrean Orthodox Tewahdo Church in Western Australia Inc</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="css/styles.css">
@@ -87,24 +87,30 @@
   
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17909191769"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    
-    gtag('config', 'AW-17909191769');
-  </script>
-  
-  <!-- Event snippet for Page view conversion page -->
-  <script>
-    gtag('event', 'conversion', {
-        'send_to': 'AW-17909191769/_4GLCKq25-0bENmo4ttC',
-        'value': 1.0,
-        'currency': 'USD'
-    });
-  </script>
+  <script defer src="js/analytics-init.js"></script>
 </head>
 <body>
+  <!-- Privacy Consent Banner -->
+  <div id="privacy-consent-banner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.95); color: white; padding: 20px; z-index: 10000; box-shadow: 0 -2px 10px rgba(0,0,0,0.3);">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+      <div style="flex: 1; min-width: 300px;">
+        <p style="margin: 0; font-size: 14px; line-height: 1.6;">
+          <i class="fas fa-cookie-bite" style="margin-right: 8px;"></i>
+          We use cookies and analytics to improve your experience. By continuing to use this site, you consent to our use of cookies and data collection practices.
+          <a href="pages/privacy-policy.html" target="_blank" style="color: #4a90e2; text-decoration: underline; margin-left: 5px;">Learn more</a>
+        </p>
+      </div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button onclick="acceptPrivacyConsent()" style="background: #4a90e2; color: white; border: none; padding: 10px 24px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.3s;">
+          <i class="fas fa-check"></i> Accept
+        </button>
+        <button onclick="declinePrivacyConsent()" style="background: transparent; color: white; border: 1px solid white; padding: 10px 24px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.3s;">
+          Decline
+        </button>
+      </div>
+    </div>
+  </div>
+
   <header>
     <h1>Saint Michael Eritrean Orthodox Tewahdo Church in Western Australia Inc</h1>
     <p>Joondanna, Western Australia</p>
@@ -858,7 +864,7 @@
     <div class="verse">
       <div class="role">Verse of the Day</div>
       <div class="lang en">"For I know the plans I have for you," declares the LORD, "plans to prosper you and not to harm you, plans to give you hope and a future." - Jeremiah 29:11</div>
-      <div class="lang geez">"ሽዑ ኣነ ኸምዚ ኢለ መለስኩሎም፡ ኣምላኽ ሰማይ ኬቕንዓልና እዩ እሞ፡ ንሕና ባሮቱ ተንሲእና ኽንዐዪ ኢና። ንስኻትኩም ግና ኣብ ዮርሳሌም ክፍልን ግቡእን መዘከርታን የብልኩምን በልክዎም።" - መዝሙር 13:1</div>
+      <div class="lang geez">"ምኽንያቱ እቲ ንዓኻትኩም ዝሓሰብክዎ ሓሳባት ኣነ ኣለኹ እየ ዝፈልጦ፡ ይብል እግዚኣብሔር፡ ሓሳባት ሰላም እምበር ሓሳባት ክፉእ ኣይኮነን፡ ንምሃብኩም መወዳእታን ተስፋን።" - ኤርምያስ 29:11</div>
       <div class="lang ti">"ምኽንያቱ እግዚኣብሄር ንህዝቡ ይፈትሖም እዩ፡ ንዝእምነቶም ንምጽራይ እዩ።" - 1 ጴጥሮስ 1:7</div>
     </div>
 
@@ -943,18 +949,15 @@
   </footer>
   
   <!-- HTML -->
-<script>
-  // Optional: override the default API URL if needed
-  window.API_BASE_URL = 'https://my-church.onrender.com';
-</script>
+<script defer src="js/api-config.js"></script>
+<script defer src="js/kidsprogram.js" charset="UTF-8"></script>
 
-<script src="js/kidsprogram.js" charset="UTF-8"></script>
-
-  <script src="js/script.js"></script>
-  <script src="js/calendar.js"></script>
-  <script src="js/TewahdoHaymanot.js"></script>
-  <script src="js/articles.js"></script>
-  <script src="js/seo-helper.js"></script>
-  <script src="js/contact-form.js"></script>
+  <script defer src="js/script.js"></script>
+  <script defer src="js/calendar.js"></script>
+  <script defer src="js/TewahdoHaymanot.js"></script>
+  <script defer src="js/articles.js"></script>
+  <script defer src="js/seo-helper.js"></script>
+  <script defer src="js/contact-form.js"></script>
+  <script defer src="js/privacy-consent.js"></script>
 
 </body></html>

@@ -2,27 +2,47 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 const User = require('../models/Users');
 const { authenticateToken } = require('../middleware/auth');
+
+// STEP 4: Login rate limiter to prevent brute force attacks
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 attempts per window
+    message: {
+        success: false,
+        error: 'Too many login attempts from this IP. Please try again in 15 minutes.',
+        code: 'RATE_LIMIT_EXCEEDED'
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true // Don't count successful logins
+});
 
 // Generate JWT Token
 const generateToken = (userId, role) => {
     return jwt.sign(
         { userId, role },
-        process.env.JWT_SECRET || 'church-management-secret-key',
-        { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+        process.env.JWT_SECRET,
+        { 
+            expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+            issuer: 'stmichael-church',
+            audience: 'admin-panel'
+        }
     );
 };
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        // DEVELOPMENT BYPASS: Allow development login without database user
-        if (process.env.NODE_ENV === 'development' && process.env.BYPASS_AUTH === 'true' && 
+        // SAFER DEV BYPASS: Only works if explicitly enabled (never set in production)
+        if (process.env.ALLOW_DEV_BYPASS === 'true' && 
             username === 'admin' && password === 'dev123') {
-            console.log('🔓 DEVELOPMENT: Bypassing login authentication for dev user');
+            console.log('🔓 DEV BYPASS ENABLED: Bypassing login authentication for dev user');
+            console.warn('⚠️  WARNING: ALLOW_DEV_BYPASS should NEVER be set in production!');
             
             // Create a mock user for development
             const mockUser = {
@@ -323,12 +343,15 @@ router.post('/forgot-password', async (req, res) => {
         const resetTokenExpiry = new Date();
         resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1); // 1 hour
         
-        // Update user with reset token
-        user.resetToken = resetToken;
+        // STEP 2: Hash the reset token before storing in database
+        const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+        
+        // Update user with HASHED reset token
+        user.resetToken = hashedToken;
         user.resetTokenExpiry = resetTokenExpiry;
         await user.save();
         
-        // Send reset email
+        // Send reset email with UNHASHED token (user needs this)
         const emailService = require('../utils/emailService');
         const emailSent = await emailService.sendPasswordResetEmail(user, resetToken);
         
@@ -377,9 +400,13 @@ router.post('/reset-password', async (req, res) => {
         }
         
         console.log('🔑 Looking for user with reset token...');
-        // Find user with valid reset token
+        // STEP 2: Hash the incoming token to compare with stored hash
+        const crypto = require('crypto');
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+        
+        // Find user with valid HASHED reset token
         const user = await User.findOne({
-            resetToken: token,
+            resetToken: hashedToken,
             resetTokenExpiry: { $gt: new Date() }
         });
         

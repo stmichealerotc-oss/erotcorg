@@ -4,9 +4,10 @@ const User = require('../models/Users');
 // JWT Authentication Middleware
 const authenticateToken = async (req, res, next) => {
     try {
-        // TEMPORARY: Bypass authentication in development mode for testing
-        if (process.env.NODE_ENV === 'development' && process.env.BYPASS_AUTH === 'true') {
-            console.log('🔓 DEVELOPMENT: Bypassing authentication for:', req.path);
+        // SAFER DEV BYPASS: Only works if explicitly enabled (never set in production)
+        if (process.env.ALLOW_DEV_BYPASS === 'true') {
+            console.log('🔓 DEV BYPASS ENABLED: Bypassing authentication for:', req.path);
+            console.warn('⚠️  WARNING: ALLOW_DEV_BYPASS should NEVER be set in production!');
             // Create a mock user for development
             req.user = {
                 _id: 'dev-admin-id',
@@ -15,6 +16,7 @@ const authenticateToken = async (req, res, next) => {
                 username: 'dev-admin',
                 role: 'super-admin',
                 isActive: true,
+                accountStatus: 'active',
                 permissions: ['read', 'write', 'delete', 'manage-users', 'super-admin']
             };
             return next();
@@ -23,8 +25,8 @@ const authenticateToken = async (req, res, next) => {
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
-        // Debug logging for PDF generation endpoint
-        if (req.path.includes('generate-pdf')) {
+        // Remove debug logging in production
+        if (process.env.NODE_ENV === 'development' && req.path.includes('generate-pdf')) {
             console.log('🔍 Auth Debug for PDF generation:');
             console.log('- Auth header:', authHeader ? 'exists' : 'missing');
             console.log('- Token extracted:', token ? 'exists' : 'missing');
@@ -41,8 +43,12 @@ const authenticateToken = async (req, res, next) => {
             });
         }
 
-        // Verify JWT token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'church-management-secret-key');
+        // ISSUE 2: Verify JWT token with algorithm validation (prevents algorithm substitution attacks)
+        const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+            algorithms: ['HS256'],
+            issuer: 'stmichael-church',
+            audience: 'admin-panel'
+        });
         
         // Get user from database to ensure they still exist and are active
         const user = await User.findById(decoded.userId).select('-password');
@@ -56,12 +62,34 @@ const authenticateToken = async (req, res, next) => {
             });
         }
 
+        // ISSUE 4: Check both isActive and accountStatus (consistency with login)
         if (!user.isActive) {
             return res.status(401).json({ 
                 success: false, 
                 error: 'Account is deactivated.',
                 code: 'ACCOUNT_DEACTIVATED'
             });
+        }
+
+        if (user.accountStatus === 'suspended') {
+            return res.status(403).json({
+                success: false,
+                error: 'Account suspended. Please contact administrator.',
+                code: 'ACCOUNT_SUSPENDED'
+            });
+        }
+
+        // STEP 3: Invalidate JWT after password change
+        if (user.passwordChangedAt) {
+            const changedTimestamp = parseInt(user.passwordChangedAt.getTime() / 1000, 10);
+            
+            if (decoded.iat < changedTimestamp) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Token expired due to password change. Please login again.',
+                    code: 'PASSWORD_CHANGED'
+                });
+            }
         }
 
         // Add user info to request object

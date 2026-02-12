@@ -1,4 +1,17 @@
 require('dotenv').config();
+
+// CRITICAL: Validate JWT_SECRET in production
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  console.error('❌ FATAL: JWT_SECRET must be defined in production environment');
+  console.error('   Set JWT_SECRET in your .env file or environment variables');
+  process.exit(1);
+}
+
+if (!process.env.JWT_SECRET) {
+  console.warn('⚠️  WARNING: JWT_SECRET not set. Using fallback for development only.');
+  console.warn('   This is insecure and should NEVER be used in production!');
+}
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -13,6 +26,7 @@ const bcrypt = require('bcryptjs');
 const authRoutes = require('./routes/auth');
 const kidsProgram2Routes = require('./routes/kidsProgram');
 const contactRoutes = require('./routes/contact');
+const articlesRoutes = require('./routes/articles');
 // CMS routes
 const membersRoutes = require('./routes/members');
 const accountingRoutes = require('./routes/accounting');
@@ -104,7 +118,32 @@ imgSrc: ["'self'", "data:", "https:"],
 connectSrc: ["'self'"],
 }
 } : false,
+crossOriginEmbedderPolicy: false,
+crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
+
+// Additional security headers
+app.use((req, res, next) => {
+  // Strict Transport Security (HSTS)
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  
+  // X-Content-Type-Options
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  
+  // X-Frame-Options
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  
+  // X-XSS-Protection
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // Referrer Policy
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // Permissions Policy
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  
+  next();
+});
 
 // Trust proxy
 app.set('trust proxy', 1);
@@ -301,19 +340,22 @@ next();
 app.use('/api/auth', authRoutes);
 app.use('/api/kids-program', kidsProgram2Routes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/articles', articlesRoutes);
 
 // ================= PROTECTED CMS API ROUTES =================
-// All these routes require authentication (temporarily disabled auth middleware)
-app.use('/api/members', membersRoutes);
-app.use('/api/member-cards', memberCardsRoutes);
-app.use('/api/accounting', accountingRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/promises', promiseRoutes);
-app.use('/api/member-contributions', memberContributionsRoutes);
-app.use('/api/user-management', userManagementRoutes);
-app.use('/api/signatures', signaturesRoutes);
+// STEP 5: All CMS routes now require authentication
+const { authenticateToken } = require('./middleware/auth');
+
+app.use('/api/members', authenticateToken, membersRoutes);
+app.use('/api/member-cards', authenticateToken, memberCardsRoutes);
+app.use('/api/accounting', authenticateToken, accountingRoutes);
+app.use('/api/inventory', authenticateToken, inventoryRoutes);
+app.use('/api/reports', authenticateToken, reportsRoutes);
+app.use('/api/tasks', authenticateToken, taskRoutes);
+app.use('/api/promises', authenticateToken, promiseRoutes);
+app.use('/api/member-contributions', authenticateToken, memberContributionsRoutes);
+app.use('/api/user-management', authenticateToken, userManagementRoutes);
+app.use('/api/signatures', authenticateToken, signaturesRoutes);
 
 // Health endpoint
 app.get('/api/health', async (req, res) => {
