@@ -1491,13 +1491,49 @@ tr:hover {
   }
   
   /* Fix for medium screen widths (900-1300px) - ensure dropdown is properly positioned */
-  @media (min-width: 900px) and (max-width: 1300px) {
+  @media (min-width: 768px) and (max-width: 1024px) {
     .dropdown-menu {
-      /* Ensure dropdown menu is wide enough and positioned correctly */
+      /* Smart positioning for tablets and small desktops */
+      min-width: 300px;
+      max-width: calc(100vw - 40px);
+      /* Center the dropdown if it would go off-screen */
+      left: 50%;
+      transform: translateX(-50%);
+      right: auto;
+    }
+    
+    /* For dropdowns that have enough space, use normal positioning */
+    .nav-dropdown:first-child .dropdown-menu,
+    .nav-dropdown:nth-child(2) .dropdown-menu {
+      left: 0;
+      transform: none;
+    }
+    
+    /* For dropdowns near the right edge */
+    .nav-dropdown:nth-last-child(-n+2) .dropdown-menu {
+      left: auto;
+      right: 0;
+      transform: none;
+    }
+    
+    /* Ensure the nav container doesn't clip dropdowns */
+    .nav-container {
+      overflow: visible !important;
+    }
+    
+    .nav-links {
+      overflow: visible !important;
+    }
+  }
+  
+  @media (min-width: 1025px) and (max-width: 1300px) {
+    .dropdown-menu {
+      /* Medium desktop positioning */
       min-width: 300px;
       max-width: 400px;
       left: 0;
       right: auto;
+      transform: none;
     }
     
     /* For dropdowns near the right edge, adjust positioning */
@@ -1506,7 +1542,7 @@ tr:hover {
       right: 0;
     }
     
-    /* Ensure the nav container doesn't clip dropdowns */
+    /* Ensure containers don't clip */
     .nav-container {
       overflow: visible !important;
     }
@@ -1527,50 +1563,74 @@ tr:hover {
     flex-shrink: 0;
   }
   
-  /* Desktop submenu positioning - appear to the right */
+  /* Desktop submenu positioning - smart positioning based on available space */
   .dropdown-submenu-content {
     position: absolute;
-    left: 100%;
     top: 0;
+    min-width: 280px;
+    max-width: 350px;
+    z-index: 10005;
+    /* Default to right positioning */
+    left: 100%;
     margin-left: 0.5rem;
   }
   
-  /* If submenu would go off right edge, position it to the left */
-  .dropdown-submenu:last-child .dropdown-submenu-content {
-    left: auto;
-    right: 100%;
-    margin-left: 0;
-    margin-right: 0.5rem;
-  }
-  
-  /* Fix for medium screen widths (900-1300px) - ensure submenus are visible */
-  @media (min-width: 900px) and (max-width: 1300px) {
+  /* Smart positioning for different screen widths */
+  @media (min-width: 768px) and (max-width: 1024px) {
+    /* Tablet and small desktop - center the submenus */
     .dropdown-submenu-content {
-      /* Ensure submenu doesn't go off-screen on medium widths */
-      left: 100%;
-      right: auto;
-      margin-left: 0.5rem;
+      /* Position submenu to not go off-screen */
+      left: 50%;
+      transform: translateX(-50%);
+      margin-left: 0;
       margin-right: 0;
+      /* Ensure it stays within viewport */
+      max-width: calc(100vw - 40px);
     }
     
-    /* For the last submenu, check if it would go off-screen and adjust */
+    /* For very narrow tablets, position more carefully */
+    .dropdown-submenu:first-child .dropdown-submenu-content {
+      left: 0;
+      transform: none;
+    }
+    
     .dropdown-submenu:last-child .dropdown-submenu-content {
-      /* Calculate if submenu would overflow viewport */
+      right: 0;
+      left: auto;
+      transform: none;
+    }
+  }
+  
+  @media (min-width: 1025px) and (max-width: 1300px) {
+    /* Medium desktop - smart left/right positioning */
+    .dropdown-submenu-content {
+      left: 100%;
+      margin-left: 0.5rem;
+      transform: none;
+    }
+    
+    /* If submenu would go off right edge, position it to the left */
+    .dropdown-submenu:last-child .dropdown-submenu-content {
       left: auto;
       right: 100%;
       margin-left: 0;
       margin-right: 0.5rem;
     }
-    
-    /* Special handling for Five Pillars submenu to ensure it's always visible */
-    .dropdown-submenu:first-child .dropdown-submenu-content {
+  }
+  
+  @media (min-width: 1301px) {
+    /* Large desktop - normal positioning */
+    .dropdown-submenu-content {
       left: 100%;
-      right: auto;
       margin-left: 0.5rem;
-      margin-right: 0;
-      /* Ensure it doesn't get clipped */
-      min-width: 280px;
-      max-width: none;
+      transform: none;
+    }
+    
+    .dropdown-submenu:last-child .dropdown-submenu-content {
+      left: auto;
+      right: 100%;
+      margin-left: 0;
+      margin-right: 0.5rem;
     }
   }
 }
@@ -2172,6 +2232,16 @@ tr:hover {
     background: rgba(0, 0, 0, 0.1);
     z-index: 10000;
     backdrop-filter: blur(2px);
+}
+
+/* JavaScript-controlled positioning overrides CSS */
+.dropdown-submenu-content[style*="left"],
+.dropdown-submenu-content[style*="right"],
+.dropdown-submenu-content[style*="transform"] {
+    /* Allow JavaScript inline styles to take precedence */
+    position: absolute !important;
+    top: 0 !important;
+    z-index: 10005 !important;
 }
 
 /* Page overlay effect when dropdown is active - DESKTOP ONLY */

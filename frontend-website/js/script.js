@@ -140,7 +140,7 @@ function setupDropdownMenus() {
     });
   }
 
-  // Submenu toggles - works for both desktop and mobile
+  // Submenu toggles - works for both desktop and mobile with smart positioning
   document.querySelectorAll('.dropdown-submenu .dropdown-item').forEach(item => {
     item.addEventListener('click', (e) => {
       console.log('Submenu item clicked:', e.target); // Debug log
@@ -159,7 +159,14 @@ function setupDropdownMenus() {
         });
         
         // Toggle current submenu
+        const isShowing = submenu.classList.contains('show');
         submenu.classList.toggle('show');
+        
+        // Smart positioning for desktop
+        if (window.innerWidth >= 768 && !isShowing) {
+          positionSubmenuSmart(submenu, item);
+        }
+        
         console.log('Submenu show class:', submenu.classList.contains('show')); // Debug log
       }
     });
@@ -184,6 +191,17 @@ function setupDropdownMenus() {
       }
       document.body.classList.remove('dropdown-active');
     }
+  });
+
+  // Handle window resize to reposition submenus
+  window.addEventListener('resize', () => {
+    // Reposition any open submenus
+    document.querySelectorAll('.dropdown-submenu-content.show').forEach(submenu => {
+      const parentItem = submenu.previousElementSibling;
+      if (parentItem && window.innerWidth >= 768) {
+        positionSubmenuSmart(submenu, parentItem);
+      }
+    });
   });
 
   // Mobile-specific nav toggle
@@ -333,8 +351,70 @@ function showBookContent(bookId, bookName) {
   alert(`Loading: ${bookName}\nBook ID: ${bookId}\n\nIn a full implementation, this would load the actual book content.`);
 }
 
+// Smart submenu positioning function
+function positionSubmenuSmart(submenu, parentItem) {
+  // Reset any previous positioning
+  submenu.style.left = '';
+  submenu.style.right = '';
+  submenu.style.transform = '';
+  
+  // Get viewport dimensions
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  
+  // Get parent item position
+  const parentRect = parentItem.getBoundingClientRect();
+  const submenuRect = submenu.getBoundingClientRect();
+  
+  // Calculate available space
+  const spaceRight = viewportWidth - parentRect.right;
+  const spaceLeft = parentRect.left;
+  const submenuWidth = 300; // Approximate submenu width
+  
+  console.log('Positioning submenu:', {
+    viewportWidth,
+    spaceRight,
+    spaceLeft,
+    submenuWidth,
+    parentRect
+  });
+  
+  // Smart positioning logic
+  if (viewportWidth <= 1024) {
+    // Tablet and small desktop - center positioning
+    if (spaceRight >= submenuWidth) {
+      // Enough space on right
+      submenu.style.left = '100%';
+      submenu.style.marginLeft = '0.5rem';
+    } else if (spaceLeft >= submenuWidth) {
+      // Not enough space on right, use left
+      submenu.style.right = '100%';
+      submenu.style.left = 'auto';
+      submenu.style.marginRight = '0.5rem';
+    } else {
+      // Not enough space on either side, center it
+      submenu.style.left = '50%';
+      submenu.style.transform = 'translateX(-50%)';
+      submenu.style.maxWidth = `${Math.min(submenuWidth, viewportWidth - 40)}px`;
+    }
+  } else {
+    // Desktop - normal left/right positioning
+    if (spaceRight >= submenuWidth) {
+      // Enough space on right
+      submenu.style.left = '100%';
+      submenu.style.marginLeft = '0.5rem';
+    } else {
+      // Not enough space on right, use left
+      submenu.style.right = '100%';
+      submenu.style.left = 'auto';
+      submenu.style.marginRight = '0.5rem';
+    }
+  }
+}
+
 // Make functions globally available
 window.showPage = showPage;
 window.toggleBookCategory = toggleBookCategory;
 window.showBookContent = showBookContent;
 window.initializeKidsProgram = initializeKidsProgram;
+window.positionSubmenuSmart = positionSubmenuSmart;
