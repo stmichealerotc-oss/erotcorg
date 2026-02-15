@@ -1,4 +1,112 @@
 ﻿/* ============================================================================
+   Legacy Navigation Classes - For backward compatibility with registration pages
+   ============================================================================ */
+
+/* Legacy navbar class - redirect to nav styles */
+.navbar {
+  background: white;
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 10000;
+  backdrop-filter: blur(10px);
+  overflow: visible !important;
+}
+
+.navbar .nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  overflow: visible !important;
+}
+
+.nav-logo {
+  font-weight: bold;
+  color: var(--primary);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.nav-logo a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.nav-menu {
+  display: none;
+  flex-direction: column;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: white;
+  box-shadow: var(--shadow-lg);
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  overflow-y: auto;
+  max-height: calc(100vh - 80px);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-menu.active {
+  display: flex;
+  animation: slideDown 0.3s ease;
+}
+
+.nav-menu li {
+  margin: 0;
+}
+
+.nav-menu a {
+  padding: 1rem 1.5rem;
+  text-decoration: none;
+  color: var(--dark);
+  border-bottom: 1px solid var(--gray-light);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: var(--transition);
+  font-weight: 500;
+}
+
+.nav-menu a:hover {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  transform: translateX(5px);
+}
+
+/* Desktop styles for legacy nav */
+@media (min-width: 768px) {
+  .nav-menu {
+    display: flex !important;
+    position: static;
+    flex-direction: row;
+    background: none;
+    box-shadow: none;
+    width: auto;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow: visible !important;
+  }
+  
+  .nav-menu li {
+    margin: 0;
+  }
+  
+  .nav-menu a {
+    border: none;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+}
+
+/* ============================================================================
    CSS Reset and Base Styles
    ============================================================================ */
 

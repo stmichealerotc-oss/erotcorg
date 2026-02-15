@@ -6,22 +6,66 @@
     <title>Member Registration - Saint Michael Eritrean Orthodox Church</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/styles-merged.css">
+    <script src="../js/script.js" defer></script>>
     
 </head>
 <body>
-    <nav class="navbar">
+    <nav>
         <div class="nav-container">
-            <div class="nav-logo">
-                <a href="../index.html">
-                    <span>Saint Michael EOTC</span>
-                </a>
+            <div class="logo">
+                <a href="../index.html">Saint Michael EOTC</a>
             </div>
-            <ul class="nav-menu">
-                <li><a href="../index.html">Home</a></li>
-                <li><a href="../index.html#about">About</a></li>
-                <li><a href="../index.html#services">Services</a></li>
-                <li><a href="../index.html#contact">Contact</a></li>
-            </ul>
+            <button class="hamburger">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="nav-links">
+                <a href="../index.html"><i class="fas fa-home"></i> Home</a>
+                <a href="../index.html#about"><i class="fas fa-info-circle"></i> About</a>
+                <a href="../index.html#services"><i class="fas fa-church"></i> Services</a>
+                
+                <!-- Tewahdo Haymanot Dropdown -->
+                <div class="nav-dropdown">
+                    <a href="#" class="nav-link dropdown-toggle">
+                        <i class="fas fa-cross"></i> ትውህደ ሃይማኖት
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </a>
+                    <div class="dropdown-menu">
+                        <div class="dropdown-submenu">
+                            <a href="#" class="dropdown-item">
+                                Five Pillars of Mystery
+                                <i class="fas fa-chevron-right submenu-arrow"></i>
+                            </a>
+                            <div class="dropdown-submenu-content">
+                                <a href="#" data-pillar="trinity">The Mystery of the Holy Trinity</a>
+                                <a href="#" data-pillar="incarnation">The Mystery of the Incarnation</a>
+                                <a href="#" data-pillar="baptism">The Mystery of Baptism</a>
+                                <a href="#" data-pillar="communion">The Mystery of Communion</a>
+                                <a href="#" data-pillar="resurrection">The Mystery of Resurrection</a>
+                            </div>
+                        </div>
+                        <div class="dropdown-submenu">
+                            <a href="#" class="dropdown-item">
+                                Seven Sacraments
+                                <i class="fas fa-chevron-right submenu-arrow"></i>
+                            </a>
+                            <div class="dropdown-submenu-content">
+                                <a href="#" data-sacrament="baptism">Baptism</a>
+                                <a href="#" data-sacrament="confirmation">Confirmation</a>
+                                <a href="#" data-sacrament="eucharist">Eucharist</a>
+                                <a href="#" data-sacrament="penance">Penance</a>
+                                <a href="#" data-sacrament="unction">Holy Unction</a>
+                                <a href="#" data-sacrament="matrimony">Holy Matrimony</a>
+                                <a href="#" data-sacrament="orders">Holy Orders</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="../index.html#contact"><i class="fas fa-envelope"></i> Contact</a>
+                <a href="member-registration.html"><i class="fas fa-user-plus"></i> Join Us</a>
+                <a href="../index.html#articles"><i class="fas fa-newspaper"></i> Articles</a>
+                <a href="../index.html#support"><i class="fas fa-heart"></i> Support Us</a>
+            </div>
         </div>
     </nav>
 
