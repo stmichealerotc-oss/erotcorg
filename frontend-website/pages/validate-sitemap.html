@@ -4,81 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sitemap Validator - Saint Michael EOTC</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            color: #d4af37;
-            text-align: center;
-        }
-        .test-section {
-            margin: 2rem 0;
-            padding: 1rem;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .success {
-            background: #d4edda;
-            border-color: #c3e6cb;
-            color: #155724;
-        }
-        .error {
-            background: #f8d7da;
-            border-color: #f5c6cb;
-            color: #721c24;
-        }
-        .info {
-            background: #d1ecf1;
-            border-color: #bee5eb;
-            color: #0c5460;
-        }
-        button {
-            background: #d4af37;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-        button:hover {
-            background: #b8941f;
-        }
-        .url-list {
-            list-style: none;
-            padding: 0;
-        }
-        .url-list li {
-            padding: 0.5rem;
-            margin: 0.25rem 0;
-            background: #f8f9fa;
-            border-radius: 3px;
-        }
-        .url-status {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            margin-right: 10px;
-        }
-        .status-ok { background: #28a745; }
-        .status-error { background: #dc3545; }
-        .status-pending { background: #ffc107; }
-    </style>
+    <link rel="stylesheet" href="../css/page-specific.css">
 </head>
-<body>
-    <div class="container">
+<body class="validate-sitemap-body">
+    <div class="validate-sitemap-container">
         <h1>🗺️ Sitemap Validator</h1>
         <p>This tool helps validate your sitemap and test URL accessibility.</p>
         
@@ -92,7 +21,7 @@
         <div class="test-section">
             <h3>🔍 URL Accessibility Test</h3>
             <button onclick="testAllUrls()">Test All URLs</button>
-            <div id="testResults" style="margin-top: 1rem;"></div>
+            <div id="testResults" class="test-results-margin"></div>
         </div>
         
         <div class="test-section">
@@ -145,7 +74,7 @@
                 listItem.innerHTML = `
                     <span class="url-status status-pending"></span>
                     <span>${url}</span>
-                    <span style="float: right;">Testing...</span>
+                    <span class="float-right">Testing...</span>
                 `;
                 urlResults.appendChild(listItem);
                 
@@ -160,13 +89,13 @@
                     listItem.innerHTML = `
                         <span class="url-status status-ok"></span>
                         <span>${url}</span>
-                        <span style="float: right; color: #28a745;">✓ Accessible</span>
+                        <span class="float-right-success">✓ Accessible</span>
                     `;
                 } catch (error) {
                     listItem.innerHTML = `
                         <span class="url-status status-error"></span>
                         <span>${url}</span>
-                        <span style="float: right; color: #dc3545;">✗ Error</span>
+                        <span class="float-right-error">✗ Error</span>
                     `;
                 }
                 

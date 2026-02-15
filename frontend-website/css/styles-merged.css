@@ -1,4 +1,4 @@
-/* ============================================================================
+﻿/* ============================================================================
    CSS Reset and Base Styles
    ============================================================================ */
 
@@ -414,7 +414,7 @@ tr:hover {
 }
 
 .kids-program-header::before {
-  content: '👦👧';
+  content: 'ðŸ‘¦ðŸ‘§';
   position: absolute;
   top: 10px;
   right: 20px;
@@ -1412,7 +1412,6 @@ tr:hover {
   opacity: 1 !important;
   position: absolute !important;
   background: white !important;
-  border: 2px solid red !important; /* Temporary debug border */
 }
 
 /* Ensure submenu doesn't go off-screen */
@@ -1428,6 +1427,7 @@ tr:hover {
   border-radius: 8px;
   z-index: 10004; /* Even higher for submenus */
   border: 1px solid #e0e0e0;
+  margin-left: 0.5rem; /* Add spacing from parent */
 }
 
 .dropdown-submenu-content.show {
@@ -1444,12 +1444,6 @@ tr:hover {
     opacity: 1;
     transform: translateX(0);
   }
-}
-
-/* If submenu would go off right edge, position it to the left */
-.dropdown-submenu:last-child .dropdown-submenu-content {
-  left: -100%;
-  right: 0;
 }
 
 @keyframes slideDown {
@@ -1485,15 +1479,41 @@ tr:hover {
     right: auto;
     z-index: 10003; /* Higher z-index to ensure it's on top */
     margin-top: 0.5rem;
-    /* Prevent dropdown from extending beyond viewport */
-    max-height: 80vh;
-    overflow-y: auto;
+    /* Allow dropdown to overlay content without scrolling */
+    max-height: none;
+    overflow: visible; /* Allow submenu to overflow to the right */
   }
   
   /* If dropdown is near the right edge, position it to the left */
   .nav-dropdown:nth-last-child(-n+3) .dropdown-menu {
     left: auto;
     right: 0;
+  }
+  
+  /* Fix for medium screen widths (900-1300px) - ensure dropdown is properly positioned */
+  @media (min-width: 900px) and (max-width: 1300px) {
+    .dropdown-menu {
+      /* Ensure dropdown menu is wide enough and positioned correctly */
+      min-width: 300px;
+      max-width: 400px;
+      left: 0;
+      right: auto;
+    }
+    
+    /* For dropdowns near the right edge, adjust positioning */
+    .nav-dropdown:nth-last-child(-n+2) .dropdown-menu {
+      left: auto;
+      right: 0;
+    }
+    
+    /* Ensure the nav container doesn't clip dropdowns */
+    .nav-container {
+      overflow: visible !important;
+    }
+    
+    .nav-links {
+      overflow: visible !important;
+    }
   }
   
   /* Ensure nav links are properly spaced to avoid overlap */
@@ -1505,6 +1525,53 @@ tr:hover {
   .nav-dropdown {
     white-space: nowrap;
     flex-shrink: 0;
+  }
+  
+  /* Desktop submenu positioning - appear to the right */
+  .dropdown-submenu-content {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    margin-left: 0.5rem;
+  }
+  
+  /* If submenu would go off right edge, position it to the left */
+  .dropdown-submenu:last-child .dropdown-submenu-content {
+    left: auto;
+    right: 100%;
+    margin-left: 0;
+    margin-right: 0.5rem;
+  }
+  
+  /* Fix for medium screen widths (900-1300px) - ensure submenus are visible */
+  @media (min-width: 900px) and (max-width: 1300px) {
+    .dropdown-submenu-content {
+      /* Ensure submenu doesn't go off-screen on medium widths */
+      left: 100%;
+      right: auto;
+      margin-left: 0.5rem;
+      margin-right: 0;
+    }
+    
+    /* For the last submenu, check if it would go off-screen and adjust */
+    .dropdown-submenu:last-child .dropdown-submenu-content {
+      /* Calculate if submenu would overflow viewport */
+      left: auto;
+      right: 100%;
+      margin-left: 0;
+      margin-right: 0.5rem;
+    }
+    
+    /* Special handling for Five Pillars submenu to ensure it's always visible */
+    .dropdown-submenu:first-child .dropdown-submenu-content {
+      left: 100%;
+      right: auto;
+      margin-left: 0.5rem;
+      margin-right: 0;
+      /* Ensure it doesn't get clipped */
+      min-width: 280px;
+      max-width: none;
+    }
   }
 }
 
@@ -1531,22 +1598,6 @@ tr:hover {
 
 .dropdown-item:last-child {
   border-bottom: none;
-}
-
-.dropdown-submenu-content.show {
-  display: block;
-  animation: slideRight 0.3s ease;
-}
-
-@keyframes slideRight {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
 }
 
 .dropdown-submenu-content a {
@@ -1877,11 +1928,11 @@ tr:hover {
 .step-icon.rising_sun { background: #fff3e0; color: #ef6c00; }
 .step-icon.church_dome { background: #e8f5e8; color: #2e7d32; }
 
-.step-icon.broken_chain::before { content: "⛓️"; }
-.step-icon.water_dove::before { content: "💧"; }
-.step-icon.cross_water::before { content: "✝️"; }
-.step-icon.rising_sun::before { content: "🌅"; }
-.step-icon.church_dome::before { content: "⛪"; }
+.step-icon.broken_chain::before { content: "â›“ï¸"; }
+.step-icon.water_dove::before { content: "ðŸ’§"; }
+.step-icon.cross_water::before { content: "âœï¸"; }
+.step-icon.rising_sun::before { content: "ðŸŒ…"; }
+.step-icon.church_dome::before { content: "â›ª"; }
 
 .step-label {
     font-weight: 700;
@@ -2844,3 +2895,2047 @@ body.legal-page {
 .card .btn:active {
   transform: translateY(0) !important;
 }
+
+/* ============================================================================
+   Inline Overrides - Extracted from HTML inline styles
+   Purpose: CSP compliance - no inline styles allowed
+   ============================================================================ */
+
+/* Utility Classes */
+.text-center {
+    text-align: center;
+}
+
+.mt-1 { margin-top: 1rem; }
+.mt-2 { margin-top: 2rem; }
+.mt-3 { margin-top: 3rem; }
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: 1rem; }
+.mb-2 { margin-bottom: 2rem; }
+
+.inline-block {
+    display: inline-block;
+}
+
+.no-decoration {
+    text-decoration: none;
+}
+
+/* Color Utilities */
+.color-primary { color: #d4af37; }
+.color-success { color: #28a745; }
+.color-danger { color: #e74c3c; }
+.color-gray { color: #666; }
+.color-gray-dark { color: #555; }
+
+.bg-light { background: #f8f9fa; }
+.bg-white { background: white; }
+.bg-warning { background: #fff3cd; }
+
+/* Member Registration & Update Pages */
+.page-title {
+    text-align: center;
+    color: #d4af37;
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    color: #d4af37;
+    margin-top: 2rem;
+}
+
+.invalid-token {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+}
+
+.invalid-token .fa-check-circle {
+    color: #28a745;
+}
+
+.invalid-token .submit-btn {
+    display: inline-block;
+    text-decoration: none;
+    margin-top: 1rem;
+}
+
+#updateSection {
+    display: none;
+}
+
+#alreadyUsedToken {
+    display: none;
+}
+
+#invalidToken {
+    display: none;
+}
+
+/* Declaration Section */
+.declaration-section {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #d4af37;
+    margin: 2rem 0;
+}
+
+.declaration-section h3 {
+    color: #d4af37;
+    margin-bottom: 1rem;
+}
+
+.declaration-box {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+}
+
+.declaration-box p {
+    margin-bottom: 1rem;
+    color: #555;
+}
+
+.declaration-box ul {
+    color: #666;
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.declaration-link-container {
+    text-align: center;
+    margin: 1.5rem 0;
+}
+
+.declaration-link {
+    display: inline-block;
+    background: #d4af37;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: 600;
+    transition: background 0.3s ease;
+}
+
+.declaration-link:hover {
+    background: #c49d2f;
+}
+
+.declaration-note {
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+    margin-bottom: 0;
+}
+
+.declaration-checkbox-group {
+    margin-bottom: 0;
+}
+
+.declaration-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    cursor: pointer;
+}
+
+.declaration-checkbox-label input[type="checkbox"] {
+    margin-right: 0.75rem;
+    margin-top: 0.25rem;
+    transform: scale(1.2);
+}
+
+.declaration-checkbox-label span {
+    flex: 1;
+}
+
+.declaration-checkbox-label .required {
+    color: #e74c3c;
+    margin-left: 0.25rem;
+}
+
+/* Membership Declaration Page */
+.declaration-note-box {
+    text-align: center;
+    margin-top: 2rem;
+    padding: 1rem;
+    background: #fff3cd;
+    border-radius: 8px;
+}
+
+/* Test Articles Page */
+.article-test-section {
+    margin-top: 3rem;
+}
+
+#article-view {
+    display: none;
+}
+
+/* Validate Sitemap Page */
+#testResults {
+    margin-top: 1rem;
+}
+
+.url-test-item .status-text {
+    float: right;
+}
+
+.url-test-item .status-ok {
+    color: #28a745;
+}
+
+.url-test-item .status-error {
+    color: #dc3545;
+}
+
+/* Privacy Banner (from index.html) */
+#privacy-consent-banner {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.95);
+    color: white;
+    padding: 20px;
+    z-index: 10000;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+}
+
+#privacy-consent-banner .banner-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+#privacy-consent-banner .banner-text {
+    flex: 1;
+    min-width: 300px;
+}
+
+#privacy-consent-banner .banner-text p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+#privacy-consent-banner .banner-text a {
+    color: #4a90e2;
+    text-decoration: underline;
+    margin-left: 5px;
+}
+
+#privacy-consent-banner .banner-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+#privacy-consent-banner .btn-accept {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.3s;
+}
+
+#privacy-consent-banner .btn-accept:hover {
+    background: #3a7bc8;
+}
+
+#privacy-consent-banner .btn-decline {
+    background: transparent;
+    color: white;
+    border: 1px solid white;
+    padding: 10px 24px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+#privacy-consent-banner .btn-decline:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive Utilities */
+@media (max-width: 768px) {
+    #privacy-consent-banner .banner-content {
+        flex-direction: column;
+    }
+    
+    #privacy-consent-banner .banner-buttons {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .declaration-checkbox-label {
+        font-size: 0.9rem;
+    }
+}
+
+/* Float Utilities */
+.float-right {
+    float: right;
+}
+
+.float-left {
+    float: left;
+}
+
+.clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+
+/* ============================================================================
+   INDEX.HTML SPECIFIC STYLES
+   ============================================================================ */
+
+/* Privacy banner - already defined above, keeping for reference */
+
+/* Grid with top margin */
+.grid-2-mt-2 {
+    margin-top: 2rem;
+}
+
+/* Card with top margin */
+.card-mt-2 {
+    margin-top: 2rem;
+}
+
+/* Card with gradient background */
+.card-gradient-gold {
+    margin-top: 2rem;
+    background: linear-gradient(135deg, #d4af37, #f1c40f);
+    color: white;
+    text-align: center;
+}
+
+.card-gradient-gold p {
+    margin: 1rem 0;
+}
+
+.card-gradient-gold .btn-wrapper {
+    margin-top: 1.5rem;
+}
+
+.card-gradient-gold .btn-white {
+    background: white;
+    color: #d4af37;
+    padding: 0.75rem 2rem;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: 600;
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+.card-gradient-gold .btn-white:hover {
+    transform: translateY(-2px);
+}
+
+.card-gradient-gold .note-text {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* Section with top margin */
+.section-mt-3 {
+    margin-top: 3rem;
+}
+
+/* Paragraph with top margin */
+.p-mt-1 {
+    margin-top: 1rem;
+}
+
+/* WhatsApp box */
+.whatsapp-box {
+    background: #e8f5e8;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.whatsapp-box h3 {
+    margin: 0 0 0.5rem 0;
+}
+
+.whatsapp-box .whatsapp-icon {
+    color: #25D366;
+}
+
+.whatsapp-box p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.whatsapp-box .language-note {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Week navigation flex */
+.week-nav-flex {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.week-nav-flex h4 {
+    margin: 0;
+}
+
+/* Contact form note */
+.form-note {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 1rem;
+}
+
+/* WhatsApp group text */
+.whatsapp-group-text {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Social media section */
+.social-media-section {
+    margin-top: 1rem;
+}
+
+.social-links {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.social-links a {
+    color: var(--primary);
+    font-size: 1.5rem;
+}
+
+/* Nonprofit info section */
+.nonprofit-info {
+    margin-top: 1.5rem;
+}
+
+.nonprofit-purposes {
+    margin-top: 1.5rem;
+}
+
+.nonprofit-purposes ul {
+    margin-top: 1rem;
+}
+
+/* Footer additional info */
+.footer-info {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Privacy banner inline styles (moved from HTML) */
+#privacy-consent-banner {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.95);
+    color: white;
+    padding: 20px;
+    z-index: 10000;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+}
+
+#privacy-consent-banner .banner-content-flex {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+#privacy-consent-banner .banner-text-flex {
+    flex: 1;
+    min-width: 300px;
+}
+
+#privacy-consent-banner .banner-text-flex p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+#privacy-consent-banner .banner-text-flex .cookie-icon {
+    margin-right: 8px;
+}
+
+#privacy-consent-banner .banner-text-flex a {
+    color: #4a90e2;
+    text-decoration: underline;
+    margin-left: 5px;
+}
+
+#privacy-consent-banner .banner-buttons-flex {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+#privacy-consent-banner .btn-accept-privacy {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.3s;
+}
+
+#privacy-consent-banner .btn-accept-privacy:hover {
+    background: #3a7bc8;
+}
+
+#privacy-consent-banner .btn-decline-privacy {
+    background: transparent;
+    color: white;
+    border: 1px solid white;
+    padding: 10px 24px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+#privacy-consent-banner .btn-decline-privacy:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+
+/* Additional utility classes for remaining inline styles */
+.card-mt-1 {
+    margin-top: 1rem;
+}
+
+.grid-2-mt-2 {
+    margin-top: 2rem;
+}
+
+.section-display-none {
+    display: none;
+}
+
+.footer-center {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.footer-links {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.footer-links a {
+    color: var(--primary);
+    margin-right: 1rem;
+    text-decoration: none;
+}
+
+.footer-links a:last-child {
+    margin-right: 0;
+}
+
+.footer-tagline {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.map-static {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.map-static .map-icon {
+    font-size: 3rem;
+    color: #4CAF50;
+    margin-bottom: 1rem;
+}
+
+.map-static h4 {
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.map-static p {
+    color: #666;
+    margin-bottom: 1.5rem;
+}
+
+.map-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.map-buttons a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nonprofit-transparency {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #4CAF50;
+}
+
+.donation-note {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #e8f5e8;
+    border-radius: 8px;
+}
+
+.volunteer-cta {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.calendar-controls {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.calendar-controls button {
+    margin-top: 0.5rem;
+}
+
+.custom-holidays-list {
+    margin-top: 1rem;
+}
+
+
+/* ============================================================================
+   ARTICLES.JS DYNAMIC STYLES - CSP COMPLIANT
+   ============================================================================ */
+
+/* Article card image gradients by category */
+.article-gradient-qa {
+    background: linear-gradient(135deg, #17a2b8, #17a2b8aa);
+}
+
+.article-gradient-church-history {
+    background: linear-gradient(135deg, #8e44ad, #8e44adaa);
+}
+
+.article-gradient-liturgy {
+    background: linear-gradient(135deg, #2980b9, #2980b9aa);
+}
+
+.article-gradient-community {
+    background: linear-gradient(135deg, #27ae60, #27ae60aa);
+}
+
+.article-gradient-theology {
+    background: linear-gradient(135deg, #e74c3c, #e74c3caa);
+}
+
+.article-gradient-announcements {
+    background: linear-gradient(135deg, #f39c12, #f39c12aa);
+}
+
+/* Default gradient for unknown categories */
+.article-image-gradient {
+    background: linear-gradient(135deg, #2c5e1a, #2c5e1aaa);
+}
+
+/* Article category badges by category */
+.article-badge-qa {
+    background: #17a2b8;
+}
+
+.article-badge-church-history {
+    background: #8e44ad;
+}
+
+.article-badge-liturgy {
+    background: #2980b9;
+}
+
+.article-badge-community {
+    background: #27ae60;
+}
+
+.article-badge-theology {
+    background: #e74c3c;
+}
+
+.article-badge-announcements {
+    background: #f39c12;
+}
+
+/* Default badge color for unknown categories */
+.article-category-badge {
+    background: #2c5e1a;
+}
+
+/* Article featured image */
+.article-featured-image {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+/* Article section image */
+.article-section-image {
+    width: 100%;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+/* Article blockquote */
+.article-blockquote {
+    border-left: 4px solid var(--primary);
+    padding-left: 1rem;
+    font-style: italic;
+    margin: 1.5rem 0;
+}
+
+
+/* ============================================================================
+   Page-Specific Styles - Extracted from HTML <style> blocks
+   Purpose: CSP compliance - no inline styles allowed
+   ============================================================================ */
+
+/* ============================================================================
+   VALIDATE SITEMAP PAGE
+   ============================================================================ */
+.validate-sitemap-body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: #f5f5f5;
+}
+
+.validate-sitemap-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.validate-sitemap-container h1 {
+    color: #d4af37;
+    text-align: center;
+}
+
+.test-section {
+    margin: 2rem 0;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.test-section.success {
+    background: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.test-section.error {
+    background: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.test-section.info {
+    background: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+.test-section button {
+    background: #d4af37;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.test-section button:hover {
+    background: #b8941f;
+}
+
+.url-list {
+    list-style: none;
+    padding: 0;
+}
+
+.url-list li {
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+    background: #f8f9fa;
+    border-radius: 3px;
+}
+
+.url-status {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.url-status.status-ok { 
+    background: #28a745; 
+}
+
+.url-status.status-error { 
+    background: #dc3545; 
+}
+
+.url-status.status-pending { 
+    background: #ffc107; 
+}
+
+/* ============================================================================
+   TERMS OF SERVICE & PRIVACY POLICY PAGES
+   ============================================================================ */
+.terms-container,
+.policy-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    line-height: 1.6;
+}
+
+.terms-header,
+.policy-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #d4af37;
+}
+
+.terms-section,
+.policy-section {
+    margin-bottom: 2rem;
+}
+
+.terms-section h3,
+.policy-section h3 {
+    color: #d4af37;
+    margin-bottom: 1rem;
+}
+
+.terms-section ul,
+.policy-section ul {
+    margin: 1rem 0;
+    padding-left: 2rem;
+}
+
+.contact-info {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #d4af37;
+    margin-top: 2rem;
+}
+
+.highlight-box {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+/* ============================================================================
+   MEMBERSHIP DECLARATION PAGE
+   ============================================================================ */
+.declaration-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    line-height: 1.6;
+}
+
+.declaration-header {
+    text-align: center;
+    color: #d4af37;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #d4af37;
+    padding-bottom: 1rem;
+}
+
+.declaration-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #d4af37;
+}
+
+.declaration-section h3 {
+    color: #d4af37;
+    margin-bottom: 1rem;
+}
+
+.declaration-section p {
+    margin: 1rem 0;
+}
+
+.declaration-section ul {
+    margin: 1rem 0;
+    padding-left: 2rem;
+}
+
+.declaration-section li {
+    margin: 0.5rem 0;
+}
+
+.emphasis {
+    font-style: italic;
+    color: #555;
+    font-weight: 500;
+}
+
+.close-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #d4af37;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.close-btn:hover {
+    background: #b8941f;
+}
+
+.policy-links {
+    text-align: center;
+    margin: 2rem 0;
+    padding: 1rem;
+    background: #e8f4fd;
+    border-radius: 8px;
+}
+
+.policy-links a {
+    color: #d4af37;
+    text-decoration: underline;
+    margin: 0 1rem;
+    font-weight: 600;
+}
+
+/* ============================================================================
+   MEMBER REGISTRATION & UPDATE PAGES
+   ============================================================================ */
+.registration-container,
+.update-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.member-info {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 2rem;
+    border-left: 4px solid #d4af37;
+}
+
+.registration-form,
+.update-form {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    padding: 0.75rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #d4af37;
+}
+
+.required {
+    color: #e74c3c;
+}
+
+.submit-btn {
+    background: linear-gradient(135deg, #d4af37, #f1c40f);
+    color: white;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+}
+
+.submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 5px;
+    border: 1px solid #c3e6cb;
+    margin-bottom: 1rem;
+    display: none;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 5px;
+    border: 1px solid #f5c6cb;
+    margin-bottom: 1rem;
+    display: none;
+}
+
+.loading {
+    display: none;
+    text-align: center;
+    padding: 1rem;
+}
+
+.spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #d4af37;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.invalid-token {
+    text-align: center;
+    padding: 2rem;
+    color: #721c24;
+}
+
+.invalid-token i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #dc3545;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    cursor: pointer;
+    line-height: 1.5;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 0.75rem;
+    margin-top: 0.25rem;
+    transform: scale(1.2);
+}
+
+.declaration-content {
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    color: #555;
+}
+
+.declaration-content ul {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+/* ============================================================================
+   ARTICLE PAGE
+   ============================================================================ */
+.article-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.article-header {
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+
+.article-title {
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin-bottom: 10px;
+}
+
+.article-subtitle {
+    font-size: 1.3rem;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.article-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.article-meta i {
+    margin-right: 5px;
+}
+
+.article-content {
+    line-height: 1.8;
+    font-size: 1.1rem;
+}
+
+.article-section {
+    margin-bottom: 30px;
+}
+
+.article-section h2 {
+    color: var(--primary);
+    margin-bottom: 15px;
+    font-size: 1.8rem;
+}
+
+.article-section p {
+    margin-bottom: 15px;
+}
+
+.article-section ul, 
+.article-section ol {
+    margin-left: 30px;
+    margin-bottom: 15px;
+}
+
+.article-section li {
+    margin-bottom: 10px;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.article-loading {
+    text-align: center;
+    padding: 100px 20px;
+}
+
+.article-error {
+    text-align: center;
+    padding: 100px 20px;
+    color: #dc3545;
+}
+
+/* ============================================================================
+   RESPONSIVE STYLES
+   ============================================================================ */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .registration-container,
+    .update-container,
+    .declaration-container,
+    .terms-container,
+    .policy-container {
+        margin: 1rem;
+        padding: 1rem;
+    }
+    
+    .declaration-section {
+        padding: 1rem;
+    }
+}
+
+/* ============================================================================
+   ADDITIONAL UTILITY CLASSES FOR CSP COMPLIANCE
+   ============================================================================ */
+
+/* Display utilities */
+.display-none {
+    display: none;
+}
+
+.display-inline-block {
+    display: inline-block;
+}
+
+/* Text decoration */
+.text-decoration-none {
+    text-decoration: none;
+}
+
+/* Flex utilities */
+.flex-1 {
+    flex: 1;
+}
+
+/* Page title styling */
+.page-title-centered {
+    text-align: center;
+    color: #d4af37;
+    margin-bottom: 2rem;
+}
+
+/* Section title styling */
+.section-title-gold {
+    color: #d4af37;
+    margin-top: 2rem;
+}
+
+.section-title-gold-mb {
+    color: #d4af37;
+    margin-bottom: 1rem;
+}
+
+/* Declaration section inline styles */
+.declaration-section-inline {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #d4af37;
+    margin: 2rem 0;
+}
+
+.declaration-box-white {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+}
+
+.declaration-text {
+    margin-bottom: 1rem;
+    color: #555;
+}
+
+.declaration-list {
+    color: #666;
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.declaration-link-wrapper {
+    text-align: center;
+    margin: 1.5rem 0;
+}
+
+.declaration-link-button {
+    display: inline-block;
+    background: #d4af37;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: 600;
+    transition: background 0.3s ease;
+}
+
+.declaration-link-button:hover {
+    background: #c49d2f;
+}
+
+.declaration-note-small {
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+    margin-bottom: 0;
+}
+
+.form-group-no-margin {
+    margin-bottom: 0;
+}
+
+.checkbox-label-flex {
+    display: flex;
+    align-items: flex-start;
+    cursor: pointer;
+}
+
+.checkbox-scaled {
+    margin-right: 0.75rem;
+    margin-top: 0.25rem;
+    transform: scale(1.2);
+}
+
+.required-asterisk {
+    color: #e74c3c;
+    margin-left: 0.25rem;
+}
+
+/* Note box styling */
+.note-box-yellow {
+    text-align: center;
+    margin-top: 2rem;
+    padding: 1rem;
+    background: #fff3cd;
+    border-radius: 8px;
+}
+
+/* Submit button as link */
+.submit-btn-link {
+    display: inline-block;
+    text-decoration: none;
+    margin-top: 1rem;
+}
+
+/* Icon color overrides */
+.icon-success {
+    color: #28a745;
+}
+
+/* Test results margin */
+.test-results-margin {
+    margin-top: 1rem;
+}
+
+/* Float with color */
+.float-right-success {
+    float: right;
+    color: #28a745;
+}
+
+.float-right-error {
+    float: right;
+    color: #dc3545;
+}
+
+/* Article test section */
+.article-test-margin {
+    margin-top: 3rem;
+}
+
+/* Article view display */
+.article-view-hidden {
+    display: none;
+}
+
+/* Success message info box */
+.info-box-blue {
+    background: #e8f4fd;
+    padding: 1rem;
+    border-radius: 5px;
+    margin: 1rem 0;
+}
+
+.info-box-blue h4 {
+    margin-top: 0;
+    color: #0c5460;
+}
+
+.info-box-blue ol {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+    color: #0c5460;
+}
+
+/* Small text with gray color */
+.text-small-gray {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Link with primary color */
+.link-primary {
+    color: #d4af37;
+}
+
+/* Card with top margin */
+.card-mt-2 {
+    margin-top: 2rem;
+}
+
+
+/* Privacy Banner Show Class (CSP Compliant) */
+#privacy-consent-banner.show {
+    display: block !important;
+}
+/* CSP COMPLIANCE - Display Toggle Classes */
+.show { display: block !important; }
+.hide { display: none !important; }
+.show-grid { display: grid !important; }
+.show-flex { display: flex !important; }
+
+.feedback-success {
+    display: block;
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 5px;
+    margin: 1rem 0;
+}
+
+.feedback-error {
+    display: block;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 5px;
+    margin: 1rem 0;
+}
+
+.char-counter {
+    text-align: right;
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.char-counter.warning {
+    color: #d32f2f;
+}
+
+
+/* ============================================
+   Kids Program CSP-Compliant Utility Classes
+   ============================================ */
+
+/* Progress Bar */
+.progress-fill-0 { width: 0%; }
+
+/* Theme Step */
+.theme-text {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--primary);
+    text-align: center;
+}
+
+/* Bible Study Items */
+.bible-study-item {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.bible-study-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.bible-study-header {
+    margin-bottom: 1.5rem;
+}
+
+.passage-badge {
+    background: #fff3e0;
+    color: #e65100;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.key-verse-section {
+    background: #fff9e6;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #ffd700;
+}
+
+.key-verse-title {
+    margin: 0 0 0.5rem 0;
+    color: #e65100;
+}
+
+.key-verse-text {
+    margin: 0;
+    font-style: italic;
+    font-weight: 600;
+}
+
+.study-notes-section {
+    margin-bottom: 1.5rem;
+}
+
+.study-notes-title {
+    color: var(--primary);
+    margin-bottom: 0.8rem;
+}
+
+.reflection-section {
+    background: #e8f5e8;
+    padding: 1.2rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.reflection-title {
+    margin: 0 0 0.8rem 0;
+    color: #2e7d32;
+}
+
+.reflection-para {
+    margin: 0.5rem 0;
+}
+
+.faq-section {
+    background: #e3f2fd;
+    padding: 1.2rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.faq-title {
+    margin: 0 0 0.8rem 0;
+    color: #1565c0;
+}
+
+.faq-para {
+    margin: 0.5rem 0;
+}
+
+.activity-section {
+    background: #fff3e0;
+    padding: 1.2rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.activity-title {
+    margin: 0 0 0.8rem 0;
+    color: #e65100;
+}
+
+.activity-text {
+    margin: 0;
+}
+
+.ai-enhancements {
+    background: #f3e5f5;
+    padding: 1.2rem;
+    border-radius: 8px;
+}
+
+.ai-enhancements-title {
+    margin: 0 0 0.8rem 0;
+    color: #7b1fa2;
+}
+
+.ai-section {
+    margin-bottom: 1rem;
+}
+
+.age-group {
+    margin: 0.5rem 0;
+}
+
+.age-list {
+    margin: 0.3rem 0 0 1rem;
+}
+
+.ai-list {
+    margin: 0.5rem 0 0 1rem;
+}
+
+/* Prayer Items */
+.prayer-item {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.prayer-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.prayer-header {
+    margin-bottom: 1.5rem;
+}
+
+.prayer-type-badge {
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.language-badge {
+    background: #fff3e0;
+    color: #e65100;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.prayer-content {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+}
+
+.prayer-meaning {
+    background: #f3e5f5;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.prayer-meaning-title {
+    margin: 0 0 0.5rem 0;
+    color: #7b1fa2;
+}
+
+.prayer-meaning-text {
+    margin: 0;
+}
+
+.prayer-enhancements {
+    background: #e8f5e8;
+    padding: 1.2rem;
+    border-radius: 8px;
+}
+
+.prayer-enhancements-title {
+    margin: 0 0 0.8rem 0;
+    color: #2e7d32;
+}
+
+/* Mezmur Items */
+.mezmur-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1rem;
+}
+
+.mezmur-title {
+    margin: 0;
+    color: var(--primary);
+    flex: 1;
+}
+
+.difficulty-badge {
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.mezmur-description {
+    margin-bottom: 1.5rem;
+}
+
+.mezmur-description-title {
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+}
+
+.mezmur-lyrics-section {
+    margin-bottom: 1.5rem;
+}
+
+.mezmur-lyrics-title {
+    color: var(--primary);
+    margin-bottom: 0.8rem;
+}
+
+.mezmur-lyrics-box {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--accent);
+}
+
+.mezmur-lyrics-pre {
+    white-space: pre-wrap;
+    font-family: inherit;
+    margin: 0;
+    line-height: 1.6;
+    font-size: 1.1rem;
+}
+
+.mezmur-meaning {
+    background: #e8f5e8;
+    padding: 1.2rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.mezmur-meaning-title {
+    margin: 0 0 0.5rem 0;
+    color: #2e7d32;
+}
+
+.mezmur-meaning-text {
+    margin: 0;
+}
+
+.mezmur-enhancements {
+    background: #fff3e0;
+    padding: 1.2rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.mezmur-enhancements-title {
+    margin: 0 0 0.8rem 0;
+    color: #e65100;
+}
+
+.audio-player-container {
+    margin-top: 1.5rem;
+}
+
+.audio-label {
+    font-weight: bold;
+    margin-bottom: 0.8rem;
+    color: var(--primary);
+}
+
+.audio-player {
+    width: 100%;
+    border-radius: 25px;
+}
+
+.audio-fallback {
+    color: #666;
+    font-style: italic;
+    margin-top: 1rem;
+}
+
+.audio-fallback-error {
+    color: #f44336;
+}
+
+/* Liturgy Items */
+.liturgy-item {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.liturgy-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.liturgy-header {
+    margin-bottom: 1.5rem;
+}
+
+.liturgy-timing-badge {
+    background: #fff3e0;
+    color: #e65100;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.liturgy-response-box {
+    background: #e3f2fd;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.liturgy-response-label {
+    margin: 0 0 0.8rem 0;
+    font-weight: bold;
+    color: #1565c0;
+}
+
+.liturgy-response-text {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: var(--primary);
+    text-align: center;
+    margin: 0;
+}
+
+.liturgy-meaning {
+    background: #fff3e0;
+    padding: 1.2rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.liturgy-meaning-title {
+    margin: 0 0 0.5rem 0;
+    color: #e65100;
+}
+
+.liturgy-meaning-text {
+    margin: 0;
+}
+
+.liturgy-practice-area {
+    background: #f5f5f5;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.liturgy-practice-label {
+    margin: 0 0 1rem 0;
+    font-weight: bold;
+    color: var(--dark);
+}
+
+.liturgy-input {
+    width: 100%;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    font-size: 1.1rem;
+}
+
+.liturgy-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.liturgy-enhancements {
+    background: #e8f5e8;
+    padding: 1.2rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.liturgy-enhancements-title {
+    margin: 0 0 0.8rem 0;
+    color: #2e7d32;
+}
+
+/* Learning Objectives */
+.objectives-list {
+    list-style: none;
+    padding: 0;
+}
+
+.objective-item {
+    padding: 1rem;
+    margin: 0.5rem 0;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary);
+}
+
+.objective-item-achieved {
+    background: #d4edda;
+    border-left-color: #28a745;
+}
+
+.objective-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.objective-icon {
+    font-size: 1.2rem;
+}
+
+.objective-text {
+    flex: 1;
+}
+
+.objective-empty {
+    text-align: center;
+    color: #666;
+}
+
+/* Quiz Styles */
+.quiz-intro {
+    text-align: center;
+    padding: 1rem;
+}
+
+.quiz-icon {
+    font-size: 3rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.quiz-info {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.quiz-start-btn {
+    background: var(--primary);
+    color: white;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+.quiz-note {
+    margin-top: 1rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Feedback States */
+.response-feedback {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 6px;
+    display: none;
+}
+
+.response-feedback.show {
+    display: block;
+}
+
+.feedback-success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.feedback-error {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+.feedback-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+}
+
+.feedback-info {
+    background: #cce7ff;
+    border: 1px solid #b3d9ff;
+    color: #004085;
+}
+
+/* Width utilities for progress bar */
+.w-0 { width: 0%; }
+.w-10 { width: 10%; }
+.w-20 { width: 20%; }
+.w-30 { width: 30%; }
+.w-40 { width: 40%; }
+.w-50 { width: 50%; }
+.w-60 { width: 60%; }
+.w-70 { width: 70%; }
+.w-80 { width: 80%; }
+.w-90 { width: 90%; }
+.w-100 { width: 100%; }

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -13,106 +13,11 @@
   <link rel="canonical" href="https://erotc.org/">
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles-merged.css">
+  <link rel="stylesheet" href="css/page-specific.css">
   
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17909191769"></script>
-  <script defer src="js/analytics-init.js"></script>
-  
-  <style>
-    .article-container {
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 20px;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    
-    .article-header {
-      border-bottom: 2px solid var(--primary);
-      padding-bottom: 20px;
-      margin-bottom: 30px;
-    }
-    
-    .article-title {
-      font-size: 2.5rem;
-      color: var(--primary);
-      margin-bottom: 10px;
-    }
-    
-    .article-subtitle {
-      font-size: 1.3rem;
-      color: #666;
-      margin-bottom: 20px;
-    }
-    
-    .article-meta {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      color: #888;
-      font-size: 0.9rem;
-    }
-    
-    .article-meta i {
-      margin-right: 5px;
-    }
-    
-    .article-content {
-      line-height: 1.8;
-      font-size: 1.1rem;
-    }
-    
-    .article-section {
-      margin-bottom: 30px;
-    }
-    
-    .article-section h2 {
-      color: var(--primary);
-      margin-bottom: 15px;
-      font-size: 1.8rem;
-    }
-    
-    .article-section p {
-      margin-bottom: 15px;
-    }
-    
-    .article-section ul, .article-section ol {
-      margin-left: 30px;
-      margin-bottom: 15px;
-    }
-    
-    .article-section li {
-      margin-bottom: 10px;
-    }
-    
-    .back-link {
-      display: inline-block;
-      margin-bottom: 20px;
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 500;
-    }
-    
-    .back-link:hover {
-      text-decoration: underline;
-    }
-    
-    .loading {
-      text-align: center;
-      padding: 100px 20px;
-    }
-    
-    .error {
-      text-align: center;
-      padding: 100px 20px;
-      color: #dc3545;
-    }
-  </style>
 </head>
 <body>
   <header>
@@ -136,17 +41,17 @@
     <div class="article-container">
       <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
       
-      <div id="article-loading" class="loading">
+      <div id="article-loading" class="article-loading">
         <i class="fas fa-spinner fa-spin fa-3x"></i>
         <p>Loading article...</p>
       </div>
       
-      <div id="article-error" class="error" style="display: none;">
+      <div id="article-error" class="article-error display-none">
         <i class="fas fa-exclamation-triangle fa-3x"></i>
         <p>Article not found</p>
       </div>
       
-      <div id="article-content" style="display: none;">
+      <div id="article-content" class="display-none">
         <!-- Article content will be loaded here -->
       </div>
     </div>
@@ -154,8 +59,13 @@
 
   <footer>
     <p>&copy; 2025 Saint Michael Eritrean Orthodox Tewahdo Church in Western Australia Inc. All rights reserved.</p>
-    <p style="margin-top: 0.5rem; font-size: 0.9rem;">ABN: 80 798 549 161 | 60 Osborne Street, Joondanna, WA 6060 | 0470 275 305</p>
+    <p class="footer-info">ABN: 80 798 549 161 | 60 Osborne Street, Joondanna, WA 6060 | 0470 275 305</p>
   </footer>
+
+  
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17909191769"></script>
+  <script defer src="js/analytics-init.js"></script>
 
   <script defer src="js/api-config.js"></script>
   <script defer src="js/article-loader.js"></script>

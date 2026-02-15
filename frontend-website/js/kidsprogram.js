@@ -246,7 +246,7 @@ class KidsProgram {
             <div class="lesson-container">
                 <div class="progress-container">
                     <div class="progress-bar">
-                        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                        <div class="progress-fill w-0" id="progress-fill"></div>
                     </div>
                     <div class="progress-text" id="progress-text">Step 1 of ${totalSteps}</div>
                 </div>
@@ -278,7 +278,7 @@ class KidsProgram {
                         <h3 class="card-title">Theme</h3>
                     </div>
                     <div class="card-content">
-                        <p style="font-size: 1.3rem; font-weight: bold; color: var(--primary); text-align: center;">
+                        <p class="theme-text">
                             ${this.escapeHtml(weekData.theme || 'No theme available')}
                         </p>
                     </div>
@@ -320,26 +320,27 @@ class KidsProgram {
     
     // Generate HTML for ALL Bible studies
     const studiesHTML = weekData.bibleStudy.map((study, index) => {
+        const isLast = index === weekData.bibleStudy.length - 1;
         return `
-            <div class="bible-study-item" style="margin-bottom: ${index < weekData.bibleStudy.length - 1 ? '2.5rem' : '0'}; padding-bottom: ${index < weekData.bibleStudy.length - 1 ? '2rem' : '0'}; border-bottom: ${index < weekData.bibleStudy.length - 1 ? '1px solid #e0e0e0' : 'none'};">
-                <div class="card-header" style="margin-bottom: 1.5rem;">
+            <div class="bible-study-item ${isLast ? '' : 'bible-study-item'}">
+                <div class="card-header bible-study-header">
                     <div class="card-icon">📖</div>
                     <h3 class="card-title">${this.escapeHtml(study.topic || 'Bible Study')}</h3>
-                    ${study.passage ? `<span style="background: #fff3e0; color: #e65100; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.85rem; font-weight: 600;">${this.escapeHtml(study.passage)}</span>` : ''}
+                    ${study.passage ? `<span class="passage-badge">${this.escapeHtml(study.passage)}</span>` : ''}
                 </div>
 
                 <!-- Key Verse -->
                 ${study.keyVerse ? `
-                    <div class="key-verse-section" style="background: #fff9e6; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #ffd700;">
-                        <h4 style="margin: 0 0 0.5rem 0; color: #e65100;">📌 Key Verse</h4>
-                        <p style="margin: 0; font-style: italic; font-weight: 600;">${this.escapeHtml(study.keyVerse)}</p>
+                    <div class="key-verse-section">
+                        <h4 class="key-verse-title">📌 Key Verse</h4>
+                        <p class="key-verse-text">${this.escapeHtml(study.keyVerse)}</p>
                     </div>
                 ` : ''}
 
                 <!-- Study Notes -->
                 ${study.studyNotes ? `
-                    <div class="study-notes-section" style="margin-bottom: 1.5rem;">
-                        <h4 style="color: var(--primary); margin-bottom: 0.8rem;">📝 Study Notes</h4>
+                    <div class="study-notes-section">
+                        <h4 class="study-notes-title">📝 Study Notes</h4>
                         <div class="study-content">
                             ${study.studyNotes.split('\n').map(para => `<p>${this.escapeHtml(para)}</p>`).join('')}
                         </div>
@@ -348,59 +349,59 @@ class KidsProgram {
 
                 <!-- Reflection Questions -->
                 ${study.reflectionQuestions ? `
-                    <div class="reflection-section" style="background: #e8f5e8; padding: 1.2rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                        <h4 style="margin: 0 0 0.8rem 0; color: #2e7d32;">💭 Reflection Questions</h4>
+                    <div class="reflection-section">
+                        <h4 class="reflection-title">💭 Reflection Questions</h4>
                         <div class="reflection-content">
-                            ${study.reflectionQuestions.split('\n').map(para => `<p style="margin: 0.5rem 0;">${this.escapeHtml(para)}</p>`).join('')}
+                            ${study.reflectionQuestions.split('\n').map(para => `<p class="reflection-para">${this.escapeHtml(para)}</p>`).join('')}
                         </div>
                     </div>
                 ` : ''}
 
                 <!-- FAQ Discussion -->
                 ${study.faqDiscussion ? `
-                    <div class="faq-section" style="background: #e3f2fd; padding: 1.2rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                        <h4 style="margin: 0 0 0.8rem 0; color: #1565c0;">❓ Frequently Asked Questions</h4>
+                    <div class="faq-section">
+                        <h4 class="faq-title">❓ Frequently Asked Questions</h4>
                         <div class="faq-content">
-                            ${study.faqDiscussion.split('\n').map(para => `<p style="margin: 0.5rem 0;">${this.escapeHtml(para)}</p>`).join('')}
+                            ${study.faqDiscussion.split('\n').map(para => `<p class="faq-para">${this.escapeHtml(para)}</p>`).join('')}
                         </div>
                     </div>
                 ` : ''}
 
                 <!-- Activity -->
                 ${study.activity ? `
-                    <div class="activity-section" style="background: #fff3e0; padding: 1.2rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                        <h4 style="margin: 0 0 0.8rem 0; color: #e65100;">🎨 Activity</h4>
-                        <p style="margin: 0;">${this.escapeHtml(study.activity)}</p>
+                    <div class="activity-section">
+                        <h4 class="activity-title">🎨 Activity</h4>
+                        <p class="activity-text">${this.escapeHtml(study.activity)}</p>
                     </div>
                 ` : ''}
 
                 <!-- AI Enhancements -->
                 ${study.aiEnhancements ? `
-                    <div style="background: #f3e5f5; padding: 1.2rem; border-radius: 8px;">
-                        <h4 style="margin: 0 0 0.8rem 0; color: #7b1fa2;">🎯 Learning Helps</h4>
+                    <div class="ai-enhancements">
+                        <h4 class="ai-enhancements-title">🎯 Learning Helps</h4>
                         ${study.aiEnhancements.discussionPrompts ? `
-                            <div style="margin-bottom: 1rem;">
+                            <div class="ai-section">
                                 <strong>Discussion Prompts:</strong>
                                 ${study.aiEnhancements.discussionPrompts.ages_3_5 && study.aiEnhancements.discussionPrompts.ages_3_5.length > 0 ? `
-                                    <div style="margin: 0.5rem 0;">
+                                    <div class="age-group">
                                         <em>Ages 3-5:</em>
-                                        <ul style="margin: 0.3rem 0 0 1rem;">
+                                        <ul class="age-list">
                                             ${study.aiEnhancements.discussionPrompts.ages_3_5.map(prompt => `<li>${this.escapeHtml(prompt)}</li>`).join('')}
                                         </ul>
                                     </div>
                                 ` : ''}
                                 ${study.aiEnhancements.discussionPrompts.ages_6_8 && study.aiEnhancements.discussionPrompts.ages_6_8.length > 0 ? `
-                                    <div style="margin: 0.5rem 0;">
+                                    <div class="age-group">
                                         <em>Ages 6-8:</em>
-                                        <ul style="margin: 0.3rem 0 0 1rem;">
+                                        <ul class="age-list">
                                             ${study.aiEnhancements.discussionPrompts.ages_6_8.map(prompt => `<li>${this.escapeHtml(prompt)}</li>`).join('')}
                                         </ul>
                                     </div>
                                 ` : ''}
                                 ${study.aiEnhancements.discussionPrompts.ages_9_12 && study.aiEnhancements.discussionPrompts.ages_9_12.length > 0 ? `
-                                    <div style="margin: 0.5rem 0;">
+                                    <div class="age-group">
                                         <em>Ages 9-12:</em>
-                                        <ul style="margin: 0.3rem 0 0 1rem;">
+                                        <ul class="age-list">
                                             ${study.aiEnhancements.discussionPrompts.ages_9_12.map(prompt => `<li>${this.escapeHtml(prompt)}</li>`).join('')}
                                         </ul>
                                     </div>
@@ -408,9 +409,9 @@ class KidsProgram {
                             </div>
                         ` : ''}
                         ${study.aiEnhancements.activities && study.aiEnhancements.activities.length > 0 ? `
-                            <div style="margin-bottom: 1rem;">
+                            <div class="ai-section">
                                 <strong>Additional Activities:</strong>
-                                <ul style="margin: 0.5rem 0 0 1rem;">
+                                <ul class="ai-list">
                                     ${study.aiEnhancements.activities.map(activity => `<li>${this.escapeHtml(activity)}</li>`).join('')}
                                 </ul>
                             </div>
@@ -418,7 +419,7 @@ class KidsProgram {
                         ${study.aiEnhancements.learningObjectives && study.aiEnhancements.learningObjectives.length > 0 ? `
                             <div>
                                 <strong>Learning Objectives:</strong>
-                                <ul style="margin: 0.5rem 0 0 1rem;">
+                                <ul class="ai-list">
                                     ${study.aiEnhancements.learningObjectives.map(objective => `<li>${this.escapeHtml(objective)}</li>`).join('')}
                                 </ul>
                             </div>
@@ -447,6 +448,7 @@ class KidsProgram {
         </div>
     `;
 }
+
    getPrayerStep(weekData, stepIndex, totalSteps) {
     if (!weekData.prayer || weekData.prayer.length === 0) {
         return this.getEmptyStep(stepIndex, totalSteps, 'Prayer', 'No prayer content available for this week');
@@ -454,36 +456,37 @@ class KidsProgram {
     
     // Generate HTML for ALL prayers
     const prayersHTML = weekData.prayer.map((prayer, index) => {
+        const isLast = index === weekData.prayer.length - 1;
         return `
-            <div class="prayer-item" style="margin-bottom: ${index < weekData.prayer.length - 1 ? '2.5rem' : '0'}; padding-bottom: ${index < weekData.prayer.length - 1 ? '2rem' : '0'}; border-bottom: ${index < weekData.prayer.length - 1 ? '1px solid #e0e0e0' : 'none'};">
-                <div class="card-header" style="margin-bottom: 1.5rem;">
+            <div class="prayer-item ${isLast ? '' : 'prayer-item'}">
+                <div class="card-header prayer-header">
                     <div class="card-icon">📝</div>
                     <h3 class="card-title">${this.escapeHtml(prayer.title || 'Prayer')}</h3>
-                    ${prayer.type ? `<span class="prayer-type" style="background: #e3f2fd; color: #1565c0; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.85rem; font-weight: 600;">${this.escapeHtml(prayer.type)}</span>` : ''}
-                    ${prayer.language ? `<span style="background: #fff3e0; color: #e65100; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.85rem; font-weight: 600;">${this.escapeHtml(prayer.language)}</span>` : ''}
+                    ${prayer.type ? `<span class="prayer-type-badge">${this.escapeHtml(prayer.type)}</span>` : ''}
+                    ${prayer.language ? `<span class="language-badge">${this.escapeHtml(prayer.language)}</span>` : ''}
                 </div>
                 
                 <!-- Prayer Content -->
-                <div style="font-size: 1.1rem; line-height: 1.7; margin-bottom: 1.5rem;">
+                <div class="prayer-content">
                     ${prayer.content ? prayer.content.split('\n').map(para => `<p>${this.escapeHtml(para)}</p>`).join('') : '<p>No prayer content available.</p>'}
                 </div>
 
                 <!-- Prayer Meaning -->
                 ${prayer.meaning ? `
-                    <div style="background: #f3e5f5; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                        <h4 style="margin: 0 0 0.5rem 0; color: #7b1fa2;">💫 What This Prayer Means</h4>
-                        <p style="margin: 0;">${this.escapeHtml(prayer.meaning)}</p>
+                    <div class="prayer-meaning">
+                        <h4 class="prayer-meaning-title">💫 What This Prayer Means</h4>
+                        <p class="prayer-meaning-text">${this.escapeHtml(prayer.meaning)}</p>
                     </div>
                 ` : ''}
 
                 <!-- AI Enhancements -->
                 ${prayer.aiEnhancements ? `
-                    <div style="background: #e8f5e8; padding: 1.2rem; border-radius: 8px;">
-                        <h4 style="margin: 0 0 0.8rem 0; color: #2e7d32;">💡 Reflection Helps</h4>
+                    <div class="prayer-enhancements">
+                        <h4 class="prayer-enhancements-title">💡 Reflection Helps</h4>
                         ${prayer.aiEnhancements.reflectionQuestions && prayer.aiEnhancements.reflectionQuestions.length > 0 ? `
-                            <div style="margin-bottom: 1rem;">
+                            <div class="ai-section">
                                 <strong>Reflection Questions:</strong>
-                                <ul style="margin: 0.5rem 0 0 1rem;">
+                                <ul class="ai-list">
                                     ${prayer.aiEnhancements.reflectionQuestions.map(question => `<li>${this.escapeHtml(question)}</li>`).join('')}
                                 </ul>
                             </div>
@@ -491,7 +494,7 @@ class KidsProgram {
                         ${prayer.aiEnhancements.relatedVerses && prayer.aiEnhancements.relatedVerses.length > 0 ? `
                             <div>
                                 <strong>Related Bible Verses:</strong>
-                                <ul style="margin: 0.5rem 0 0 1rem;">
+                                <ul class="ai-list">
                                     ${prayer.aiEnhancements.relatedVerses.map(verse => `<li>${this.escapeHtml(verse)}</li>`).join('')}
                                 </ul>
                             </div>
@@ -529,62 +532,62 @@ class KidsProgram {
     // Generate HTML for ALL mezmurs in the array
     const mezmursHTML = weekData.mezmur.map((mezmur, index) => {
         const audioHTML = mezmur.audio ? `
-            <div class="audio-player-container" style="margin-top: 1.5rem;">
-                <p style="font-weight: bold; margin-bottom: 0.8rem; color: var(--primary);">🎵 Listen to the song:</p>
-                <audio controls style="width: 100%; border-radius: 25px;" data-audio-src="${mezmur.audio}">
+            <div class="audio-player-container">
+                <p class="audio-label">🎵 Listen to the song:</p>
+                <audio controls class="audio-player" data-audio-src="${mezmur.audio}">
                     <source src="${mezmur.audio}" type="audio/mpeg">
                     Your browser does not support the audio element.
                 </audio>
             </div>
-        ` : '<p style="color: #666; font-style: italic; margin-top: 1rem;">No audio available for this mezmur.</p>';
+        ` : '<p class="audio-fallback">No audio available for this mezmur.</p>';
         
         return `
-            <div class="mezmur-item" style="margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: ${index < weekData.mezmur.length - 1 ? '1px solid #e0e0e0' : 'none'};">
-                <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 1rem;">
-                    <h3 style="margin: 0; color: var(--primary); flex: 1;">${this.escapeHtml(mezmur.title || 'Mezmur')}</h3>
-                    ${mezmur.difficulty ? `<span style="background: #e3f2fd; color: #1565c0; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.85rem; font-weight: 600;">${this.escapeHtml(mezmur.difficulty)}</span>` : ''}
+            <div class="mezmur-item">
+                <div class="mezmur-header">
+                    <h3 class="mezmur-title">${this.escapeHtml(mezmur.title || 'Mezmur')}</h3>
+                    ${mezmur.difficulty ? `<span class="difficulty-badge">${this.escapeHtml(mezmur.difficulty)}</span>` : ''}
                 </div>
                 
                 <!-- Description -->
                 ${mezmur.description ? `
-                    <div style="margin-bottom: 1.5rem;">
-                        <h4 style="color: var(--primary); margin-bottom: 0.5rem;">📋 About this song</h4>
+                    <div class="mezmur-description">
+                        <h4 class="mezmur-description-title">📋 About this song</h4>
                         <p>${this.escapeHtml(mezmur.description)}</p>
                     </div>
                 ` : ''}
 
                 <!-- Lyrics -->
-                <div style="margin-bottom: 1.5rem;">
-                    <h4 style="color: var(--primary); margin-bottom: 0.8rem;">🎼 Lyrics</h4>
-                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--accent);">
-                        <pre style="white-space: pre-wrap; font-family: inherit; margin: 0; line-height: 1.6; font-size: 1.1rem;">${this.escapeHtml(mezmur.lyrics || 'No lyrics available')}</pre>
+                <div class="mezmur-lyrics-section">
+                    <h4 class="mezmur-lyrics-title">🎼 Lyrics</h4>
+                    <div class="mezmur-lyrics-box">
+                        <pre class="mezmur-lyrics-pre">${this.escapeHtml(mezmur.lyrics || 'No lyrics available')}</pre>
                     </div>
                 </div>
 
                 <!-- Meaning -->
                 ${mezmur.meaning ? `
-                    <div style="background: #e8f5e8; padding: 1.2rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                        <h4 style="margin: 0 0 0.5rem 0; color: #2e7d32;">💫 What This Song Means</h4>
-                        <p style="margin: 0;">${this.escapeHtml(mezmur.meaning)}</p>
+                    <div class="mezmur-meaning">
+                        <h4 class="mezmur-meaning-title">💫 What This Song Means</h4>
+                        <p class="mezmur-meaning-text">${this.escapeHtml(mezmur.meaning)}</p>
                     </div>
                 ` : ''}
 
                 <!-- AI Enhancements -->
                 ${mezmur.aiEnhancements ? `
-                    <div style="background: #fff3e0; padding: 1.2rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                        <h4 style="margin: 0 0 0.8rem 0; color: #e65100;">🎯 Learning Helps</h4>
+                    <div class="mezmur-enhancements">
+                        <h4 class="mezmur-enhancements-title">🎯 Learning Helps</h4>
                         ${mezmur.aiEnhancements.teachingPoints && mezmur.aiEnhancements.teachingPoints.length > 0 ? `
-                            <div style="margin-bottom: 1rem;">
+                            <div class="ai-section">
                                 <strong>Teaching Points:</strong>
-                                <ul style="margin: 0.5rem 0 0 1rem;">
+                                <ul class="ai-list">
                                     ${mezmur.aiEnhancements.teachingPoints.map(point => `<li>${this.escapeHtml(point)}</li>`).join('')}
                                 </ul>
                             </div>
                         ` : ''}
                         ${mezmur.aiEnhancements.movementSuggestions && mezmur.aiEnhancements.movementSuggestions.length > 0 ? `
-                            <div style="margin-bottom: 1rem;">
+                            <div class="ai-section">
                                 <strong>Movement Suggestions:</strong>
-                                <ul style="margin: 0.5rem 0 0 1rem;">
+                                <ul class="ai-list">
                                     ${mezmur.aiEnhancements.movementSuggestions.map(movement => `<li>${this.escapeHtml(movement)}</li>`).join('')}
                                 </ul>
                             </div>
@@ -592,7 +595,7 @@ class KidsProgram {
                         ${mezmur.aiEnhancements.memoryAids && mezmur.aiEnhancements.memoryAids.length > 0 ? `
                             <div>
                                 <strong>Memory Aids:</strong>
-                                <ul style="margin: 0.5rem 0 0 1rem;">
+                                <ul class="ai-list">
                                     ${mezmur.aiEnhancements.memoryAids.map(aid => `<li>${this.escapeHtml(aid)}</li>`).join('')}
                                 </ul>
                             </div>
@@ -636,77 +639,77 @@ class KidsProgram {
     // Generate HTML for ALL liturgy responses
     const liturgiesHTML = weekData.divineLiturgy.map((liturgy, index) => {
         const audioHTML = liturgy.audio ? `
-            <div class="audio-player-container" style="margin-top: 1.5rem;">
-                <p style="font-weight: bold; margin-bottom: 0.8rem; color: var(--primary);">🔊 Listen to the pronunciation:</p>
-                <audio controls style="width: 100%; border-radius: 25px;" data-audio-src="${liturgy.audio}">
+            <div class="audio-player-container">
+                <p class="audio-label">🔊 Listen to the pronunciation:</p>
+                <audio controls class="audio-player" data-audio-src="${liturgy.audio}">
                     <source src="${liturgy.audio}" type="audio/mpeg">
                     Your browser does not support the audio element.
                 </audio>
             </div>
         ` : '';
         
+        const isLast = index === weekData.divineLiturgy.length - 1;
         return `
-            <div class="liturgy-item" style="margin-bottom: ${index < weekData.divineLiturgy.length - 1 ? '2.5rem' : '0'}; padding-bottom: ${index < weekData.divineLiturgy.length - 1 ? '2rem' : '0'}; border-bottom: ${index < weekData.divineLiturgy.length - 1 ? '1px solid #e0e0e0' : 'none'};">
-                <div class="card-header" style="margin-bottom: 1.5rem;">
+            <div class="liturgy-item ${isLast ? '' : 'liturgy-item'}">
+                <div class="card-header liturgy-header">
                     <div class="card-icon">💬</div>
                     <h3 class="card-title">${this.escapeHtml(liturgy.part || 'Liturgy Part')}</h3>
-                    ${liturgy.when ? `<span class="liturgy-timing" style="background: #fff3e0; color: #e65100; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.85rem; font-weight: 600;">${this.escapeHtml(liturgy.when)}</span>` : ''}
-                    ${liturgy.language ? `<span style="background: #e3f2fd; color: #1565c0; padding: 0.25rem 0.75rem; border-radius: 15px; font-size: 0.85rem; font-weight: 600;">${this.escapeHtml(liturgy.language)}</span>` : ''}
+                    ${liturgy.when ? `<span class="liturgy-timing-badge">${this.escapeHtml(liturgy.when)}</span>` : ''}
+                    ${liturgy.language ? `<span class="language-badge">${this.escapeHtml(liturgy.language)}</span>` : ''}
                 </div>
                 
                 <!-- Response -->
-                <div style="background: #e3f2fd; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                    <p style="margin: 0 0 0.8rem 0; font-weight: bold; color: #1565c0;">📢 Response to Practice:</p>
-                    <p class="expected-response" style="font-size: 1.4rem; font-weight: bold; color: var(--primary); text-align: center; margin: 0;">
+                <div class="liturgy-response-box">
+                    <p class="liturgy-response-label">📢 Response to Practice:</p>
+                    <p class="liturgy-response-text expected-response">
                         "${this.escapeHtml(liturgy.response || 'No response available')}"
                     </p>
                 </div>
 
                 <!-- Meaning -->
                 ${liturgy.meaning ? `
-                    <div style="background: #fff3e0; padding: 1.2rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                        <h4 style="margin: 0 0 0.5rem 0; color: #e65100;">💡 What It Means</h4>
-                        <p style="margin: 0;">${this.escapeHtml(liturgy.meaning)}</p>
+                    <div class="liturgy-meaning">
+                        <h4 class="liturgy-meaning-title">💡 What It Means</h4>
+                        <p class="liturgy-meaning-text">${this.escapeHtml(liturgy.meaning)}</p>
                     </div>
                 ` : ''}
 
                 <!-- Practice Area -->
-                <div style="background: #f5f5f5; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                    <p style="margin: 0 0 1rem 0; font-weight: bold; color: var(--dark);">🎯 Your Turn to Practice:</p>
+                <div class="liturgy-practice-area">
+                    <p class="liturgy-practice-label">🎯 Your Turn to Practice:</p>
                     
-                    <input type="text" class="user-response-input" 
+                    <input type="text" class="user-response-input liturgy-input" 
                            placeholder="Type or say the response..." 
-                           style="width:100%;padding:1rem;margin-bottom:1rem;border:2px solid var(--primary);border-radius:8px;font-size:1.1rem;"
                            data-expected="${this.escapeHtml(liturgy.response)}">
                     
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <button class="nav-btn check-response-btn" style="background: var(--success);">
+                    <div class="liturgy-buttons">
+                        <button class="nav-btn check-response-btn" data-style="success">
                             <i class="fas fa-check"></i> Check Response
                         </button>
-                        <button class="nav-btn speak-response-btn" style="background: var(--info);">
+                        <button class="nav-btn speak-response-btn" data-style="info">
                             <i class="fas fa-microphone"></i> Speak Response
                         </button>
                     </div>
                     
-                    <div class="response-feedback" style="margin-top: 1rem; padding: 1rem; border-radius: 6px; display: none;"></div>
+                    <div class="response-feedback"></div>
                 </div>
 
                 <!-- AI Enhancements -->
                 ${liturgy.aiEnhancements ? `
-                    <div style="background: #e8f5e8; padding: 1.2rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                        <h4 style="margin: 0 0 0.8rem 0; color: #2e7d32;">🎓 Learning Tips</h4>
+                    <div class="liturgy-enhancements">
+                        <h4 class="liturgy-enhancements-title">🎓 Learning Tips</h4>
                         ${liturgy.aiEnhancements.emphasisPoints && liturgy.aiEnhancements.emphasisPoints.length > 0 ? `
-                            <div style="margin-bottom: 1rem;">
+                            <div class="ai-section">
                                 <strong>Key Points:</strong>
-                                <ul style="margin: 0.5rem 0 0 1rem;">
+                                <ul class="ai-list">
                                     ${liturgy.aiEnhancements.emphasisPoints.map(point => `<li>${this.escapeHtml(point)}</li>`).join('')}
                                 </ul>
                             </div>
                         ` : ''}
                         ${liturgy.aiEnhancements.commonMistakes && liturgy.aiEnhancements.commonMistakes.length > 0 ? `
-                            <div style="margin-bottom: 1rem;">
+                            <div class="ai-section">
                                 <strong>Avoid These Mistakes:</strong>
-                                <ul style="margin: 0.5rem 0 0 1rem;">
+                                <ul class="ai-list">
                                     ${liturgy.aiEnhancements.commonMistakes.map(mistake => `<li>${this.escapeHtml(mistake)}</li>`).join('')}
                                 </ul>
                             </div>
@@ -714,7 +717,7 @@ class KidsProgram {
                         ${liturgy.aiEnhancements.practiceExercises && liturgy.aiEnhancements.practiceExercises.length > 0 ? `
                             <div>
                                 <strong>Practice Exercises:</strong>
-                                <ul style="margin: 0.5rem 0 0 1rem;">
+                                <ul class="ai-list">
                                     ${liturgy.aiEnhancements.practiceExercises.map(exercise => `<li>${this.escapeHtml(exercise)}</li>`).join('')}
                                 </ul>
                             </div>
@@ -745,19 +748,21 @@ class KidsProgram {
         </div>
     `;
 }
+
+
     getLearningObjectivesStep(weekData, stepIndex, totalSteps) {
         const hasObjectives = weekData.learningObjectives && weekData.learningObjectives.length > 0;
         
         const objectivesHTML = hasObjectives ? 
             weekData.learningObjectives.map((obj, index) => `
-                <li style="padding: 1rem; margin: 0.5rem 0; background: ${obj.achieved ? '#d4edda' : '#f8f9fa'}; border-radius: 8px; border-left: 4px solid ${obj.achieved ? '#28a745' : 'var(--primary)'};">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <span style="font-size: 1.2rem;">${obj.achieved ? '✅' : '📝'}</span>
-                        <span style="flex: 1;">${this.escapeHtml(obj.objective)}</span>
+                <li class="objective-item ${obj.achieved ? 'objective-item-achieved' : ''}">
+                    <div class="objective-content">
+                        <span class="objective-icon">${obj.achieved ? '✅' : '📝'}</span>
+                        <span class="objective-text">${this.escapeHtml(obj.objective)}</span>
                     </div>
                 </li>
             `).join('') : 
-            `<li style="padding: 1rem; margin: 0.5rem 0; background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary); text-align: center; color: #666;">
+            `<li class="objective-item objective-empty">
                 <i class="fas fa-info-circle"></i> No specific learning objectives defined for this week.
             </li>`;
 
@@ -775,7 +780,7 @@ class KidsProgram {
                         <h3 class="card-title">This Week's Goals</h3>
                     </div>
                     <div class="card-content">
-                        <ul style="list-style: none; padding: 0;">
+                        <ul class="objectives-list">
                             ${objectivesHTML}
                         </ul>
                     </div>
@@ -784,7 +789,7 @@ class KidsProgram {
                 ${this.getNavigationHTML(stepIndex, totalSteps)}
             </div>
         `;
-    }7
+    }
 
     getQuizStep(weekData, stepIndex, totalSteps) {
         const hasQuiz = weekData.practiceQuiz && weekData.practiceQuiz.questions && weekData.practiceQuiz.questions.length > 0;
@@ -805,25 +810,25 @@ class KidsProgram {
                     <div class="card-content">
                         <div id="quiz-content">
                             ${hasQuiz ? `
-                                <div style="text-align: center; padding: 1rem;">
-                                    <i class="fas fa-brain" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
-                                    <p style="font-size: 1.1rem; margin-bottom: 1rem;">
+                                <div class="quiz-intro">
+                                    <i class="fas fa-brain quiz-icon"></i>
+                                    <p class="quiz-info">
                                         <strong>${weekData.practiceQuiz.questions.length} Questions</strong><br>
                                         Time Limit: ${weekData.practiceQuiz.timeLimit || 10} minutes<br>
                                         Passing Score: ${weekData.practiceQuiz.passingScore || 70}%
                                     </p>
-                                    <button class="nav-btn start-quiz-btn" style="background: var(--primary); color: white; padding: 1rem 2rem; font-size: 1.1rem;">
+                                    <button class="nav-btn start-quiz-btn quiz-start-btn">
                                         <i class="fas fa-play"></i> Start Quiz
                                     </button>
                                 </div>
                             ` : `
-                                <div style="text-align: center; padding: 2rem;">
-                                    <i class="fas fa-brain" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
-                                    <p style="font-size: 1.1rem; margin-bottom: 2rem;">Ready to test your knowledge from this week's lesson?</p>
-                                    <button class="nav-btn start-quiz-btn" style="background: var(--primary); color: white; padding: 1rem 2rem; font-size: 1.1rem;">
+                                <div class="quiz-intro">
+                                    <i class="fas fa-brain quiz-icon"></i>
+                                    <p class="quiz-info">Ready to test your knowledge from this week's lesson?</p>
+                                    <button class="nav-btn start-quiz-btn quiz-start-btn">
                                         <i class="fas fa-play"></i> Start Quiz
                                     </button>
-                                    <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+                                    <p class="quiz-note">
                                         <i class="fas fa-info-circle"></i> Quiz will be generated from this week's content
                                     </p>
                                 </div>
@@ -865,8 +870,8 @@ class KidsProgram {
                 
                 <div class="content-card">
                     <div class="card-content">
-                        <div style="text-align: center; padding: 2rem; color: #666;">
-                            <i class="fas fa-info-circle" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                        <div class="quiz-intro">
+                            <i class="fas fa-info-circle quiz-icon"></i>
                             <p>${message}</p>
                         </div>
                     </div>
@@ -916,7 +921,7 @@ class KidsProgram {
                     </div>
                 ` : ''}
                 
-                <div class="question-feedback" style="display: none;"></div>
+                <div class="question-feedback"></div>
             </div>
         `).join('');
 
@@ -935,7 +940,7 @@ class KidsProgram {
             </div>
             
             <div class="quiz-actions">
-                <button class="nav-btn submit-quiz-btn" style="background: var(--success);">
+                <button class="nav-btn submit-quiz-btn" data-style="success">
                     <i class="fas fa-paper-plane"></i> Submit Quiz
                 </button>
             </div>
@@ -999,7 +1004,7 @@ class KidsProgram {
         const resultsHTML = `
             <div class="quiz-results">
                 <div class="results-header ${results.performance.color}">
-                    <i class="fas ${results.performance.icon}" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                    <i class="fas ${results.performance.icon} quiz-icon"></i>
                     <h3>${results.performance.level}</h3>
                     <p>${results.performance.message}</p>
                 </div>
@@ -1042,7 +1047,7 @@ class KidsProgram {
                 </div>
                 
                 <div class="quiz-actions">
-                    <button class="nav-btn retry-quiz-btn" style="background: var(--primary);">
+                    <button class="nav-btn retry-quiz-btn quiz-start-btn">
                         <i class="fas fa-redo"></i> Try Again
                     </button>
                 </div>
@@ -1057,10 +1062,10 @@ class KidsProgram {
         if (quizContent) {
             quizContent.innerHTML = `
                 <div class="quiz-error">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #f44336; margin-bottom: 1rem;"></i>
+                    <i class="fas fa-exclamation-triangle quiz-icon"></i>
                     <h4>Quiz Error</h4>
                     <p>${message}</p>
-                    <button class="nav-btn retry-quiz-btn" style="background: var(--primary); margin-top: 1rem;">
+                    <button class="nav-btn retry-quiz-btn quiz-start-btn">
                         <i class="fas fa-redo"></i> Try Again
                     </button>
                 </div>
@@ -1133,7 +1138,7 @@ class KidsProgram {
         if (container) {
             const fallback = container.querySelector('.audio-fallback');
             if (fallback) {
-                fallback.style.color = '#f44336';
+                fallback.classList.add('audio-fallback-error');
                 fallback.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Audio file not available or cannot be loaded';
             }
         }
@@ -1221,16 +1226,18 @@ class KidsProgram {
         if (!feedbackElement) return;
         
         feedbackElement.textContent = message;
-        feedbackElement.style.display = 'block';
-        feedbackElement.style.background = type === 'success' ? '#d4edda' : 
-                                          type === 'error' ? '#f8d7da' : 
-                                          type === 'warning' ? '#fff3cd' : '#cce7ff';
-        feedbackElement.style.border = type === 'success' ? '1px solid #c3e6cb' : 
-                                      type === 'error' ? '1px solid #f5c6cb' : 
-                                      type === 'warning' ? '1px solid #ffeaa7' : '1px solid #b3d9ff';
-        feedbackElement.style.color = type === 'success' ? '#155724' : 
-                                     type === 'error' ? '#721c24' : 
-                                     type === 'warning' ? '#856404' : '#004085';
+        feedbackElement.classList.remove('feedback-success', 'feedback-error', 'feedback-warning', 'feedback-info');
+        feedbackElement.classList.add('show');
+        
+        if (type === 'success') {
+            feedbackElement.classList.add('feedback-success');
+        } else if (type === 'error') {
+            feedbackElement.classList.add('feedback-error');
+        } else if (type === 'warning') {
+            feedbackElement.classList.add('feedback-warning');
+        } else {
+            feedbackElement.classList.add('feedback-info');
+        }
     }
 
     showStep(stepIndex) {
@@ -1268,7 +1275,13 @@ class KidsProgram {
         const progressFill = document.getElementById('progress-fill');
         const progressText = document.getElementById('progress-text');
         
-        if (progressFill) progressFill.style.width = `${progress}%`;
+        if (progressFill) {
+            // Remove all width classes
+            progressFill.classList.remove('w-0', 'w-10', 'w-20', 'w-30', 'w-40', 'w-50', 'w-60', 'w-70', 'w-80', 'w-90', 'w-100');
+            // Add the appropriate width class
+            const widthClass = `w-${Math.round(progress / 10) * 10}`;
+            progressFill.classList.add(widthClass);
+        }
         if (progressText) progressText.textContent = `Step ${this.currentStep + 1} of ${totalSteps}`;
     }
 

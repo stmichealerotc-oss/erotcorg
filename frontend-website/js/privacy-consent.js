@@ -10,15 +10,16 @@
     if (!consent && consentBanner) {
       // Show banner after 1 second delay
       setTimeout(() => {
-        consentBanner.style.display = 'block';
+        consentBanner.classList.add('show');
       }, 1000);
     }
   }
 
-  window.acceptPrivacyConsent = function() {
+  function acceptPrivacyConsent() {
     localStorage.setItem('privacyConsent', 'accepted');
     localStorage.setItem('privacyConsentDate', new Date().toISOString());
-    document.getElementById('privacy-consent-banner').style.display = 'none';
+    const banner = document.getElementById('privacy-consent-banner');
+    if (banner) banner.classList.remove('show');
     
     // Enable analytics if user accepts
     if (typeof gtag !== 'undefined') {
@@ -26,12 +27,13 @@
         'analytics_storage': 'granted'
       });
     }
-  };
+  }
 
-  window.declinePrivacyConsent = function() {
+  function declinePrivacyConsent() {
     localStorage.setItem('privacyConsent', 'declined');
     localStorage.setItem('privacyConsentDate', new Date().toISOString());
-    document.getElementById('privacy-consent-banner').style.display = 'none';
+    const banner = document.getElementById('privacy-consent-banner');
+    if (banner) banner.classList.remove('show');
     
     // Disable analytics if user declines
     if (typeof gtag !== 'undefined') {
@@ -39,12 +41,32 @@
         'analytics_storage': 'denied'
       });
     }
-  };
+  }
+
+  // Attach event listeners to buttons
+  function attachEventListeners() {
+    const acceptBtn = document.getElementById('accept-privacy-btn');
+    const declineBtn = document.getElementById('decline-privacy-btn');
+    
+    if (acceptBtn) {
+      acceptBtn.addEventListener('click', acceptPrivacyConsent);
+    }
+    
+    if (declineBtn) {
+      declineBtn.addEventListener('click', declinePrivacyConsent);
+    }
+  }
+
+  // Initialize on page load
+  function init() {
+    checkPrivacyConsent();
+    attachEventListeners();
+  }
 
   // Run on page load
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', checkPrivacyConsent);
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    checkPrivacyConsent();
+    init();
   }
 })();

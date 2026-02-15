@@ -1,179 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Member Registration - Saint Michael Eritrean Orthodox Church</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/styles.css">
-    <style>
-        .registration-container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        .registration-form {
-            display: grid;
-            gap: 1.5rem;
-        }
-        
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-        
-        .form-group label {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: #333;
-        }
-        
-        .form-group input,
-        .form-group textarea,
-        .form-group select {
-            padding: 0.75rem;
-            border: 2px solid #e1e5e9;
-            border-radius: 5px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
-        
-        .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #d4af37;
-        }
-        
-        .required {
-            color: #e74c3c;
-        }
-        
-        .submit-btn {
-            background: linear-gradient(135deg, #d4af37, #f1c40f);
-            color: white;
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 5px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-        
-        .submit-btn:hover {
-            transform: translateY(-2px);
-        }
-        
-        .submit-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .success-message {
-            background: #d4edda;
-            color: #155724;
-            padding: 1rem;
-            border-radius: 5px;
-            border: 1px solid #c3e6cb;
-            margin-bottom: 1rem;
-            display: none;
-        }
-        
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 1rem;
-            border-radius: 5px;
-            border: 1px solid #f5c6cb;
-            margin-bottom: 1rem;
-            display: none;
-        }
-        
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 1rem;
-        }
-        
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #d4af37;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .checkbox-label {
-            display: flex;
-            align-items: flex-start;
-            cursor: pointer;
-            line-height: 1.5;
-        }
-        
-        .checkbox-label input[type="checkbox"] {
-            margin-right: 0.75rem;
-            margin-top: 0.25rem;
-            transform: scale(1.2);
-        }
-        
-        .declaration-section {
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 8px;
-            border-left: 4px solid #d4af37;
-            margin: 2rem 0;
-        }
-        
-        .declaration-section h3 {
-            color: #d4af37;
-            margin-bottom: 1rem;
-        }
-        
-        .declaration-content {
-            margin-bottom: 1.5rem;
-            line-height: 1.6;
-            color: #555;
-        }
-        
-        .declaration-content ul {
-            margin: 1rem 0;
-            padding-left: 1.5rem;
-        }
-        
-        @media (max-width: 768px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-            
-            .registration-container {
-                margin: 1rem;
-                padding: 1rem;
-            }
-            
-            .declaration-section {
-                padding: 1rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="../css/styles-merged.css">
+    
 </head>
 <body>
     <nav class="navbar">
@@ -194,7 +27,7 @@
 
     <main class="main-content">
         <div class="registration-container">
-            <h1 style="text-align: center; color: #d4af37; margin-bottom: 2rem;">
+            <h1 class="page-title-centered">
                 <i class="fas fa-user-plus"></i> Member Registration
             </h1>
             
@@ -257,7 +90,7 @@
                     </div>
                 </div>
                 
-                <h3 style="color: #d4af37; margin-top: 2rem;">Emergency Contact</h3>
+                <h3 class="section-title-gold">Emergency Contact</h3>
                 
                 <div class="form-row">
                     <div class="form-group">
@@ -275,41 +108,41 @@
                     <textarea id="notes" name="notes" rows="3" placeholder="Any additional information you'd like to share..."></textarea>
                 </div>
                 
-                <div class="declaration-section" style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #d4af37; margin: 2rem 0;">
-                    <h3 style="color: #d4af37; margin-bottom: 1rem;">
+                <div class="declaration-section-inline">
+                    <h3 class="section-title-gold-mb">
                         <i class="fas fa-file-contract"></i> Membership Declaration and Agreement
                     </h3>
                     
-                    <div style="background: white; padding: 1.5rem; border-radius: 6px; margin-bottom: 1.5rem;">
-                        <p style="margin-bottom: 1rem; color: #555;">
+                    <div class="declaration-box-white">
+                        <p class="declaration-text">
                             <strong>Before completing your registration, please review our membership declaration which covers:</strong>
                         </p>
-                        <ul style="color: #666; margin: 1rem 0; padding-left: 1.5rem;">
+                        <ul class="declaration-list">
                             <li>Personal information accuracy and consent</li>
                             <li>Orthodox Tewahedo Church membership commitment</li>
                             <li>Community participation and responsibilities</li>
                             <li>Privacy policy and terms of service acknowledgment</li>
                         </ul>
                         
-                        <div style="text-align: center; margin: 1.5rem 0;">
+                        <div class="declaration-link-wrapper">
                             <a href="membership-declaration.html" 
                                target="_blank" 
-                               style="display: inline-block; background: #d4af37; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 5px; font-weight: 600; transition: background 0.3s ease;">
+                               class="declaration-link-button">
                                 <i class="fas fa-external-link-alt"></i> Read Full Declaration
                             </a>
                         </div>
                         
-                        <p style="font-size: 0.9rem; color: #666; text-align: center; margin-bottom: 0;">
+                        <p class="declaration-note-small">
                             <em>The declaration will open in a new window for your review</em>
                         </p>
                     </div>
                     
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label class="checkbox-label" style="display: flex; align-items: flex-start; cursor: pointer;">
-                            <input type="checkbox" id="declaration" name="declaration" required style="margin-right: 0.75rem; margin-top: 0.25rem; transform: scale(1.2);">
-                            <span style="flex: 1;">
+                    <div class="form-group form-group-no-margin">
+                        <label class="checkbox-label checkbox-label-flex">
+                            <input type="checkbox" id="declaration" name="declaration" required class="checkbox-scaled">
+                            <span class="flex-1">
                                 <strong>I have read and agree to the Membership Declaration and Agreement.</strong> I affirm my faith in the Orthodox Tewahedo Church and my sincere desire to join Saint Michael Eritrean Orthodox Tewahedo Church.
-                                <span class="required" style="color: #e74c3c; margin-left: 0.25rem;">*</span>
+                                <span class="required required-asterisk">*</span>
                             </span>
                         </label>
                     </div>
@@ -377,9 +210,9 @@
                         <p>Thank you for your interest in joining our church family, ${result.member.firstName}!</p>
                         <p><strong>Your Application ID:</strong> ${result.member.displayId}</p>
                         
-                        <div style="background: #e8f4fd; padding: 1rem; border-radius: 5px; margin: 1rem 0;">
-                            <h4 style="margin-top: 0; color: #0c5460;"><i class="fas fa-clock"></i> What Happens Next?</h4>
-                            <ol style="margin: 0.5rem 0; padding-left: 1.5rem; color: #0c5460;">
+                        <div class="info-box-blue">
+                            <h4><i class="fas fa-clock"></i> What Happens Next?</h4>
+                            <ol>
                                 <li>Your application is now in our verification queue</li>
                                 <li>A church representative will contact you within 3-5 business days</li>
                                 <li>We will verify your information and discuss membership requirements</li>
@@ -387,9 +220,9 @@
                             </ol>
                         </div>
                         
-                        <p style="font-size: 0.9rem; color: #666;">
+                        <p class="text-small-gray">
                             <strong>Questions?</strong> Contact us at 
-                            <a href="mailto:stmichaelerotc@gmail.com" style="color: #d4af37;">stmichaelerotc@gmail.com</a>
+                            <a href="mailto:stmichaelerotc@gmail.com" class="link-primary">stmichaelerotc@gmail.com</a>
                         </p>
                     `;
                     

@@ -21,10 +21,18 @@
   <meta name="geo.placename" content="Perth, Western Australia">
   <meta name="geo.position" content="-31.9505;115.8605">
   <meta name="ICBM" content="-31.9505, 115.8605">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' https://www.googletagmanager.com https://cdnjs.cloudflare.com; connect-src 'self' https://my-church.onrender.com https://www.google-analytics.com; img-src 'self' data: blob: https:; style-src 'self' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com data:; frame-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' https://www.googletagmanager.com https://cdnjs.cloudflare.com; connect-src 'self' https://my-church.onrender.com https://www.google-analytics.com https://pagead2.googlesyndication.com; img-src 'self' data: blob: https:; style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; frame-src 'self' https://www.googletagmanager.com">
   <title>Saint Michael Eritrean Orthodox Tewahdo Church in Western Australia Inc</title>
+  
+  <!-- Preconnect to external domains for faster loading -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
+  
+  <!-- Critical CSS - Load immediately -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles-merged.css">
   
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -76,10 +84,49 @@
     "event": {
       "@type": "Event",
       "name": "Sunday Service",
+      "description": "Join us for our weekly Sunday worship service featuring traditional Ethiopian Orthodox liturgy, prayers, and fellowship.",
+      "startDate": "2024-01-07T09:00:00+11:00",
+      "endDate": "2024-01-07T12:00:00+11:00",
+      "eventStatus": "https://schema.org/EventScheduled",
+      "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+      "location": {
+        "@type": "Place",
+        "name": "St. Michael Ethiopian Orthodox Tewahedo Church",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "123 Church Street",
+          "addressLocality": "Melbourne",
+          "addressRegion": "VIC",
+          "postalCode": "3000",
+          "addressCountry": "AU"
+        }
+      },
+      "image": [
+        "https://stmichaelchurch.org.au/images/church-exterior.jpg"
+      ],
+      "organizer": {
+        "@type": "Organization",
+        "name": "St. Michael Ethiopian Orthodox Tewahedo Church",
+        "url": "https://stmichaelchurch.org.au"
+      },
+      "performer": {
+        "@type": "PerformingGroup",
+        "name": "St. Michael Church Choir"
+      },
       "eventSchedule": {
         "@type": "Schedule",
         "repeatFrequency": "P1W",
-        "byDay": "Sunday"
+        "byDay": "http://schema.org/Sunday",
+        "startTime": "09:00:00",
+        "endTime": "12:00:00"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "AUD",
+        "availability": "https://schema.org/InStock",
+        "url": "https://stmichaelchurch.org.au",
+        "validFrom": "2024-01-01"
       }
     }
   }
@@ -91,20 +138,20 @@
 </head>
 <body>
   <!-- Privacy Consent Banner -->
-  <div id="privacy-consent-banner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.95); color: white; padding: 20px; z-index: 10000; box-shadow: 0 -2px 10px rgba(0,0,0,0.3);">
-    <div style="max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
-      <div style="flex: 1; min-width: 300px;">
-        <p style="margin: 0; font-size: 14px; line-height: 1.6;">
-          <i class="fas fa-cookie-bite" style="margin-right: 8px;"></i>
+  <div id="privacy-consent-banner">
+    <div class="banner-content-flex">
+      <div class="banner-text-flex">
+        <p>
+          <i class="fas fa-cookie-bite cookie-icon"></i>
           We use cookies and analytics to improve your experience. By continuing to use this site, you consent to our use of cookies and data collection practices.
-          <a href="pages/privacy-policy.html" target="_blank" style="color: #4a90e2; text-decoration: underline; margin-left: 5px;">Learn more</a>
+          <a href="pages/privacy-policy.html" target="_blank">Learn more</a>
         </p>
       </div>
-      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <button onclick="acceptPrivacyConsent()" style="background: #4a90e2; color: white; border: none; padding: 10px 24px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background 0.3s;">
+      <div class="banner-buttons-flex">
+        <button id="accept-privacy-btn" class="btn-accept-privacy">
           <i class="fas fa-check"></i> Accept
         </button>
-        <button onclick="declinePrivacyConsent()" style="background: transparent; color: white; border: 1px solid white; padding: 10px 24px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.3s;">
+        <button id="decline-privacy-btn" class="btn-decline-privacy">
           Decline
         </button>
       </div>
@@ -182,7 +229,7 @@
       <h2>Welcome</h2>
       <p>Welcome to Saint Michael Eritrean Orthodox Tewahdo Church in Western Australia. We are a spiritual home for Eritrean Orthodox believers in Perth and beyond.</p>
       
-      <div class="grid-2" style="margin-top: 2rem;">
+      <div class="grid-2 grid-2-mt-2">
         <div class="card">
           <h3><i class="fas fa-bullhorn"></i> Announcements</h3>
           <p>Join us for our Sunday service at 9:00 AM. All are welcome!</p>
@@ -198,21 +245,21 @@
       </div>
 
       <!-- Member Registration CTA -->
-      <div class="card" style="margin-top: 2rem; background: linear-gradient(135deg, #d4af37, #f1c40f); color: white; text-align: center;">
+      <div class="card card-gradient-gold">
         <h3><i class="fas fa-users"></i> Join Our Church Family</h3>
-        <p style="margin: 1rem 0;">Become a registered member of Saint Michael Eritrean Orthodox Tewahdo Church and be part of our growing spiritual community.</p>
-        <div style="margin-top: 1.5rem;">
-          <a href="pages/member-registration.html" class="btn" style="background: white; color: #d4af37; padding: 0.75rem 2rem; text-decoration: none; border-radius: 5px; font-weight: 600; display: inline-block; transition: transform 0.2s ease;">
+        <p>Become a registered member of Saint Michael Eritrean Orthodox Tewahdo Church and be part of our growing spiritual community.</p>
+        <div class="btn-wrapper">
+          <a href="pages/member-registration.html" class="btn btn-white">
             <i class="fas fa-user-plus"></i> Register as Member
           </a>
         </div>
-        <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.9;">
+        <p class="note-text">
           Registration is free and helps us serve you better with church communications, events, and pastoral care.
         </p>
       </div>
 
       <!-- Recent Articles Section -->
-      <div style="margin-top: 3rem;">
+      <div class="section-mt-3">
         <div class="section-header">
           <h3><i class="fas fa-newspaper"></i> Recent Articles</h3>
           <a href="#" data-page="articles" class="view-all-link">View All Articles <i class="fas fa-arrow-right"></i></a>
@@ -231,7 +278,7 @@
       <h2>About Us</h2>
       <p>Established in 2015, Saint Michael Eritrean Orthodox Tewaḥdo Church in Western Australia serves the Eritrean Orthodox Tewaḥdo community in WA. We are dedicated to faith, worship, spiritual integrity, and community support, rooted in the ancient Orthodox Christian tradition.</p>
       
-      <div class="grid-2" style="margin-top: 2rem;">
+      <div class="grid-2 grid-2-mt-2">
         <div class="card">
           <h3><i class="fas fa-history"></i> Our History</h3>
           <p>Saint Michael Eritrean Orthodox Tewaḥdo Church was established to serve the spiritual needs of the growing Eritrean community in Western Australia. Founded as a registered religious organization, the church provides essential spiritual services, pastoral care, and community support while preserving the Orthodox Tewaḥdo faith and heritage.</p>
@@ -240,36 +287,36 @@
         <div class="card">
           <h3><i class="fas fa-bullseye"></i> Our Mission</h3>
           <p>Saint Michael Eritrean Orthodox Tewaḥdo Church in Western Australia Inc. is dedicated to promoting worship and services according to the faith, doctrine, and canon law of the Orthodox Tewaḥdo Church.</p>
-          <p style="margin-top: 1rem;">As an association, we provide a spiritual home and organizational support to maintain Orthodox traditions and worship. We offer religious education, social gatherings, and moral and pastoral support for the benefit of our members and the wider community in Western Australia.</p>
+          <p class="p-mt-1">As an association, we provide a spiritual home and organizational support to maintain Orthodox traditions and worship. We offer religious education, social gatherings, and moral and pastoral support for the benefit of our members and the wider community in Western Australia.</p>
         </div>
       </div>
 
-      <div class="card" style="margin-top: 2rem;">
+      <div class="card card-mt-2">
         <h3><i class="fas fa-church"></i> Our Ecclesiastical Position</h3>
         <p>Saint Michael Eritrean Orthodox Tewaḥdo Church in Western Australia stands in fidelity to the canonical Orthodox tradition of the Eritrean Orthodox Tewaḥdo Church.</p>
         
-        <p style="margin-top: 1rem;">In matters of ecclesiastical integrity and conscience, we openly recognize <strong>His Holiness Patriarch Abune Antonios</strong> as the rightful and legitimate Patriarch of the Eritrean Orthodox Tewaḥdo Church. We affirm that his unjust deposition and prolonged confinement, resulting from his refusal to accept state interference in church affairs, stand as a testimony to faithfulness, humility, and moral courage.</p>
+        <p class="p-mt-1">In matters of ecclesiastical integrity and conscience, we openly recognize <strong>His Holiness Patriarch Abune Antonios</strong> as the rightful and legitimate Patriarch of the Eritrean Orthodox Tewaḥdo Church. We affirm that his unjust deposition and prolonged confinement, resulting from his refusal to accept state interference in church affairs, stand as a testimony to faithfulness, humility, and moral courage.</p>
         
-        <p style="margin-top: 1rem;">Saint Michael Eritrean Orthodox Tewaḥdo Church in Western Australia functions within the ecclesiastical framework of the <strong>Eritrean Orthodox Tewaḥdo Sub-Diocese of Australia and New Zealand</strong>, through which pastoral coordination and spiritual administration are exercised in the region.</p>
+        <p class="p-mt-1">Saint Michael Eritrean Orthodox Tewaḥdo Church in Western Australia functions within the ecclesiastical framework of the <strong>Eritrean Orthodox Tewaḥdo Sub-Diocese of Australia and New Zealand</strong>, through which pastoral coordination and spiritual administration are exercised in the region.</p>
         
-        <p style="margin-top: 1rem;">As a church community, we do not accept or support actions that compromise the spiritual independence of the Church or depart from Orthodox canonical order. Guided by prayer, peace, and humility, we remain committed to Orthodox unity, truth, and the faithful transmission of the Tewaḥdo tradition.</p>
+        <p class="p-mt-1">As a church community, we do not accept or support actions that compromise the spiritual independence of the Church or depart from Orthodox canonical order. Guided by prayer, peace, and humility, we remain committed to Orthodox unity, truth, and the faithful transmission of the Tewaḥdo tradition.</p>
       </div>
 
-      <div class="card" style="margin-top: 2rem;">
+      <div class="card card-mt-2">
         <h3><i class="fas fa-certificate"></i> Nonprofit Status</h3>
         <p>Saint Michael Eritrean Orthodox Tewaḥdo Church in Western Australia Inc. is a registered religious organization operating as a nonprofit entity. We are dedicated to promoting services according to the faith and doctrine of the Orthodox Tewaḥdo Church.</p>
         
-        <p style="margin-top: 1rem;">As an association, we provide a spiritual home and organizational support to maintain Orthodox traditions and worship. We offer religious education, social gatherings, and moral support for the benefit of our members and the wider community in Western Australia.</p>
+        <p class="p-mt-1">As an association, we provide a spiritual home and organizational support to maintain Orthodox traditions and worship. We offer religious education, social gatherings, and moral support for the benefit of our members and the wider community in Western Australia.</p>
         
-        <div style="margin-top: 1.5rem;">
+        <div class="nonprofit-info">
           <p><strong>Legal Name:</strong> Saint Michael Eritrean Orthodox Tewaḥdo Church in Western Australia Inc</p>
           <p><strong>ABN:</strong> 80 798 549 161</p>
           <p><strong>Category:</strong> Religious activities – Association of churches</p>
           <p><strong>Registration:</strong> Incorporated association in Western Australia</p>
         </div>
 
-        <h4 style="margin-top: 1.5rem;">Our Charitable Purposes:</h4>
-        <ul style="margin-top: 1rem;">
+        <h4 class="nonprofit-purposes">Our Charitable Purposes:</h4>
+        <ul>
           <li>Religious worship and spiritual guidance according to Orthodox Tewaḥdo doctrine</li>
           <li>Religious education and cultural preservation</li>
           <li>Youth development through Sunday School programs</li>
@@ -315,10 +362,10 @@
     <h2><i class="fas fa-child"></i> Kids Sunday School</h2>
     <p>Learn about God through stories, songs, and prayers!</p>
     
-    <div style="background: #e8f5e8; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
-      <h3 style="margin: 0 0 0.5rem 0;"><i class="fab fa-whatsapp" style="color: #25D366;"></i> Join Our WhatsApp Group</h3>
-      <p style="margin: 0; font-size: 0.9rem;">Stay updated with kids and youth activities! Contact us to join our WhatsApp group for online updates and follow-up.</p>
-      <p style="margin: 0.5rem 0 0 0; font-size: 0.8rem; color: #666;">Updates available in Eritrean language | Phone: 0470 275 305</p>
+    <div class="whatsapp-box">
+      <h3><i class="fab fa-whatsapp whatsapp-icon"></i> Join Our WhatsApp Group</h3>
+      <p>Stay updated with kids and youth activities! Contact us to join our WhatsApp group for online updates and follow-up.</p>
+      <p class="language-note">Updates available in Eritrean language | Phone: 0470 275 305</p>
     </div>
   </div>
 
@@ -336,8 +383,8 @@
   </div>
 
   <!-- Compact Week Navigation -->
-   <div style="display: flex; align-items: center; gap: 1rem;">
-  <!--  <h4 style="margin: 0;">Select Week:</h4>-->
+   <div class="week-nav-flex">
+  <!--  <h4>Select Week:</h4>-->
  <div class="week-nav">
     <div class="week-buttons">
       <button class="week-nav-btn active" data-week="1">Wk 1</button>
@@ -364,7 +411,7 @@
   <h2>Contact Us</h2>
   <p>We'd love to hear from you! Whether you have questions about our services, want to join our community, or need spiritual guidance, please don't hesitate to reach out.</p>
   
-  <div class="grid-2" style="margin-top: 2rem;">
+  <div class="grid-2 grid-2-mt-2">
     <!-- Contact Form -->
     <div class="card">
       <h3><i class="fas fa-envelope"></i> Send Us a Message</h3>
@@ -416,7 +463,7 @@
           <i class="fas fa-paper-plane"></i> Send Message
         </button>
         
-        <p style="font-size: 0.9rem; color: #666; margin-top: 1rem;">
+        <p class="form-note">
           * Required fields. We typically respond within 24 hours.
         </p>
       </form>
@@ -444,7 +491,7 @@
         </div>
       </div>
       
-      <div class="card" style="margin-top: 1rem;">
+      <div class="card card-mt-1">
         <h3><i class="fas fa-calendar-alt"></i> Service Times</h3>
         <ul>
           <li><strong>Sunday Service:</strong> 9:00 AM - 12:00 PM</li>
@@ -454,18 +501,18 @@
         </ul>
       </div>
       
-      <div class="card" style="margin-top: 1rem;">
+      <div class="card card-mt-1">
         <h3><i class="fab fa-whatsapp"></i> WhatsApp Groups</h3>
         <p><strong>Kids & Youth Programs:</strong></p>
-        <p style="font-size: 0.9rem; color: #666;">Join our WhatsApp group for updates on kids and youth activities. Contact us for group invitation.</p>
-        <p style="font-size: 0.9rem; color: #666;"><strong>Language:</strong> Updates available in Tigrinya and English</p>
+        <p class="whatsapp-group-text">Join our WhatsApp group for updates on kids and youth activities. Contact us for group invitation.</p>
+        <p class="whatsapp-group-text"><strong>Language:</strong> Updates available in Tigrinya and English</p>
         
-        <div style="margin-top: 1rem;">
+        <div class="social-media-section">
           <h4>Follow Us</h4>
-          <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-            <a href="#" style="color: var(--primary); font-size: 1.5rem;" title="Facebook"><i class="fab fa-facebook"></i></a>
-            <a href="#" style="color: var(--primary); font-size: 1.5rem;" title="Instagram"><i class="fab fa-instagram"></i></a>
-            <a href="#" style="color: var(--primary); font-size: 1.5rem;" title="YouTube"><i class="fab fa-youtube"></i></a>
+          <div class="social-links">
+            <a href="#" title="Facebook"><i class="fab fa-facebook"></i></a>
+            <a href="#" title="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="#" title="YouTube"><i class="fab fa-youtube"></i></a>
           </div>
         </div>
       </div>
@@ -473,25 +520,23 @@
   </div>
   
   <!-- Map Section -->
-  <div class="card" style="margin-top: 2rem;">
+  <div class="card card-mt-2">
     <h3><i class="fas fa-map"></i> Find Us</h3>
     <div class="map-container">
-      <div id="static-map" style="background: #f8f9fa; border-radius: 8px; padding: 2rem; text-align: center; height: 300px; display: flex; flex-direction: column; justify-content: center;">
-        <i class="fas fa-map-marker-alt" style="font-size: 3rem; color: #4CAF50; margin-bottom: 1rem;"></i>
-        <h4 style="color: #333; margin-bottom: 0.5rem;">Saint Michael Eritrean Orthodox Tewahdo Church</h4>
-        <p style="color: #666; margin-bottom: 1.5rem;">60 Osborne Street, Joondanna, WA 6060</p>
-        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+      <div id="static-map" class="map-static">
+        <i class="fas fa-map-marker-alt map-icon"></i>
+        <h4>Saint Michael Eritrean Orthodox Tewahdo Church</h4>
+        <p>60 Osborne Street, Joondanna, WA 6060</p>
+        <div class="map-buttons">
           <a href="https://maps.google.com/?q=60+Osborne+Street,+Joondanna,+WA+6060" 
              target="_blank" 
-             class="btn-primary"
-             style="display: inline-flex; align-items: center; gap: 0.5rem;">
+             class="btn-primary">
             <i class="fab fa-google"></i>
             Google Maps
           </a>
           <a href="https://www.openstreetmap.org/search?query=60%20Osborne%20Street%20Joondanna%20WA%206060" 
              target="_blank" 
-             class="btn-secondary"
-             style="display: inline-flex; align-items: center; gap: 0.5rem;">
+             class="btn-secondary">
             <i class="fas fa-map"></i>
             OpenStreetMap
           </a>
@@ -504,10 +549,9 @@
 <!-- Support Us Section -->
 <section id="support">
   <h2>Support Our Mission</h2>
-  <!-- 
   <p>Your support helps us continue our spiritual mission and community service. As a registered nonprofit religious organization (ABN: 80 798 549 161), we rely on the generosity of our community.</p>
   
-  <div class="grid-2" style="margin-top: 2rem;">
+  <div class="grid-2 grid-2-mt-2">
     <div class="card">
       <h3><i class="fas fa-university"></i> Direct Bank Transfer</h3>
       <div class="bank-details">
@@ -517,10 +561,9 @@
         <p><strong>Bank:</strong> Commonwealth Bank of Australia</p>
         <p><strong>Reference:</strong> Please include your name for receipt</p>
       </div>
-      <p style="margin-top: 1rem; padding: 1rem; background: #e8f5e8; border-radius: 8px;">
-        -->
-        <!--<i class="fas fa-receipt"></i> <strong>Tax Deductible:</strong> All donations are tax deductible. We will provide official receipts for tax purposes.-->
-      </p>
+      <!-- <p class="donation-note">
+        <i class="fas fa-receipt"></i> <strong>Tax Deductible:</strong> All donations are tax deductible. We will provide official receipts for tax purposes.
+      </p> -->
     </div>
     
     <div class="card">
@@ -532,13 +575,13 @@
         <li><strong>Monthly Pledges:</strong> Regular monthly contributions</li>
         <li><strong>In-Kind Donations:</strong> Church supplies, food for events</li>
       </ul>
-      <p style="margin-top: 1rem;">
+      <p class="p-mt-1">
         <strong>Contact us:</strong> 0470 275 305 or info@erotc.org for assistance with donations.
       </p>
     </div>
   </div>
 
-  <div class="card" style="margin-top: 2rem;">
+  <div class="card card-mt-2">
     <h3><i class="fas fa-hands-helping"></i> Volunteer Opportunities</h3>
     <div class="grid-2">
       <div>
@@ -560,12 +603,12 @@
         </ul>
       </div>
     </div>
-    <p style="margin-top: 1rem; text-align: center;">
+    <p class="volunteer-cta">
       <strong>Ready to volunteer?</strong> Contact us at 0470 275 305 or complete our contact form below.
     </p>
   </div>
 
-  <div class="card" style="margin-top: 2rem;">
+  <div class="card card-mt-2">
     <h3><i class="fas fa-info-circle"></i> How Your Support Helps Our Mission</h3>
     <div class="grid-2">
       <div>
@@ -589,7 +632,7 @@
     </div>
   </div>
 
-  <div class="nonprofit-info" style="margin-top: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #4CAF50;">
+  <div class="nonprofit-transparency">
     <h4><i class="fas fa-certificate"></i> Nonprofit Transparency</h4>
     <p><strong>Saint Michael Eritrean Orthodox Tewahdo Church in Western Australia Inc</strong></p>
     <ul>
@@ -613,9 +656,9 @@
                 <label for="year">Eritrean Year</label>
                 <input id="year" type="number" value="2017" />
             </div>
-            <div style="display: flex; flex-direction: column; justify-content: flex-end;">
+            <div class="calendar-controls">
                 <button id="calc">Calculate</button>
-                <button id="printBtn" style="margin-top: 0.5rem;">Print / Export PDF</button>
+                <button id="printBtn">Print / Export PDF</button>
             </div>
         </div>
         <p class="note">Enter Eritrean year and calculate all movable feast dates automatically.</p>
@@ -813,7 +856,7 @@
             <input type="number" id="customHolidayDay" placeholder="Day" min="1" max="30">
         </div>
         <button id="addCustomHoliday">Add Holiday</button>
-        <div id="customHolidaysList" style="margin-top: 1rem;"></div>
+        <div id="customHolidaysList" class="custom-holidays-list"></div>
     </div>
 </section>
     <!-- Articles Section -->
@@ -839,7 +882,7 @@
       </div>
 
       <!-- Individual Article View (hidden by default) -->
-      <div id="article-view" class="article-view" style="display: none;">
+      <div id="article-view" class="article-view section-display-none">
         <button class="back-to-articles"><i class="fas fa-arrow-left"></i> Back to Articles</button>
         <div id="article-content"></div>
       </div>
@@ -855,7 +898,7 @@
     </section>
 
     <!-- Tewahdo Haymanot Section -->
-<section id="tewahdo-haymanot" style="display: none;">
+<section id="tewahdo-haymanot" class="section-display-none">
   <div id="tewahdo-content" class="tewahdo-content">
     <!-- Content will be loaded here dynamically -->
   </div>
@@ -869,7 +912,7 @@
     </div>
 
     <!-- Privacy Policy Section -->
-    <section id="privacy" style="display: none;">
+    <section id="privacy" class="section-display-none">
       <h2>Privacy Policy</h2>
       <div class="card">
         <p><strong>Last updated:</strong> January 2025</p>
@@ -901,7 +944,7 @@
     </section>
 
     <!-- Terms of Service Section -->
-    <section id="terms" style="display: none;">
+    <section id="terms" class="section-display-none">
       <h2>Terms of Service</h2>
       <div class="card">
         <p><strong>Last updated:</strong> January 2025</p>
@@ -935,14 +978,14 @@
   </main>
 
   <footer>
-    <div style="text-align: center; padding: 2rem 1rem;">
+    <div class="footer-center">
       <p>&copy; 2026 Saint Michael Eritrean Orthodox Tewahdo Church in Western Australia Inc. All rights reserved.</p>
-      <p style="margin-top: 0.5rem; font-size: 0.9rem;">ABN: 80 798 549 161 | 60 Osborne Street, Joondanna, WA 6060 | 0470 275 305</p>
-      <div style="margin-top: 1rem; font-size: 0.9rem;">
-        <a href="pages/privacy-policy.html" style="color: var(--primary); margin-right: 1rem; text-decoration: none;">Privacy Policy</a>
-        <a href="pages/terms-of-service.html" style="color: var(--primary); text-decoration: none;">Terms of Service</a>
+      <p class="footer-info">ABN: 80 798 549 161 | 60 Osborne Street, Joondanna, WA 6060 | 0470 275 305</p>
+      <div class="footer-links">
+        <a href="pages/privacy-policy.html">Privacy Policy</a>
+        <a href="pages/terms-of-service.html">Terms of Service</a>
       </div>
-      <p style="margin-top: 1rem; font-size: 0.8rem; color: #666;">
+      <p class="footer-tagline">
         Registered Religious Organization | Advancing Religion & Community Support
       </p>
     </div>

@@ -38,6 +38,22 @@ function initializeNavigation() {
 
   // Tewahdo Haymanot Dropdown functionality
   setupDropdownMenus();
+  
+  // Fallback: Add event delegation for dropdown toggle
+  document.addEventListener('click', (e) => {
+    const dropdownToggle = e.target.closest('.dropdown-toggle');
+    if (dropdownToggle && dropdownToggle.closest('.nav-dropdown')) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Fallback dropdown handler triggered');
+      
+      const dropdownMenu = dropdownToggle.nextElementSibling;
+      if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
+        dropdownMenu.classList.toggle('show');
+        console.log('Dropdown toggled via fallback');
+      }
+    }
+  }, true); // Use capture phase to catch it early
 
   // Load last viewed page
   const lastPage = localStorage.getItem('lastPage') || 'home';
@@ -46,17 +62,24 @@ function initializeNavigation() {
 
 // Setup dropdown menus for Tewahdo Haymanot
 function setupDropdownMenus() {
-  // Main dropdown toggle
-  const dropdownToggle = document.querySelector('.nav-dropdown .dropdown-toggle');
-  const dropdownMenu = document.querySelector('.dropdown-menu');
+  // Main dropdown toggle - use more specific selector
+  const dropdownToggle = document.querySelector('.nav-dropdown > .dropdown-toggle');
+  const dropdownMenu = document.querySelector('.nav-dropdown > .dropdown-menu');
+  
+  console.log('Setup dropdowns - Toggle found:', !!dropdownToggle, 'Menu found:', !!dropdownMenu);
   
   if (dropdownToggle && dropdownMenu) {
+    // Remove any existing event listeners by cloning
+    const newToggle = dropdownToggle.cloneNode(true);
+    dropdownToggle.parentNode.replaceChild(newToggle, dropdownToggle);
+    
     // Desktop and mobile click handler
-    dropdownToggle.addEventListener('click', (e) => {
+    newToggle.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation();
       
-      console.log('Dropdown toggle clicked'); // Debug log
+      console.log('Dropdown toggle clicked', 'Window width:', window.innerWidth); // Debug log
       
       // Check if mobile or desktop
       const isMobile = window.innerWidth < 768;

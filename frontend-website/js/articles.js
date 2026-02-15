@@ -127,6 +127,26 @@ class ArticleSystem {
             .slice(0, limit);
 
         container.innerHTML = recentArticles.map(article => this.renderArticleCard(article)).join('');
+        
+        // Apply colors after DOM is created (CSP-compliant)
+        this.applyArticleColors(container);
+    }
+
+    applyArticleColors(container) {
+        // Apply colors to article cards using CSS classes (CSP-compliant)
+        const articleCards = container.querySelectorAll('.article-card[data-category]');
+        articleCards.forEach(card => {
+            const category = card.getAttribute('data-category');
+            const imageEl = card.querySelector('.article-image-gradient');
+            const categoryEl = card.querySelector('.article-category-badge');
+            
+            if (imageEl && category) {
+                imageEl.classList.add(`article-gradient-${category}`);
+            }
+            if (categoryEl && category) {
+                categoryEl.classList.add(`article-badge-${category}`);
+            }
+        });
     }
 
     renderArticles() {
@@ -150,28 +170,20 @@ class ArticleSystem {
         filteredArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         container.innerHTML = filteredArticles.map(article => this.renderArticleCard(article)).join('');
+        
+        // Apply colors after DOM is created (CSP-compliant)
+        this.applyArticleColors(container);
     }
 
     renderArticleCard(article) {
-        const categoryColors = {
-            'qa': '#17a2b8',
-            'church-history': '#8e44ad',
-            'liturgy': '#2980b9',
-            'community': '#27ae60',
-            'theology': '#e74c3c',
-            'announcements': '#f39c12'
-        };
-
-        const categoryColor = categoryColors[article.category] || '#2c5e1a';
-
         return `
-            <div class="article-card" data-article-id="${article.id}">
-                <div class="article-image" style="background: linear-gradient(135deg, ${categoryColor}, ${categoryColor}aa);">
+            <div class="article-card" data-article-id="${article.id}" data-category="${article.category}">
+                <div class="article-image article-image-gradient">
                     <i class="fas ${this.getCategoryIcon(article.category)}"></i>
                 </div>
                 <div class="article-content">
                     <div class="article-meta">
-                        <span class="article-category" style="background: ${categoryColor};">
+                        <span class="article-category article-category-badge">
                             ${this.formatCategory(article.category)}
                         </span>
                         <span class="article-date">${this.formatDate(article.date)}</span>
@@ -271,7 +283,7 @@ class ArticleSystem {
         `;
 
         if (article.featured_image) {
-            html += `<img src="${article.featured_image}" alt="${article.title}" style="width: 100%; border-radius: 8px; margin-bottom: 2rem;">`;
+            html += `<img src="${article.featured_image}" alt="${article.title}" class="article-featured-image">`;
         }
 
         article.sections.forEach(section => {
@@ -288,11 +300,11 @@ class ArticleSystem {
             }
 
             if (section.image) {
-                html += `<img src="${section.image}" alt="${section.title || 'Article image'}" style="width: 100%; border-radius: 8px; margin: 1rem 0;">`;
+                html += `<img src="${section.image}" alt="${section.title || 'Article image'}" class="article-section-image">`;
             }
 
             if (section.quote) {
-                html += `<blockquote style="border-left: 4px solid var(--primary); padding-left: 1rem; font-style: italic; margin: 1.5rem 0;">${section.quote}</blockquote>`;
+                html += `<blockquote class="article-blockquote">${section.quote}</blockquote>`;
             }
 
             html += '</div>';

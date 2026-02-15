@@ -1,0 +1,719 @@
+/* ============================================================================
+   Page-Specific Styles - Extracted from HTML <style> blocks
+   Purpose: CSP compliance - no inline styles allowed
+   ============================================================================ */
+
+/* ============================================================================
+   VALIDATE SITEMAP PAGE
+   ============================================================================ */
+.validate-sitemap-body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: #f5f5f5;
+}
+
+.validate-sitemap-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.validate-sitemap-container h1 {
+    color: #d4af37;
+    text-align: center;
+}
+
+.test-section {
+    margin: 2rem 0;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.test-section.success {
+    background: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.test-section.error {
+    background: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.test-section.info {
+    background: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+.test-section button {
+    background: #d4af37;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.test-section button:hover {
+    background: #b8941f;
+}
+
+.url-list {
+    list-style: none;
+    padding: 0;
+}
+
+.url-list li {
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+    background: #f8f9fa;
+    border-radius: 3px;
+}
+
+.url-status {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.url-status.status-ok { 
+    background: #28a745; 
+}
+
+.url-status.status-error { 
+    background: #dc3545; 
+}
+
+.url-status.status-pending { 
+    background: #ffc107; 
+}
+
+/* ============================================================================
+   TERMS OF SERVICE & PRIVACY POLICY PAGES
+   ============================================================================ */
+.terms-container,
+.policy-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    line-height: 1.6;
+}
+
+.terms-header,
+.policy-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #d4af37;
+}
+
+.terms-section,
+.policy-section {
+    margin-bottom: 2rem;
+}
+
+.terms-section h3,
+.policy-section h3 {
+    color: #d4af37;
+    margin-bottom: 1rem;
+}
+
+.terms-section ul,
+.policy-section ul {
+    margin: 1rem 0;
+    padding-left: 2rem;
+}
+
+.contact-info {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #d4af37;
+    margin-top: 2rem;
+}
+
+.highlight-box {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+/* ============================================================================
+   MEMBERSHIP DECLARATION PAGE
+   ============================================================================ */
+.declaration-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    line-height: 1.6;
+}
+
+.declaration-header {
+    text-align: center;
+    color: #d4af37;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #d4af37;
+    padding-bottom: 1rem;
+}
+
+.declaration-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #d4af37;
+}
+
+.declaration-section h3 {
+    color: #d4af37;
+    margin-bottom: 1rem;
+}
+
+.declaration-section p {
+    margin: 1rem 0;
+}
+
+.declaration-section ul {
+    margin: 1rem 0;
+    padding-left: 2rem;
+}
+
+.declaration-section li {
+    margin: 0.5rem 0;
+}
+
+.emphasis {
+    font-style: italic;
+    color: #555;
+    font-weight: 500;
+}
+
+.close-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #d4af37;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.close-btn:hover {
+    background: #b8941f;
+}
+
+.policy-links {
+    text-align: center;
+    margin: 2rem 0;
+    padding: 1rem;
+    background: #e8f4fd;
+    border-radius: 8px;
+}
+
+.policy-links a {
+    color: #d4af37;
+    text-decoration: underline;
+    margin: 0 1rem;
+    font-weight: 600;
+}
+
+/* ============================================================================
+   MEMBER REGISTRATION & UPDATE PAGES
+   ============================================================================ */
+.registration-container,
+.update-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.member-info {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 2rem;
+    border-left: 4px solid #d4af37;
+}
+
+.registration-form,
+.update-form {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    padding: 0.75rem;
+    border: 2px solid #e1e5e9;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #d4af37;
+}
+
+.required {
+    color: #e74c3c;
+}
+
+.submit-btn {
+    background: linear-gradient(135deg, #d4af37, #f1c40f);
+    color: white;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+}
+
+.submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 5px;
+    border: 1px solid #c3e6cb;
+    margin-bottom: 1rem;
+    display: none;
+}
+
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 5px;
+    border: 1px solid #f5c6cb;
+    margin-bottom: 1rem;
+    display: none;
+}
+
+.loading {
+    display: none;
+    text-align: center;
+    padding: 1rem;
+}
+
+.spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #d4af37;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.invalid-token {
+    text-align: center;
+    padding: 2rem;
+    color: #721c24;
+}
+
+.invalid-token i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: #dc3545;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    cursor: pointer;
+    line-height: 1.5;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 0.75rem;
+    margin-top: 0.25rem;
+    transform: scale(1.2);
+}
+
+.declaration-content {
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    color: #555;
+}
+
+.declaration-content ul {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+/* ============================================================================
+   ARTICLE PAGE
+   ============================================================================ */
+.article-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.article-header {
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+
+.article-title {
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin-bottom: 10px;
+}
+
+.article-subtitle {
+    font-size: 1.3rem;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.article-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.article-meta i {
+    margin-right: 5px;
+}
+
+.article-content {
+    line-height: 1.8;
+    font-size: 1.1rem;
+}
+
+.article-section {
+    margin-bottom: 30px;
+}
+
+.article-section h2 {
+    color: var(--primary);
+    margin-bottom: 15px;
+    font-size: 1.8rem;
+}
+
+.article-section p {
+    margin-bottom: 15px;
+}
+
+.article-section ul, 
+.article-section ol {
+    margin-left: 30px;
+    margin-bottom: 15px;
+}
+
+.article-section li {
+    margin-bottom: 10px;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+.article-loading {
+    text-align: center;
+    padding: 100px 20px;
+}
+
+.article-error {
+    text-align: center;
+    padding: 100px 20px;
+    color: #dc3545;
+}
+
+/* ============================================================================
+   RESPONSIVE STYLES
+   ============================================================================ */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .registration-container,
+    .update-container,
+    .declaration-container,
+    .terms-container,
+    .policy-container {
+        margin: 1rem;
+        padding: 1rem;
+    }
+    
+    .declaration-section {
+        padding: 1rem;
+    }
+}
+
+/* ============================================================================
+   ADDITIONAL UTILITY CLASSES FOR CSP COMPLIANCE
+   ============================================================================ */
+
+/* Display utilities */
+.display-none {
+    display: none;
+}
+
+.display-inline-block {
+    display: inline-block;
+}
+
+/* Text decoration */
+.text-decoration-none {
+    text-decoration: none;
+}
+
+/* Flex utilities */
+.flex-1 {
+    flex: 1;
+}
+
+/* Page title styling */
+.page-title-centered {
+    text-align: center;
+    color: #d4af37;
+    margin-bottom: 2rem;
+}
+
+/* Section title styling */
+.section-title-gold {
+    color: #d4af37;
+    margin-top: 2rem;
+}
+
+.section-title-gold-mb {
+    color: #d4af37;
+    margin-bottom: 1rem;
+}
+
+/* Declaration section inline styles */
+.declaration-section-inline {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #d4af37;
+    margin: 2rem 0;
+}
+
+.declaration-box-white {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+}
+
+.declaration-text {
+    margin-bottom: 1rem;
+    color: #555;
+}
+
+.declaration-list {
+    color: #666;
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.declaration-link-wrapper {
+    text-align: center;
+    margin: 1.5rem 0;
+}
+
+.declaration-link-button {
+    display: inline-block;
+    background: #d4af37;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: 600;
+    transition: background 0.3s ease;
+}
+
+.declaration-link-button:hover {
+    background: #c49d2f;
+}
+
+.declaration-note-small {
+    font-size: 0.9rem;
+    color: #666;
+    text-align: center;
+    margin-bottom: 0;
+}
+
+.form-group-no-margin {
+    margin-bottom: 0;
+}
+
+.checkbox-label-flex {
+    display: flex;
+    align-items: flex-start;
+    cursor: pointer;
+}
+
+.checkbox-scaled {
+    margin-right: 0.75rem;
+    margin-top: 0.25rem;
+    transform: scale(1.2);
+}
+
+.required-asterisk {
+    color: #e74c3c;
+    margin-left: 0.25rem;
+}
+
+/* Note box styling */
+.note-box-yellow {
+    text-align: center;
+    margin-top: 2rem;
+    padding: 1rem;
+    background: #fff3cd;
+    border-radius: 8px;
+}
+
+/* Submit button as link */
+.submit-btn-link {
+    display: inline-block;
+    text-decoration: none;
+    margin-top: 1rem;
+}
+
+/* Icon color overrides */
+.icon-success {
+    color: #28a745;
+}
+
+/* Test results margin */
+.test-results-margin {
+    margin-top: 1rem;
+}
+
+/* Float with color */
+.float-right-success {
+    float: right;
+    color: #28a745;
+}
+
+.float-right-error {
+    float: right;
+    color: #dc3545;
+}
+
+/* Article test section */
+.article-test-margin {
+    margin-top: 3rem;
+}
+
+/* Article view display */
+.article-view-hidden {
+    display: none;
+}
+
+/* Success message info box */
+.info-box-blue {
+    background: #e8f4fd;
+    padding: 1rem;
+    border-radius: 5px;
+    margin: 1rem 0;
+}
+
+.info-box-blue h4 {
+    margin-top: 0;
+    color: #0c5460;
+}
+
+.info-box-blue ol {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+    color: #0c5460;
+}
+
+/* Small text with gray color */
+.text-small-gray {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Link with primary color */
+.link-primary {
+    color: #d4af37;
+}
+
+/* Card with top margin */
+.card-mt-2 {
+    margin-top: 2rem;
+}
