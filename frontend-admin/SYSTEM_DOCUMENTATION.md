@@ -1,5 +1,7 @@
 # Church Management System
 
+Last Updated: February 2026
+
 ## Overview
 A comprehensive web-based management system designed for St. Michael Eritrean Orthodox Tewahedo Church in Perth, Western Australia. The system handles member management, financial accounting, inventory tracking, automated reporting with ACNC compliance, and advanced features including QR code generation, bank statement processing, and mobile-optimized date inputs.
 
