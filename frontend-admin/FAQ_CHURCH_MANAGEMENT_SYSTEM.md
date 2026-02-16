@@ -1,5 +1,7 @@
 # Church Management System - Complete FAQ Guide
 
+Last Updated: February 2026
+
 ## Table of Contents
 1. [System Overview](#system-overview)
 2. [Getting Started](#getting-started)
