@@ -29,11 +29,18 @@ The Church Management System is a comprehensive web-based application designed s
 - **Automated Reports**: Generate PDF reports and email receipts automatically
 
 ### System Architecture
-- **Frontend**: HTML, CSS, JavaScript (served via Netlify)
-- **Backend**: Node.js with Express.js (hosted on Render)
-- **Database**: MongoDB for data storage
+- **Frontend**: HTML, CSS, JavaScript (Azure Static Web Apps)
+- **Backend**: Node.js with Express.js (Azure App Service)
+- **Database**: Azure Cosmos DB (MongoDB API)
 - **Authentication**: JWT-based secure authentication
 - **Email**: Automated email notifications and receipts
+- **Document Signing**: DocuSeal on Azure App Service (Docker)
+
+### Current Deployment URLs
+- **Admin Panel**: https://lemon-rock-09193a31e.azurestaticapps.net
+- **Backend API**: https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net
+- **DocuSeal**: https://sign.erotc.org
+- **Database**: stmichael.mongo.cosmos.azure.com (Azure Cosmos DB)
 
 ---
 
@@ -41,8 +48,13 @@ The Church Management System is a comprehensive web-based application designed s
 
 ### How do I access the system?
 1. Open your web browser
-2. Navigate to the church management system URL
+2. Navigate to: **https://lemon-rock-09193a31e.azurestaticapps.net**
 3. You'll see the login page with the church header
+
+### System URLs
+- **Admin Panel**: https://lemon-rock-09193a31e.azurestaticapps.net
+- **Backend API**: https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net
+- **DocuSeal (Document Signing)**: https://sign.erotc.org
 
 ### First Time Setup
 **For System Administrators:**
@@ -481,6 +493,59 @@ The system automatically collects and processes:
 
 ---
 
+## Azure Cloud Deployment
+
+### How is the system hosted?
+The entire church management system runs on **Microsoft Azure** cloud platform:
+
+**Azure Services Used:**
+- **Azure Static Web Apps**: Hosts the admin frontend interface
+- **Azure App Service**: Runs the Node.js backend API
+- **Azure Cosmos DB**: MongoDB-compatible database for all church data
+- **Azure App Service (Docker)**: Hosts DocuSeal document signing system
+- **Azure PostgreSQL**: Database for DocuSeal
+
+### What are the benefits of Azure hosting?
+- **99.9% Uptime**: Enterprise-grade reliability
+- **Automatic Scaling**: Handles traffic spikes automatically
+- **Global Access**: Fast access from anywhere in the world
+- **Automatic Backups**: Daily backups with point-in-time recovery
+- **Security**: Enterprise-level security and compliance
+- **Automatic Updates**: System updates deployed automatically from GitHub
+
+### How do deployments work?
+**Automatic Deployment Process:**
+1. Code changes are pushed to GitHub repository
+2. GitHub Actions automatically builds and tests the code
+3. If tests pass, code is automatically deployed to Azure
+4. Both frontend and backend update simultaneously
+5. Zero downtime deployment ensures system stays online
+
+### How do I monitor system health?
+**Azure Portal Monitoring:**
+1. Go to: https://portal.azure.com
+2. Navigate to your Azure resources
+3. View real-time metrics, logs, and alerts
+4. Monitor performance, errors, and usage
+
+**Health Check Endpoints:**
+- Backend API: https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net/api/health
+- Frontend: https://lemon-rock-09193a31e.azurestaticapps.net (should load login page)
+- DocuSeal: https://sign.erotc.org (should load DocuSeal interface)
+
+### What about data backup and recovery?
+**Automatic Backups:**
+- **Cosmos DB**: Automatic backups every 4 hours, 30-day retention
+- **PostgreSQL**: Daily backups, 7-day retention
+- **Point-in-time Recovery**: Can restore to any point in the last 30 days
+
+**Manual Backup Options:**
+- Export data through the admin interface
+- Download reports and member data as CSV/PDF
+- Contact administrator for full database exports
+
+---
+
 ## Troubleshooting
 
 ### Common Login Issues
@@ -526,6 +591,37 @@ A: Ensure image is in JPG, PNG, or GIF format and under 5MB in size.
 
 **Q: Duplicate members appearing**
 A: Use the member merge function or contact administrator to resolve duplicates.
+
+### Azure-Specific Issues
+
+**Q: The admin panel won't load**
+A: Check Azure Static Web Apps status:
+1. Go to: https://portal.azure.com
+2. Navigate to: Static Web Apps → lemon-rock-09193a31e
+3. Check deployment status and logs
+4. If needed, trigger redeployment from GitHub Actions
+
+**Q: Backend API is not responding**
+A: Check Azure App Service status:
+1. Go to: https://portal.azure.com  
+2. Navigate to: App Services → cms-system
+3. Check if service is running
+4. View logs in "Log stream" section
+5. Restart service if needed
+
+**Q: Database connection errors**
+A: Check Azure Cosmos DB status:
+1. Go to: https://portal.azure.com
+2. Navigate to: Azure Cosmos DB → stmichael
+3. Check connection strings and firewall settings
+4. Verify database is not paused or throttled
+
+**Q: DocuSeal document signing not working**
+A: Check DocuSeal App Service:
+1. Go to: https://portal.azure.com
+2. Navigate to: App Services → stmichael-sign
+3. Check container status and logs
+4. Verify PostgreSQL database connection
 
 ### System Performance Issues
 
@@ -608,3 +704,7 @@ A: The interface automatically adjusts for mobile. Try rotating your device or z
 **ST. MICHAEL ERITREAN ORTHODOX TEWAHEDO CHURCH**  
 Perth, Western Australia  
 ABN: 80 798 549 161
+
+**System Version**: 3.0 (Azure Cloud Deployment)  
+**Last Updated**: February 2026  
+**Deployment Status**: ✅ Production Ready on Microsoft Azure

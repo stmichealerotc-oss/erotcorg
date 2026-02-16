@@ -6,14 +6,16 @@ A comprehensive web-based management system designed for St. Michael Eritrean Or
 ## System Architecture
 
 ### Backend (Node.js/Express)
-- **Framework**: Express.js with MongoDB
+- **Framework**: Express.js with Azure Cosmos DB (MongoDB API)
+- **Hosting**: Azure App Service with automatic GitHub deployment
 - **Authentication**: JWT-based session management
 - **API Structure**: RESTful endpoints with middleware protection
-- **Database**: MongoDB with Mongoose ODM
+- **Database**: Azure Cosmos DB with Mongoose ODM
 - **PDF Generation**: Professional PDF reports and receipts
 - **QR Code Generation**: Dynamic QR codes for members and receipts
 
 ### Frontend (Vanilla JavaScript)
+- **Hosting**: Azure Static Web Apps with automatic GitHub deployment
 - **Architecture**: Single Page Application (SPA)
 - **Styling**: Custom CSS with organized component system
 - **Navigation**: Dynamic page loading with main.js router
@@ -234,10 +236,59 @@ All APIs follow RESTful conventions:
 - **XSS Protection**: Input sanitization and output encoding
 
 ## Deployment Configuration
-- **Environment Variables**: Secure configuration management
-- **Database Connection**: MongoDB connection with error handling
-- **Static File Serving**: Efficient frontend asset delivery
+- **Frontend Hosting**: Azure Static Web Apps with automatic GitHub deployment
+- **Backend Hosting**: Azure App Service (Node.js) with automatic GitHub deployment
+- **Database**: Azure Cosmos DB (MongoDB API) with automatic backups
+- **Document Signing**: DocuSeal on Azure App Service (Docker container)
+- **Environment Variables**: Secure configuration management via Azure Portal
+- **SSL/TLS**: Automatic HTTPS certificates for all services
+- **Custom Domains**: Configured for sign.erotc.org
+- **Monitoring**: Azure Application Insights for performance monitoring
 - **Error Handling**: Comprehensive error logging and user feedback
+
+## Current Azure Architecture
+```
+┌─────────────────────────────────────────────────────────┐
+│                   MICROSOFT AZURE                       │
+│                                                         │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │  Static Web App (Admin Frontend)                  │  │
+│  │  https://lemon-rock-09193a31e.azurestaticapps.net │  │
+│  │  - HTML/CSS/JavaScript                            │  │
+│  │  - Auto-deploy from GitHub                        │  │
+│  └───────────────────────────────────────────────────┘  │
+│                          ↓                              │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │  App Service (Backend API)                        │  │
+│  │  https://cms-system-czggf5bjhxgkacat              │  │
+│  │         .australiaeast-01.azurewebsites.net       │  │
+│  │  - Node.js/Express                                │  │
+│  │  - REST API                                       │  │
+│  │  - Auto-deploy from GitHub                        │  │
+│  └───────────────────────────────────────────────────┘  │
+│                          ↓                              │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │  Cosmos DB (MongoDB API)                          │  │
+│  │  stmichael.mongo.cosmos.azure.com                 │  │
+│  │  - Members, Accounting, Inventory                 │  │
+│  │  - Tasks, Reports, Contributions                  │  │
+│  └───────────────────────────────────────────────────┘  │
+│                                                         │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │  App Service (DocuSeal)                           │  │
+│  │  https://sign.erotc.org                           │  │
+│  │  - Ruby on Rails (Docker)                         │  │
+│  │  - Document signing                               │  │
+│  └───────────────────────────────────────────────────┘  │
+│                          ↓                              │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │  PostgreSQL Database                              │  │
+│  │  docuseal.postgres.database.azure.com             │  │
+│  │  - DocuSeal data                                  │  │
+│  └───────────────────────────────────────────────────┘  │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
 
 ## File Structure
 ```
@@ -284,13 +335,19 @@ church-management-system/
 - Comprehensive error handling and validation
 
 ## Getting Started
-1. **Prerequisites**: Node.js, MongoDB
-2. **Installation**: `npm install` in backend directory
-3. **Dependencies**: QR code package installed automatically
-4. **Environment**: Configure `.env` file with database credentials
-5. **Database**: Ensure MongoDB is running
-6. **Start Server**: `npm start` in backend directory
-7. **Access**: Open `http://localhost:5000` in browser
+1. **Access System**: Navigate to https://lemon-rock-09193a31e.azurestaticapps.net
+2. **Prerequisites**: Modern web browser with JavaScript enabled
+3. **Login**: Use provided admin credentials (admin/admin123 for initial setup)
+4. **Azure Services**: All services automatically configured and running
+5. **Database**: Azure Cosmos DB automatically connected
+6. **Monitoring**: Azure Application Insights provides system monitoring
+7. **Support**: Contact system administrator for additional access
+
+## Production URLs
+- **Admin Panel**: https://lemon-rock-09193a31e.azurestaticapps.net
+- **Backend API**: https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net
+- **DocuSeal**: https://sign.erotc.org
+- **Health Check**: https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net/api/health
 
 ## Support & Maintenance
 - **User Guide**: See `frontend/FAQ_CHURCH_MANAGEMENT_SYSTEM.md`
@@ -305,5 +362,6 @@ church-management-system/
 **Perth, Western Australia**  
 **ABN: 80 798 549 161**
 
-**Last Updated**: January 2026  
-**Version**: 2.0 (Enhanced with Bank Statements, QR Codes, and Mobile Optimization)
+**Last Updated**: February 2026  
+**Version**: 3.0 (Azure Cloud Deployment with Full Integration)  
+**Deployment Status**: ✅ Production Ready on Microsoft Azure
