@@ -926,6 +926,9 @@ togglePayeeFields() {
             categorySelect.value = currentCategory;
         }
     }
+    
+    // Toggle month selector based on category
+    this.toggleMonthSelector();
 }
 // Add helper methods to check category types
 isIncomeCategory(category) {
@@ -1235,7 +1238,7 @@ handleCategoryChange() {
         this.handleDescriptionChange();
     }
     
-    // Toggle "Other" category input
+    // Toggle "Other" category input and month selector
     this.toggleOtherCategory();
 }
 
@@ -1291,6 +1294,147 @@ toggleOtherCategory() {
             customCategoryInput.required = false;
             customCategoryInput.value = '';
         }
+    }
+    
+    // Show/hide month selector for tithe/monthly categories
+    this.toggleMonthSelector();
+}
+
+// MULTI-MONTH PAYMENT FEATURE
+// Toggle month selector visibility based on category
+toggleMonthSelector() {
+    const categorySelect = document.getElementById('transaction-category');
+    const monthSelectorContainer = document.getElementById('month-selector-container');
+    const transactionType = document.getElementById('transaction-type').value;
+    
+    if (!categorySelect || !monthSelectorContainer) return;
+    
+    const category = categorySelect.value.toLowerCase();
+    const isTitheOrMonthly = category.includes('tithe') || category.includes('monthly');
+    const isIncome = transactionType === 'income';
+    
+    if (isTitheOrMonthly && isIncome) {
+        monthSelectorContainer.style.display = 'block';
+        this.generateMonthCheckboxes();
+    } else {
+        monthSelectorContainer.style.display = 'none';
+    }
+}
+
+// Generate month checkboxes dynamically
+generateMonthCheckboxes() {
+    const container = document.getElementById('month-checkboxes');
+    if (!container) return;
+    
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-11
+    
+    const months = [];
+    
+    // Generate last 12 months + current + next 3 months (16 months total)
+    for (let i = -12; i <= 3; i++) {
+        const date = new Date(currentYear, currentMonth + i, 1);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const monthLabel = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        
+        let status = '';
+        let statusClass = '';
+        if (i < 0) {
+            status = ` (Overdue - ${Math.abs(i)} month${Math.abs(i) > 1 ? 's' : ''})`;
+            statusClass = 'overdue';
+        } else if (i === 0) {
+            status = ' (Current Month)';
+            statusClass = 'current';
+        }
+        
+        months.push({
+            key: monthKey,
+            label: monthLabel,
+            status: status,
+            statusClass: statusClass,
+            isOverdue: i < 0,
+            isCurrent: i === 0
+        });
+    }
+    
+    // Build HTML
+    container.innerHTML = months.map(month => `
+        <div style="padding: 8px; border-bottom: 1px solid #e0e0e0; ${month.isCurrent ? 'background: #e8f4f8;' : ''}">
+            <label style="display: flex; align-items: center; cursor: pointer; user-select: none;">
+                <input type="checkbox" 
+                       class="month-checkbox" 
+                       value="${month.key}" 
+                       ${month.isCurrent ? 'checked' : ''}
+                       onchange="accountingPage.updateMultiMonthTotal()"
+                       style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
+                <span style="flex: 1; ${month.isOverdue ? 'color: #dc3545; font-weight: 600;' : ''}">
+                    ${month.label}${month.status}
+                </span>
+            </label>
+        </div>
+    `).join('');
+    
+    // Initialize total
+    this.updateMultiMonthTotal();
+}
+
+// Update multi-month total calculation
+updateMultiMonthTotal() {
+    const checkboxes = document.querySelectorAll('.month-checkbox:checked');
+    const amountPerMonth = parseFloat(document.getElementById('amount-per-month')?.value || 0);
+    const count = checkboxes.length;
+    const total = count * amountPerMonth;
+    
+    // Update display
+    document.getElementById('months-selected-count').textContent = count;
+    document.getElementById('multi-month-total').textContent = `$${total.toFixed(2)}`;
+    
+    // Update main amount field
+    const amountField = document.getElementById('transaction-amount');
+    if (amountField && count > 0) {
+        amountField.value = total.toFixed(2);
+    }
+    
+    // Auto-generate description
+    this.updateMultiMonthDescription();
+}
+
+// Auto-generate description for multi-month payments
+updateMultiMonthDescription() {
+    const checkboxes = Array.from(document.querySelectorAll('.month-checkbox:checked'));
+    const descriptionSelect = document.getElementById('transaction-description');
+    const customDescInput = document.getElementById('custom-description');
+    
+    if (checkboxes.length === 0) return;
+    
+    // Sort months chronologically
+    const selectedMonths = checkboxes
+        .map(cb => cb.value)
+        .sort();
+    
+    let description = '';
+    if (selectedMonths.length === 1) {
+        // Single month
+        const date = new Date(selectedMonths[0] + '-01');
+        description = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    } else {
+        // Multiple months
+        const firstDate = new Date(selectedMonths[0] + '-01');
+        const lastDate = new Date(selectedMonths[selectedMonths.length - 1] + '-01');
+        description = `${firstDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - ${lastDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} (${selectedMonths.length} months)`;
+    }
+    
+    // Set description
+    if (descriptionSelect) {
+        descriptionSelect.value = 'custom';
+        const customDescContainer = document.getElementById('custom-description-input');
+        if (customDescContainer) {
+            customDescContainer.style.display = 'block';
+        }
+    }
+    if (customDescInput) {
+        customDescInput.value = description;
     }
 }
 
@@ -2038,6 +2182,13 @@ async addTransaction() {
             name: payeeName
         }
     };
+
+    // MULTI-MONTH PAYMENT: Collect selected months
+    const selectedMonthCheckboxes = document.querySelectorAll('.month-checkbox:checked');
+    if (selectedMonthCheckboxes.length > 0) {
+        formData.monthsCovered = Array.from(selectedMonthCheckboxes).map(cb => cb.value);
+        console.log('✅ Multi-month payment covering:', formData.monthsCovered);
+    }
 
     // Handle custom category for "Other"
     if (formData.category === 'other') {

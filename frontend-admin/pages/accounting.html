@@ -765,6 +765,30 @@
                         </div>
                     </div>
                     
+                    <!-- MULTI-MONTH SELECTOR (shows only for Tithe/Monthly categories) -->
+                    <div id="month-selector-container" class="form-group" style="display: none;">
+                        <label>Select Months to Pay:</label>
+                        <div id="month-checkboxes" style="max-height: 250px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: #f9f9f9;">
+                            <!-- Month checkboxes will be dynamically generated here -->
+                        </div>
+                        <div style="margin-top: 10px; padding: 10px; background: #e8f4f8; border-radius: 4px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span><strong>Amount per month:</strong></span>
+                                <input type="number" id="amount-per-month" step="0.01" min="0.01" value="100" 
+                                       style="width: 100px; padding: 5px;" 
+                                       onchange="accountingPage.updateMultiMonthTotal()">
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span><strong>Months selected:</strong></span>
+                                <span id="months-selected-count">0</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; color: #4a6fa5;">
+                                <span>Total Amount:</span>
+                                <span id="multi-month-total">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
                         <label for="transaction-amount">Amount *</label>
                         <input type="number" id="transaction-amount" step="0.01" min="0.01" required>

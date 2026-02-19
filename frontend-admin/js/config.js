@@ -9,11 +9,12 @@ class Config {
         }
         
         // 1. Development environment (localhost)
+        // Use relative URL to avoid CORS issues when frontend and backend are on same origin
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
             if (this.isDevelopment()) {
-                console.log('🔧 Debug - Using local backend on port 3001');
+                console.log('🔧 Debug - Using relative API path (same origin)');
             }
-            return 'http://localhost:3001/api';
+            return '/api';
         }
         
         // 2. Production - Azure Static Web Apps (front-admin)

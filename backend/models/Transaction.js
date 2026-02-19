@@ -102,6 +102,14 @@ const transactionSchema = new mongoose.Schema({
   date: { 
     type: Date, 
     default: Date.now 
+  },
+  
+  // MULTI-MONTH PAYMENT TRACKING
+  // Array of months covered by this payment (format: "YYYY-MM")
+  // Example: ["2025-11", "2025-12", "2026-01"] for 3-month payment
+  monthsCovered: {
+    type: [String],
+    default: undefined // Optional field
   }
 }, {
   timestamps: true

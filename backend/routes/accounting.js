@@ -196,7 +196,7 @@ router.post('/transaction', authorizeRoles('super-admin', 'admin', 'accountant')
   try {
     console.log('Received transaction data:', req.body);
     
-    const { type, amount, category, description, payee, paymentMethod, reference, notes } = req.body;
+    const { type, amount, category, description, payee, paymentMethod, reference, notes, monthsCovered } = req.body;
     
     // Enhanced validation
     if (!type || !amount || !category || !description) {
@@ -249,6 +249,12 @@ router.post('/transaction', authorizeRoles('super-admin', 'admin', 'accountant')
       notes: notes || '',
       date: new Date() // Ensure date is set
     };
+
+    // Add monthsCovered if provided (for multi-month payments)
+    if (monthsCovered && Array.isArray(monthsCovered) && monthsCovered.length > 0) {
+      transactionData.monthsCovered = monthsCovered;
+      console.log('✅ Multi-month payment covering:', monthsCovered);
+    }
 
     console.log('✅ Creating transaction with validated data:', transactionData);
 
@@ -414,7 +420,22 @@ router.get('/member/:memberId', readOnlyAccess, async (req, res) => {
     const transactions = await Transaction.find(query)
       .sort({ _id: -1 }); // Use _id instead of date for Cosmos DB compatibility
     
-    res.json(transactions);
+    // Auto-generate monthsCovered for legacy transactions
+    const enhancedTransactions = transactions.map(tx => {
+      const txObj = tx.toObject();
+      
+      // If monthsCovered doesn't exist, generate from date field
+      if (!txObj.monthsCovered || txObj.monthsCovered.length === 0) {
+        const txDate = new Date(txObj.date);
+        const year = txDate.getFullYear();
+        const month = String(txDate.getMonth() + 1).padStart(2, '0');
+        txObj.monthsCovered = [`${year}-${month}`];
+      }
+      
+      return txObj;
+    });
+    
+    res.json(enhancedTransactions);
   } catch (err) {
     console.error('Error fetching member transactions:', err);
     res.status(500).json({ error: 'Failed to fetch member transactions' });
