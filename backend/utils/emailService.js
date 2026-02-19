@@ -68,10 +68,12 @@ class EmailService {
         return crypto.randomBytes(32).toString('hex');
     }
 
-    // Get the correct production URL
+    // Get the correct production URL for admin panel
     getProductionUrl() {
-        // Always use the production URL for emails
-        return process.env.FRONTEND_URL || 'https://church-management-vjfw.onrender.com';
+        // Use ADMIN_PANEL_URL if set, otherwise fall back to FRONTEND_URL
+        // ADMIN_PANEL_URL should be https://cms.erotc.org (admin panel)
+        // FRONTEND_URL is https://erotc.org (public website)
+        return process.env.ADMIN_PANEL_URL || process.env.FRONTEND_URL || 'https://cms.erotc.org';
     }
 
     // Send welcome email with one-time password
@@ -786,4 +788,4 @@ class EmailService {
     }
 }
 
-module.exports = new EmailService();
+module.exports = new EmailService();
