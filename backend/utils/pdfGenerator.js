@@ -1,15 +1,21 @@
-// Try to use chrome-aws-lambda for cloud environments, fallback to regular puppeteer
+// Use @sparticuz/chromium for cloud environments (Azure/AWS compatible)
 let chromium;
 let puppeteer;
 
 try {
-    chromium = require('chrome-aws-lambda');
+    chromium = require('@sparticuz/chromium');
     puppeteer = require('puppeteer-core');
-    console.log('✅ Using chrome-aws-lambda for cloud environment');
+    console.log('✅ Using @sparticuz/chromium for cloud environment');
 } catch (error) {
-    puppeteer = require('puppeteer');
-    chromium = null;
-    console.log('ℹ️ Using regular puppeteer (chrome-aws-lambda not available)');
+    console.log('⚠️ @sparticuz/chromium not available, trying puppeteer:', error.message);
+    try {
+        puppeteer = require('puppeteer');
+        chromium = null;
+        console.log('ℹ️ Using regular puppeteer (local development)');
+    } catch (puppeteerError) {
+        console.error('❌ No puppeteer available:', puppeteerError.message);
+        throw new Error('PDF generation unavailable: No puppeteer library found');
+    }
 }
 
 const path = require('path');
@@ -26,18 +32,21 @@ class PDFGenerator {
             try {
                 console.log('🔄 Initializing Puppeteer browser...');
                 
-                // Use chrome-aws-lambda if available (for Azure/AWS)
+                // Use @sparticuz/chromium if available (for Azure/AWS)
                 if (chromium) {
+                    console.log('📦 Loading Chromium binary for cloud environment...');
+                    
                     this.browser = await puppeteer.launch({
                         args: chromium.args,
                         defaultViewport: chromium.defaultViewport,
-                        executablePath: await chromium.executablePath,
+                        executablePath: await chromium.executablePath(),
                         headless: chromium.headless,
                         ignoreHTTPSErrors: true,
                     });
-                    console.log('✅ Puppeteer browser initialized with chrome-aws-lambda');
+                    console.log('✅ Puppeteer browser initialized with @sparticuz/chromium');
                 } else {
-                    // Fallback to regular puppeteer
+                    // Fallback to regular puppeteer (local development)
+                    console.log('📦 Using local Puppeteer installation...');
                     this.browser = await puppeteer.launch({
                         headless: 'new',
                         args: [
@@ -70,6 +79,7 @@ class PDFGenerator {
                 }
             } catch (error) {
                 console.error('❌ Failed to initialize Puppeteer browser:', error.message);
+                console.error('❌ Error stack:', error.stack);
                 throw new Error(`PDF generation unavailable: ${error.message}`);
             }
         }
