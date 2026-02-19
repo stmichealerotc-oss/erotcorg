@@ -1,4 +1,17 @@
-const puppeteer = require('puppeteer');
+// Try to use chrome-aws-lambda for cloud environments, fallback to regular puppeteer
+let chromium;
+let puppeteer;
+
+try {
+    chromium = require('chrome-aws-lambda');
+    puppeteer = require('puppeteer-core');
+    console.log('✅ Using chrome-aws-lambda for cloud environment');
+} catch (error) {
+    puppeteer = require('puppeteer');
+    chromium = null;
+    console.log('ℹ️ Using regular puppeteer (chrome-aws-lambda not available)');
+}
+
 const path = require('path');
 const fs = require('fs');
 const QRCodeGenerator = require('./qrCodeGenerator');
@@ -11,36 +24,50 @@ class PDFGenerator {
     async initBrowser() {
         if (!this.browser) {
             try {
-                this.browser = await puppeteer.launch({
-                    headless: 'new',
-                    args: [
-                        '--no-sandbox',
-                        '--disable-setuid-sandbox',
-                        '--disable-dev-shm-usage',
-                        '--disable-accelerated-2d-canvas',
-                        '--no-first-run',
-                        '--no-zygote',
-                        '--disable-gpu',
-                        '--disable-web-security',
-                        '--disable-features=VizDisplayCompositor',
-                        '--disable-background-timer-throttling',
-                        '--disable-backgrounding-occluded-windows',
-                        '--disable-renderer-backgrounding',
-                        '--disable-extensions',
-                        '--disable-plugins',
-                        '--disable-default-apps',
-                        '--no-default-browser-check',
-                        '--disable-hang-monitor',
-                        '--disable-prompt-on-repost',
-                        '--disable-sync',
-                        '--metrics-recording-only',
-                        '--no-first-run',
-                        '--safebrowsing-disable-auto-update',
-                        '--disable-background-networking'
-                    ],
-                    timeout: 30000 // Reduced from 60000
-                });
-                console.log('✅ Puppeteer browser initialized successfully');
+                console.log('🔄 Initializing Puppeteer browser...');
+                
+                // Use chrome-aws-lambda if available (for Azure/AWS)
+                if (chromium) {
+                    this.browser = await puppeteer.launch({
+                        args: chromium.args,
+                        defaultViewport: chromium.defaultViewport,
+                        executablePath: await chromium.executablePath,
+                        headless: chromium.headless,
+                        ignoreHTTPSErrors: true,
+                    });
+                    console.log('✅ Puppeteer browser initialized with chrome-aws-lambda');
+                } else {
+                    // Fallback to regular puppeteer
+                    this.browser = await puppeteer.launch({
+                        headless: 'new',
+                        args: [
+                            '--no-sandbox',
+                            '--disable-setuid-sandbox',
+                            '--disable-dev-shm-usage',
+                            '--disable-accelerated-2d-canvas',
+                            '--no-first-run',
+                            '--no-zygote',
+                            '--disable-gpu',
+                            '--disable-web-security',
+                            '--disable-features=VizDisplayCompositor',
+                            '--disable-background-timer-throttling',
+                            '--disable-backgrounding-occluded-windows',
+                            '--disable-renderer-backgrounding',
+                            '--disable-extensions',
+                            '--disable-plugins',
+                            '--disable-default-apps',
+                            '--no-default-browser-check',
+                            '--disable-hang-monitor',
+                            '--disable-prompt-on-repost',
+                            '--disable-sync',
+                            '--metrics-recording-only',
+                            '--safebrowsing-disable-auto-update',
+                            '--disable-background-networking'
+                        ],
+                        timeout: 30000
+                    });
+                    console.log('✅ Puppeteer browser initialized with regular puppeteer');
+                }
             } catch (error) {
                 console.error('❌ Failed to initialize Puppeteer browser:', error.message);
                 throw new Error(`PDF generation unavailable: ${error.message}`);

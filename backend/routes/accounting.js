@@ -430,7 +430,152 @@ router.get('/test-email-endpoint', readOnlyAccess, (req, res) => {
   });
 });
 
-// Send Receipt Email Endpoint
+// Send Receipt Email Endpoint (mobile app compatible - auto-detects recipient)
+router.post('/send-receipt/:transactionId', authorizeRoles('super-admin', 'admin', 'accountant'), async (req, res) => {
+  console.log('📧 Send receipt endpoint called (mobile) with:', req.params.transactionId);
+  
+  try {
+    const { transactionId } = req.params;
+
+    // Validate transaction ID
+    if (!isValidObjectId(transactionId)) {
+      return res.status(400).json({ error: 'Invalid transaction ID' });
+    }
+
+    // Get transaction with populated payee data
+    const transaction = await Transaction.findById(transactionId)
+      .populate('payee.memberId', 'firstName lastName email phone address');
+
+    if (!transaction) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+
+    if (transaction.type !== 'income') {
+      return res.status(400).json({ error: 'Email receipts can only be sent for income transactions' });
+    }
+
+    // Auto-detect recipient email and name from transaction
+    let recipientEmail = null;
+    let recipientName = 'Valued Donor';
+
+    if (transaction.payee) {
+      if (transaction.payee.type === 'member' && transaction.payee.memberId) {
+        const member = transaction.payee.memberId;
+        if (typeof member === 'object') {
+          recipientEmail = member.email;
+          recipientName = `${member.firstName} ${member.lastName}`;
+        }
+      } else if (transaction.payee.type === 'external') {
+        recipientEmail = transaction.payee.email;
+        recipientName = transaction.payee.name || 'Valued Donor';
+      }
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!recipientEmail || !emailRegex.test(recipientEmail)) {
+      return res.status(400).json({ error: 'No valid email address found for this transaction' });
+    }
+
+    // Get signature information
+    let signatureInfo = null;
+    try {
+      const signatureResponse = await fetch(`${process.env.BASE_URL || 'http://localhost:5000'}/api/signatures/${transactionId}`, {
+        headers: { 'Authorization': req.headers.authorization }
+      });
+      if (signatureResponse.ok) {
+        signatureInfo = await signatureResponse.json();
+      }
+    } catch (error) {
+      console.log('No signature found for transaction');
+    }
+
+    // Import services
+    const emailService = require('../utils/emailService');
+    const pdfGenerator = require('../utils/pdfGenerator');
+
+    // Generate PDF receipt
+    const pdfBuffer = await pdfGenerator.generateReceiptPDF(transaction, signatureInfo);
+
+    // Create simple email HTML (PDF is the main receipt)
+    const emailHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Donation Receipt</title>
+        <style>
+          body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+          .header { text-align: center; border-bottom: 2px solid #4a6fa5; padding-bottom: 20px; margin-bottom: 30px; }
+          .church-name { font-size: 24px; font-weight: bold; color: #4a6fa5; margin-bottom: 10px; }
+          .content { background: #f8f9fa; padding: 25px; border-radius: 8px; margin: 20px 0; }
+          .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 14px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="church-name">St Michael Eritrean Orthodox Church</div>
+          <p>60 Osborne Street, Joondanna, WA 6060<br>
+          ABN: 80798549161 | stmichaelerotc@gmail.com | erotc.org</p>
+        </div>
+
+        <div class="content">
+          <p>Dear ${recipientName},</p>
+          
+          <p>Thank you for your generous contribution to St Michael Eritrean Orthodox Church!</p>
+          
+          <p><strong>Please find your official donation receipt attached as a PDF.</strong></p>
+          
+          <p>This receipt includes:</p>
+          <ul>
+            <li>Transaction details and amount</li>
+            <li>Official church information</li>
+            <li>Authorized signature (if applicable)</li>
+            <li>Tax-deductible contribution notice</li>
+          </ul>
+          
+          <p>If you have any questions about this receipt or your contribution, please don't hesitate to contact us.</p>
+        </div>
+
+        <div class="footer">
+          <p><strong>Blessings and Peace,</strong></p>
+          <p><strong>St Michael Eritrean Orthodox Church</strong></p>
+          <p>stmichaelerotc@gmail.com | erotc.org</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Send email with PDF attachment
+    await emailService.sendEmail({
+      to: recipientEmail,
+      subject: `Donation Receipt - St Michael Eritrean Orthodox Church`,
+      html: emailHTML,
+      attachments: [
+        {
+          filename: `Receipt_${transaction._id.toString().substring(18)}_${new Date().toISOString().split('T')[0]}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        }
+      ]
+    });
+
+    res.json({ 
+      success: true, 
+      message: `Receipt PDF sent successfully to ${recipientEmail}` 
+    });
+
+  } catch (error) {
+    console.error('❌ Error sending receipt email:', error);
+    console.error('❌ Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Failed to send receipt email',
+      details: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Send Receipt Email Endpoint (web admin - requires explicit recipient)
 router.post('/send-receipt-email/:transactionId', authorizeRoles('super-admin', 'admin', 'accountant'), async (req, res) => {
   console.log('📧 Email endpoint called with:', req.params.transactionId);
   console.log('📧 Request body:', req.body);
