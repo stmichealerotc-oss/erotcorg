@@ -1470,17 +1470,33 @@ document.getElementById('kids-program-form')?.addEventListener('submit', async (
     // Get the full program data (all 4 weeks)
     let fullProgramData = currentProgramData;
     
-    if (!fullProgramData || !fullProgramData.weeks) {
-      // Create new program with 4 weeks
+    // Ensure we always have exactly 4 weeks
+    if (!fullProgramData || !fullProgramData.weeks || fullProgramData.weeks.length !== 4) {
+      // Create template for empty week
+      const emptyWeek = (weekNum) => ({
+        week: weekNum,
+        theme: '',
+        memoryVerse: '',
+        mezmur: [],
+        prayer: [],
+        bibleStudy: [],
+        divineLiturgy: [],
+        practiceQuiz: null
+      });
+      
+      // Start with existing weeks or empty array
+      const existingWeeks = fullProgramData?.weeks || [];
+      
+      // Create array of 4 weeks, preserving existing data
+      const weeks = [1, 2, 3, 4].map(weekNum => {
+        const existing = existingWeeks.find(w => w.week === weekNum);
+        return existing || emptyWeek(weekNum);
+      });
+      
       fullProgramData = {
         year: year,
         month: month,
-        weeks: [
-          { week: 1, theme: '', memoryVerse: '', mezmur: [], prayer: [], bibleStudy: [], divineLiturgy: [], practiceQuiz: null },
-          { week: 2, theme: '', memoryVerse: '', mezmur: [], prayer: [], bibleStudy: [], divineLiturgy: [], practiceQuiz: null },
-          { week: 3, theme: '', memoryVerse: '', mezmur: [], prayer: [], bibleStudy: [], divineLiturgy: [], practiceQuiz: null },
-          { week: 4, theme: '', memoryVerse: '', mezmur: [], prayer: [], bibleStudy: [], divineLiturgy: [], practiceQuiz: null }
-        ]
+        weeks: weeks
       };
     }
     
@@ -1498,7 +1514,7 @@ document.getElementById('kids-program-form')?.addEventListener('submit', async (
     };
     
     // Use POST method (backend uses this for both create and update)
-    console.log('Saving full program:', fullProgramData);
+    console.log('Saving full program with 4 weeks:', fullProgramData);
     const response = await apiCall('/kids-program', {
       method: 'POST',
       body: {
