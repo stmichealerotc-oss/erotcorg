@@ -27,6 +27,7 @@ const authRoutes = require('./routes/auth');
 const kidsProgram2Routes = require('./routes/kidsProgram');
 const contactRoutes = require('./routes/contact');
 const articlesRoutes = require('./routes/articles');
+const notificationRoutes = require('./routes/notifications');
 // CMS routes
 const membersRoutes = require('./routes/members');
 const accountingRoutes = require('./routes/accounting');
@@ -356,6 +357,7 @@ app.use('/api/promises', authenticateToken, promiseRoutes);
 app.use('/api/member-contributions', authenticateToken, memberContributionsRoutes);
 app.use('/api/user-management', authenticateToken, userManagementRoutes);
 app.use('/api/signatures', authenticateToken, signaturesRoutes);
+app.use('/api/notifications', notificationRoutes); // Auth handled in route file
 
 // Health endpoint
 app.get('/api/health', async (req, res) => {

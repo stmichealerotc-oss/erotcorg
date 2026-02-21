@@ -39,7 +39,22 @@ const memberSchema = new mongoose.Schema({
   updateTokenExpiry: Date,
   updateTokenUsed: { type: Boolean, default: false },
   updateTokenUsedAt: Date,
-  lastUpdated: Date
+  lastUpdated: Date,
+  
+  // Push Notifications
+  pushTokens: [{
+    token: String,
+    deviceId: String,
+    platform: { type: String, enum: ['ios', 'android'] },
+    lastUsed: { type: Date, default: Date.now },
+    createdAt: { type: Date, default: Date.now }
+  }],
+  notificationSettings: {
+    paymentReminders: { type: Boolean, default: true },
+    eventAnnouncements: { type: Boolean, default: true },
+    prayerRequests: { type: Boolean, default: true },
+    emergencyAlerts: { type: Boolean, default: true }
+  }
   
   // Note: Removed legacy id field - using MongoDB _id and virtual displayId instead
 }, {
