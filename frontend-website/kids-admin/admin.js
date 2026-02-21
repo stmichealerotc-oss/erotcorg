@@ -2,7 +2,9 @@
 // 1. AUTHENTICATION & API - COMPLETE FIXED VERSION
 // ============================================================================
 
-const API_BASE = '/api'; // Relative path that works with CSP
+// Use full backend URL since kids-admin is on public website (erotc.org)
+// but backend API is on separate domain
+const API_BASE = 'https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net/api';
 let currentUser = null;
 let authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
 let currentWeek = 1;
@@ -62,14 +64,14 @@ async function apiCall(endpoint, options = {}) {
   }
 }
 
-async function login(email, password) {
+async function login(username, password) {
   try {
     showMessage('Connecting to server...', 'info');
     
-    // ✅ Pass plain object, not string
+    // ✅ Pass plain object with username (not email)
     const response = await apiCall('/auth/login', {
       method: 'POST',
-      body: { email, password },
+      body: { username, password },
     });
 
     if (response && response.success) {
@@ -101,7 +103,7 @@ async function checkAuth() {
   }
 
   try {
-    const response = await apiCall('/auth/profile');
+    const response = await apiCall('/auth/verify');
     if (response && response.success) {
       currentUser = response.user;
       console.log('User authenticated:', currentUser.name);
@@ -155,8 +157,8 @@ function showLoginForm() {
         <h2><i class="fas fa-lock"></i> Admin Login</h2>
         <form id="loginForm">
           <div class="form-group">
-            <label for="email">Email:</label>
-            <input type="email" id="email" value="admin@church.org" required>
+            <label for="username">Username:</label>
+            <input type="text" id="username" value="admin" required>
           </div>
           <div class="form-group">
             <label for="password">Password:</label>
@@ -180,7 +182,7 @@ function showLoginForm() {
 async function handleLogin(e) {
   e.preventDefault();
   
-  const email = document.getElementById('email').value;
+  const username = document.getElementById('username').value;
   const password = document.getElementById('password').value;
   const messageDiv = document.getElementById('loginMessage');
   const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -190,7 +192,7 @@ async function handleLogin(e) {
   messageDiv.className = 'message info';
   messageDiv.textContent = 'Logging in...';
 
-  const result = await login(email, password);
+  const result = await login(username, password);
 
   if (result.success) {
     messageDiv.className = 'message success';
