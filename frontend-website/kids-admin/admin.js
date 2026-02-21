@@ -1451,12 +1451,12 @@ function setupContentListeners(sectionId) {
     document.getElementById('previewBtn')?.addEventListener('click', showPreview);
 
     // Form submission
-// Robust form submission with fallback
+// Robust form submission using POST (works for both create and update)
 document.getElementById('kids-program-form')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   
-  const year = document.getElementById('programYear')?.value;
-  const month = document.getElementById('programMonth')?.value;
+  const year = parseInt(document.getElementById('programYear')?.value);
+  const month = parseInt(document.getElementById('programMonth')?.value);
   
   if (!year || !month) {
     showMessage('Please select year and month', 'error');
@@ -1467,50 +1467,57 @@ document.getElementById('kids-program-form')?.addEventListener('submit', async (
     const weekData = parseFormData();
     showMessage('Saving program...', 'info');
     
-    // Try PATCH first (preferred method)
-    try {
-      console.log('Trying PATCH method...');
-      const response = await apiCall(`/kids-program/${year}/${month}/week/${currentWeek}`, {
-        method: 'PATCH',
-        body: weekData
-      });
-      
-      if (response && response.success) {
-        showMessage('Program saved successfully!', 'success');
-        currentProgramData = response.data;
-        return;
-      }
-    } catch (patchError) {
-      console.log('PATCH failed, trying PUT...', patchError.message);
+    // Get the full program data (all 4 weeks)
+    let fullProgramData = currentProgramData;
+    
+    if (!fullProgramData || !fullProgramData.weeks) {
+      // Create new program with 4 weeks
+      fullProgramData = {
+        year: year,
+        month: month,
+        weeks: [
+          { week: 1, theme: '', memoryVerse: '', mezmur: [], prayer: [], bibleStudy: [], divineLiturgy: [], practiceQuiz: null },
+          { week: 2, theme: '', memoryVerse: '', mezmur: [], prayer: [], bibleStudy: [], divineLiturgy: [], practiceQuiz: null },
+          { week: 3, theme: '', memoryVerse: '', mezmur: [], prayer: [], bibleStudy: [], divineLiturgy: [], practiceQuiz: null },
+          { week: 4, theme: '', memoryVerse: '', mezmur: [], prayer: [], bibleStudy: [], divineLiturgy: [], practiceQuiz: null }
+        ]
+      };
     }
     
-    // Fallback to PUT method
-    try {
-      console.log('Trying PUT method...');
-      const response = await apiCall(`/kids-program/${year}/${month}`, {
-        method: 'PUT',
-        body: {
-          weeks: [{
-            week: currentWeek,
-            ...weekData
-          }]
-        }
-      });
-      
-      if (response && response.success) {
-        showMessage('Program saved successfully (using PUT)!', 'success');
-        currentProgramData = response.data;
-        return;
-      }
-    } catch (putError) {
-      console.log('PUT also failed:', putError.message);
-    }
+    // Update the current week's data
+    const weekIndex = currentWeek - 1;
+    fullProgramData.weeks[weekIndex] = {
+      week: currentWeek,
+      theme: weekData.theme,
+      memoryVerse: weekData.memoryVerse,
+      mezmur: weekData.mezmur || [],
+      prayer: weekData.prayer || [],
+      bibleStudy: weekData.bibleStudy || [],
+      divineLiturgy: weekData.divineLiturgy || [],
+      practiceQuiz: weekData.practiceQuiz || null
+    };
     
-    // If both methods fail
-    throw new Error('Both PATCH and PUT methods failed');
+    // Use POST method (backend uses this for both create and update)
+    console.log('Saving full program:', fullProgramData);
+    const response = await apiCall('/kids-program', {
+      method: 'POST',
+      body: {
+        year: year,
+        month: month,
+        weeks: fullProgramData.weeks
+      }
+    });
+    
+    if (response && response.success) {
+      showMessage('Program saved successfully!', 'success');
+      currentProgramData = response.data;
+      console.log('Saved program data:', currentProgramData);
+    } else {
+      throw new Error(response?.message || response?.error || 'Save failed');
+    }
     
   } catch (error) {
-    console.error('Final save error:', error);
+    console.error('Save error:', error);
     showMessage('Save failed: ' + error.message, 'error');
   }
 });// Quiz management buttons
