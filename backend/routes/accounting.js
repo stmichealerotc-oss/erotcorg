@@ -498,17 +498,14 @@ router.post('/send-receipt/:transactionId', authorizeRoles('super-admin', 'admin
       return res.status(400).json({ error: 'No valid email address found for this transaction' });
     }
 
-    // Get signature information
+    // Get signature information (optional - gracefully handle if not available)
     let signatureInfo = null;
-    try {
-      const signatureResponse = await fetch(`${process.env.BASE_URL || 'http://localhost:5000'}/api/signatures/${transactionId}`, {
-        headers: { 'Authorization': req.headers.authorization }
-      });
-      if (signatureResponse.ok) {
-        signatureInfo = await signatureResponse.json();
-      }
-    } catch (error) {
-      console.log('No signature found for transaction');
+    if (transaction.recordedBy) {
+      signatureInfo = {
+        signedBy: transaction.recordedBy,
+        signatureDate: transaction.createdAt || transaction.date,
+        signatureTitle: 'Authorized by'
+      };
     }
 
     // Import services
@@ -580,6 +577,7 @@ router.post('/send-receipt/:transactionId', authorizeRoles('super-admin', 'admin
       ]
     });
 
+    console.log(`✅ Receipt email sent successfully to ${recipientEmail}`);
     res.json({ 
       success: true, 
       message: `Receipt PDF sent successfully to ${recipientEmail}` 
