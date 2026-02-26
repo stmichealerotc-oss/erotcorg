@@ -671,105 +671,77 @@ class EmailService {
         }
     }
 
-    // Send auto-reply to contact form submitter
-    async sendContactFormAutoReply(contactData) {
-        console.log('📧 Sending auto-reply to:', contactData.email);
+    // Send notification email to member
+    async sendNotificationEmail(member, notification) {
+        console.log('📧 Sending notification email to:', member.email);
         
-        const subjectLabels = {
-            'general': 'General Inquiry',
-            'services': 'Church Services',
-            'kids-program': 'Kids Sunday School',
-            'volunteer': 'Volunteer Opportunities',
-            'donation': 'Donations & Support',
-            'pastoral': 'Pastoral Care',
-            'events': 'Events & Celebrations',
-            'other': 'Other'
+        const typeIcons = {
+            'announcement': '📢',
+            'event': '📅',
+            'reminder': '⏰',
+            'urgent': '🚨',
+            'info': 'ℹ️',
+            'payment': '💰',
+            'prayer': '🙏',
+            'emergency': '🚨'
         };
+        
+        const icon = typeIcons[notification.type] || '📢';
+        const priorityLabel = notification.priority === 'high' ? 'HIGH PRIORITY' : '';
         
         const mailOptions = {
             from: `"St. Michael Eritrean Orthodox Tewahedo Church" <${process.env.SMTP_USER}>`,
-            to: contactData.email,
-            subject: `Thank you for contacting us - ${subjectLabels[contactData.subject] || contactData.subject}`,
+            to: member.email,
+            subject: `${icon} ${notification.title}${priorityLabel ? ' - ' + priorityLabel : ''}`,
             html: `
                 <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #f8f9fa;">
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                    <div style="background: linear-gradient(135deg, ${notification.priority === 'high' ? '#dc3545 0%, #c82333 100%' : '#667eea 0%, #764ba2 100%'}); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
                         <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">
-                            🏛️ St. Michael Eritrean Orthodox Tewahedo Church
+                            ${icon} ${notification.title}
                         </h1>
-                        <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Thank You for Contacting Us</p>
+                        ${priorityLabel ? `<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px; font-weight: 600;">${priorityLabel}</p>` : ''}
+                        <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">St. Michael Eritrean Orthodox Tewahedo Church</p>
                     </div>
                     
                     <div style="padding: 40px 30px; background: white;">
-                        <h2 style="color: #2d3748; margin-bottom: 20px; font-size: 24px;">Dear ${contactData.name},</h2>
+                        <h2 style="color: #2d3748; margin-bottom: 20px; font-size: 24px;">Dear ${member.firstName} ${member.lastName},</h2>
                         
-                        <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
-                            Thank you for reaching out to St. Michael Eritrean Orthodox Tewahedo Church. We have received your message and will respond within 24 hours.
-                        </p>
-                        
-                        <div style="background: linear-gradient(135deg, #f7fafc, #edf2f7); padding: 25px; border-radius: 12px; border-left: 5px solid #28a745; margin: 25px 0;">
-                            <h3 style="color: #2d3748; margin: 0 0 15px 0; font-size: 18px;">Your Message Summary</h3>
-                            <table style="width: 100%; border-collapse: collapse;">
-                                <tr>
-                                    <td style="padding: 8px 0; font-weight: 600; color: #4a5568; width: 120px;">Subject:</td>
-                                    <td style="padding: 8px 0; color: #2d3748;">${subjectLabels[contactData.subject] || contactData.subject}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 8px 0; font-weight: 600; color: #4a5568;">Date:</td>
-                                    <td style="padding: 8px 0; color: #2d3748;">${new Date(contactData.timestamp).toLocaleDateString()}</td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 8px 0; font-weight: 600; color: #4a5568;">Time:</td>
-                                    <td style="padding: 8px 0; color: #2d3748;">${new Date(contactData.timestamp).toLocaleTimeString()}</td>
-                                </tr>
-                            </table>
+                        <div style="background: linear-gradient(135deg, #f7fafc, #edf2f7); padding: 25px; border-radius: 12px; border-left: 5px solid ${notification.priority === 'high' ? '#dc3545' : '#667eea'}; margin: 25px 0;">
+                            <p style="color: #2d3748; font-size: 16px; line-height: 1.6; margin: 0; white-space: pre-wrap;">${notification.body}</p>
                         </div>
                         
-                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0;">
-                            <h3 style="color: #2d3748; margin: 0 0 15px 0; font-size: 18px;">Contact Information</h3>
-                            <p style="color: #4a5568; margin: 0 0 10px 0; line-height: 1.6;">
-                                <strong>Address:</strong><br>
-                                60 Osborne Street, Joondanna, WA 6060, Australia
+                        ${notification.type === 'event' ? `
+                        <div style="text-align: center; margin: 35px 0;">
+                            <a href="https://erotc.org" 
+                               style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px 35px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                                📅 View Event Details
+                            </a>
+                        </div>
+                        ` : ''}
+                        
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 30px;">
+                            <h3 style="color: #4a5568; margin: 0 0 15px 0; font-size: 18px;">Contact Information</h3>
+                            <p style="color: #718096; margin: 0 0 10px 0; font-size: 14px;">
+                                <strong>Address:</strong> 60 Osborne Street, Joondanna, WA 6060
                             </p>
-                            <p style="color: #4a5568; margin: 0 0 10px 0;">
+                            <p style="color: #718096; margin: 0 0 10px 0; font-size: 14px;">
                                 <strong>Phone:</strong> <a href="tel:0470275305" style="color: #667eea; text-decoration: none;">0470 275 305</a>
                             </p>
-                            <p style="color: #4a5568; margin: 0 0 10px 0;">
-                                <strong>Email:</strong> <a href="mailto:info@erotc.org" style="color: #667eea; text-decoration: none;">info@erotc.org</a>
-                            </p>
-                            <p style="color: #4a5568; margin: 0;">
-                                <strong>Website:</strong> <a href="https://erotc.org" style="color: #667eea; text-decoration: none;">www.erotc.org</a>
+                            <p style="color: #718096; margin: 0; font-size: 14px;">
+                                <strong>Email:</strong> <a href="mailto:stmichaelerotc@gmail.com" style="color: #667eea; text-decoration: none;">stmichaelerotc@gmail.com</a>
                             </p>
                         </div>
-                        
-                        <div style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); padding: 20px; border-radius: 10px; border: 1px solid #2196f3; margin: 25px 0;">
-                            <h3 style="color: #1565c0; margin: 0 0 15px 0; font-size: 18px;">⛪ Service Times</h3>
-                            <p style="color: #1565c0; margin: 0 0 10px 0;">
-                                <strong>Sunday Service:</strong> 9:00 AM - 12:00 PM
-                            </p>
-                            <p style="color: #1565c0; margin: 0;">
-                                <strong>Kids Sunday School:</strong> 10:00 AM - 11:30 AM
-                            </p>
-                        </div>
-                        
-                        <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 25px 0;">
-                            We look forward to connecting with you soon. May God bless you!
-                        </p>
-                        
-                        <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin: 0;">
-                            In Christ,<br>
-                            <strong>St. Michael Eritrean Orthodox Tewahedo Church</strong>
-                        </p>
                     </div>
                     
                     <div style="background: #2d3748; color: white; padding: 20px; text-align: center; font-size: 14px; border-radius: 0 0 10px 10px;">
                         <p style="margin: 0;">
                             <strong>St. Michael Eritrean Orthodox Tewahedo Church</strong><br>
                             60 Osborne Street, Joondanna, WA 6060<br>
-                            ABN: 80798549161 | Email: info@erotc.org<br>
+                            ABN: 80798549161 | Email: stmichaelerotc@gmail.com<br>
                             <a href="https://erotc.org" style="color: #90cdf4;">erotc.org</a>
                         </p>
                         <p style="margin: 15px 0 0 0; color: #a0aec0;">
-                            © ${new Date().getFullYear()} All Rights Reserved
+                            Church Management System © ${new Date().getFullYear()}
                         </p>
                     </div>
                 </div>
@@ -778,12 +750,13 @@ class EmailService {
 
         try {
             const info = await this.transporter.sendMail(mailOptions);
-            console.log('✅ Auto-reply sent to:', contactData.email);
+            console.log('✅ Notification email sent to:', member.email);
             console.log('📧 Message ID:', info.messageId);
             return true;
         } catch (error) {
-            console.error('❌ Failed to send auto-reply:', error.message);
-            throw error;
+            console.error('❌ Failed to send notification email to:', member.email);
+            console.error('❌ Error details:', error.message);
+            return false;
         }
     }
 }

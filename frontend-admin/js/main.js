@@ -96,6 +96,10 @@ class MainApp {
                     await import('./accounting.js');
                     break;
                     
+                case 'notifications':
+                    await import('./notifications.js');
+                    break;
+                    
                 case 'inventory':
                     await import('./inventory.js');
                     break;
@@ -318,6 +322,9 @@ class MainApp {
                 break;
             case 'accounting':
                 await this.loadModule('accounting');
+                break;
+            case 'notifications':
+                await this.loadModule('notifications');
                 break;
             case 'inventory':
                 await this.loadModule('inventory');

@@ -40,7 +40,7 @@ handleHashChange() {
 }
 
 isValidPage(page) {
-    const validPages = ['dashboard', 'members', 'memberProfile', 'accounting', 'inventory', 'reports', 'taskmanagement', 'userManagement'];
+    const validPages = ['dashboard', 'members', 'memberProfile', 'accounting', 'notifications', 'inventory', 'reports', 'taskmanagement', 'userManagement'];
     return validPages.includes(page);
 }
 
@@ -93,6 +93,7 @@ isValidPage(page) {
         'members': 'members',
         'memberProfile': 'member-profile',
         'accounting': 'accounting',
+        'notifications': 'notifications',
         'inventory': 'inventory', 
         'reports': 'generatereport',
         'taskmanagement': 'taskmanagement',

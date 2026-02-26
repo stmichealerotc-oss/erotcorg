@@ -4,7 +4,7 @@ const notificationSchema = new mongoose.Schema({
   // Notification Type
   type: { 
     type: String, 
-    enum: ['payment', 'event', 'prayer', 'emergency', 'general'], 
+    enum: ['announcement', 'event', 'reminder', 'urgent', 'info', 'payment', 'prayer', 'emergency', 'general'], 
     required: true 
   },
   

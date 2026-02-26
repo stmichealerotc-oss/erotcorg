@@ -1,0 +1,466 @@
+<style>
+    .notification-form {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    .form-row > div {
+        flex: 1;
+    }
+    .notification-item {
+        border-left: 3px solid #4a6fa5;
+        padding: 15px;
+        margin-bottom: 15px;
+        background: #f9f9f9;
+        border-radius: 4px;
+    }
+    .notification-item strong {
+        display: block;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    .notification-item p {
+        margin: 5px 0;
+        color: #666;
+    }
+    .notification-item small {
+        color: #999;
+        font-size: 12px;
+    }
+    .badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: bold;
+        margin-left: 5px;
+    }
+    .badge-urgent { background: #ef4444; color: white; }
+    .badge-high { background: #f59e0b; color: white; }
+    .badge-normal { background: #10b981; color: white; }
+    .char-counter {
+        font-size: 12px;
+        color: #999;
+        text-align: right;
+        margin-top: 5px;
+    }
+    .char-counter.warning { color: #f59e0b; }
+    .char-counter.error { color: #ef4444; }
+    
+    /* Multi-select styling */
+    #memberSelectGroup {
+        margin-top: 15px;
+    }
+    
+    .member-checkbox-item {
+        padding: 8px 10px;
+        margin-bottom: 5px;
+        background: white;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .member-checkbox-item:hover {
+        background: #e8f4f8;
+    }
+    
+    .member-checkbox-item input[type="checkbox"] {
+        cursor: pointer;
+        width: 18px;
+        height: 18px;
+    }
+    
+    .member-checkbox-item label {
+        cursor: pointer;
+        margin: 0;
+        flex: 1;
+        font-size: 14px;
+        color: #333;
+    }
+    
+    .member-checkbox-item.hidden {
+        display: none;
+    }
+</style>
+
+<div class="container">
+        <div class="page-header">
+            <h1>📢 Send Notification</h1>
+            <p>Send push notifications to church members</p>
+        </div>
+
+        <div class="notification-form">
+            <div class="card">
+                <h2>Compose Notification</h2>
+                <form id="notificationForm">
+                    <div class="form-group">
+                        <label>Title *</label>
+                        <input type="text" id="title" required maxlength="50" placeholder="Short, attention-grabbing title">
+                        <div class="char-counter" id="titleCounter">0 / 50</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Message *</label>
+                        <textarea id="message" required rows="4" maxlength="200" placeholder="Clear, concise message"></textarea>
+                        <div class="char-counter" id="messageCounter">0 / 200</div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="type">
+                                <option value="announcement">📢 Announcement</option>
+                                <option value="event">📅 Event</option>
+                                <option value="reminder">⏰ Reminder</option>
+                                <option value="urgent">🚨 Urgent</option>
+                                <option value="info">ℹ️ Information</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Priority</label>
+                            <select id="priority">
+                                <option value="normal">Normal</option>
+                                <option value="high">High (with sound)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Send To</label>
+                        <select id="audience">
+                            <option value="all">All Members</option>
+                            <option value="active">Active Members Only</option>
+                            <option value="specific">Specific Members (Select Multiple)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="memberSelectGroup" style="display: none;">
+                        <label>Select Members</label>
+                        
+                        <!-- Search box -->
+                        <input type="text" id="memberSearch" placeholder="🔍 Search members by name or email..." 
+                               style="width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                        
+                        <!-- Select All / Deselect All buttons -->
+                        <div style="margin-bottom: 10px; display: flex; gap: 10px;">
+                            <button type="button" id="selectAllBtn" class="btn btn-secondary" style="padding: 5px 15px; font-size: 13px;">
+                                ✓ Select All
+                            </button>
+                            <button type="button" id="deselectAllBtn" class="btn btn-secondary" style="padding: 5px 15px; font-size: 13px;">
+                                ✗ Deselect All
+                            </button>
+                            <span id="selectedCount" style="margin-left: auto; padding: 5px 10px; color: #666; font-size: 13px;">
+                                0 selected
+                            </span>
+                        </div>
+                        
+                        <!-- Checkbox list container -->
+                        <div id="memberCheckboxList" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; background: #f9f9f9;">
+                            <p style="text-align: center; color: #999;">Loading members...</p>
+                        </div>
+                        
+                        <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
+                            💡 Tip: Use the search box to quickly find members, then check the boxes to select them
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="scheduleForLater" style="width: 18px; height: 18px; cursor: pointer;">
+                            <span>Schedule for later</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group" id="scheduleGroup" style="display: none;">
+                        <label>Send Date & Time *</label>
+                        <input type="datetime-local" id="scheduledTime" 
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                        <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
+                            ⏰ Select when you want this notification to be sent
+                        </small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        📤 Send Notification
+                    </button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Recent Notifications</h2>
+                <div id="recentNotifications">
+                    <p style="text-align: center; color: #999;">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        
+        // Character counters
+        function updateCharCounter(inputId, counterId, maxLength) {
+            const input = document.getElementById(inputId);
+            const counter = document.getElementById(counterId);
+            
+            input.addEventListener('input', () => {
+                const length = input.value.length;
+                counter.textContent = `${length} / ${maxLength}`;
+                
+                if (length > maxLength * 0.9) {
+                    counter.classList.add('warning');
+                } else {
+                    counter.classList.remove('warning');
+                }
+                
+                if (length >= maxLength) {
+                    counter.classList.add('error');
+                } else {
+                    counter.classList.remove('error');
+                }
+            });
+        }
+        
+        updateCharCounter('title', 'titleCounter', 50);
+        updateCharCounter('message', 'messageCounter', 200);
+        
+        // Load members for dropdown
+        async function loadMembers() {
+            try {
+                const token = window.authSystem?.getToken() || localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+                const response = await fetch(`${API_BASE_URL}/members`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                const members = data.list || data.members || [];
+                
+                const select = document.getElementById('memberId');
+                select.innerHTML = ''; // Clear all options for multi-select
+                members.forEach(member => {
+                    const option = document.createElement('option');
+                    option.value = member._id;
+                    option.textContent = `${member.firstName} ${member.lastName}${member.email ? ' (' + member.email + ')' : ''}`;
+                    select.appendChild(option);
+                });
+                
+                if (members.length === 0) {
+                    select.innerHTML = '<option value="" disabled>No members found</option>';
+                }
+            } catch (error) {
+                console.error('Failed to load members:', error);
+                document.getElementById('memberId').innerHTML = '<option value="" disabled>Failed to load members</option>';
+            }
+        }
+
+        // Toggle member selection
+        document.getElementById('audience').addEventListener('change', (e) => {
+            const memberGroup = document.getElementById('memberSelectGroup');
+            memberGroup.style.display = e.target.value === 'specific' ? 'block' : 'none';
+            if (e.target.value === 'specific') {
+                loadMembers();
+            }
+        });
+
+        // Toggle schedule options
+        document.getElementById('scheduleForLater').addEventListener('change', (e) => {
+            document.getElementById('scheduleGroup').style.display = e.checked ? 'block' : 'none';
+        });
+
+        // Send notification
+        document.getElementById('notificationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            console.log('📝 Form submitted - preparing notification...');
+            
+            const title = document.getElementById('title').value.trim();
+            const message = document.getElementById('message').value.trim();
+            const type = document.getElementById('type').value;
+            const priority = document.getElementById('priority').value;
+            const audience = document.getElementById('audience').value;
+            const scheduleForLater = document.getElementById('scheduleForLater').checked;
+            
+            console.log('Form values:', { title, message, type, priority, audience });
+            
+            if (!title || !message) {
+                console.warn('⚠️ Missing required fields');
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            const payload = {
+                title,
+                body: message, // Backend expects 'body' not 'message'
+                type,
+                priority,
+                data: { screen: 'home' }
+            };
+
+            // Determine recipients
+            if (audience === 'specific') {
+                const select = document.getElementById('memberId');
+                const selectedOptions = Array.from(select.selectedOptions);
+                const selectedIds = selectedOptions.map(opt => opt.value).filter(id => id);
+                
+                console.log('Selected members:', selectedIds);
+                
+                if (selectedIds.length === 0) {
+                    console.warn('⚠️ No members selected');
+                    alert('Please select at least one member');
+                    return;
+                }
+                
+                // Backend expects 'recipients' as array of member IDs
+                payload.recipients = selectedIds;
+                console.log(`📤 Sending to ${selectedIds.length} specific member(s)`);
+            } else if (audience === 'active') {
+                payload.recipients = 'active'; // Backend handles 'active' string
+                console.log('📤 Sending to all active members');
+            } else {
+                payload.recipients = 'all'; // Send to all members
+                console.log('📤 Sending to all members');
+            }
+
+            // Schedule if needed
+            if (scheduleForLater) {
+                const scheduledTime = document.getElementById('scheduledTime').value;
+                if (!scheduledTime) {
+                    alert('Please select a date and time for scheduling');
+                    return;
+                }
+                payload.scheduledTime = scheduledTime;
+            }
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '📤 Sending...';
+
+            console.log('📡 Sending notification to API...');
+            console.log('Payload:', JSON.stringify(payload, null, 2));
+
+            try {
+                const token = window.authSystem?.getToken() || localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+                console.log('🔑 Using auth token:', token ? 'Token found' : 'No token!');
+                
+                const response = await fetch(`${API_BASE_URL}/notifications/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                console.log('📡 API response status:', response.status);
+
+                const result = await response.json();
+                
+                console.log('📤 Notification send response:', result);
+                
+                if (response.ok) {
+                    const sentCount = result.sentCount || result.successCount || 0;
+                    const failedCount = result.failureCount || 0;
+                    
+                    console.log('✅ Notification sent successfully!');
+                    console.log(`   - Sent to: ${sentCount} members`);
+                    console.log(`   - Failed: ${failedCount} members`);
+                    
+                    // Show detailed confirmation dialog
+                    const confirmMsg = `✅ Notification Sent Successfully!\n\n` +
+                                      `📊 Delivery Summary:\n` +
+                                      `   • Successfully sent: ${sentCount} members\n` +
+                                      (failedCount > 0 ? `   • Failed: ${failedCount} members\n` : '') +
+                                      `\n📱 Members will receive the notification on their phones.`;
+                    
+                    alert(confirmMsg);
+                    
+                    // Reset form
+                    document.getElementById('notificationForm').reset();
+                    document.getElementById('titleCounter').textContent = '0 / 50';
+                    document.getElementById('messageCounter').textContent = '0 / 200';
+                    document.getElementById('memberSelectGroup').style.display = 'none';
+                    
+                    // Reload recent notifications
+                    loadRecentNotifications();
+                } else {
+                    console.error('❌ Failed to send notification:', result);
+                    alert(`❌ Failed to send notification\n\nError: ${result.message || result.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('❌ Network error sending notification:', error);
+                alert(`❌ Failed to send notification\n\nNetwork Error: ${error.message}\n\nPlease check your connection and try again.`);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📤 Send Notification';
+                console.log('🔄 Form ready for next submission');
+            }
+        });
+
+        // Load recent notifications
+        async function loadRecentNotifications() {
+            try {
+                const token = window.authSystem?.getToken() || localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+                const response = await fetch(`${API_BASE_URL}/notifications/history?limit=10`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load notifications');
+                }
+                
+                const notifications = await response.json();
+                
+                const container = document.getElementById('recentNotifications');
+                if (!notifications || notifications.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #999;">No notifications sent yet.</p>';
+                    return;
+                }
+                
+                container.innerHTML = notifications.map(notif => {
+                    const date = new Date(notif.createdAt).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    const priorityBadge = notif.priority === 'high' 
+                        ? '<span class="badge badge-high">HIGH</span>' 
+                        : '<span class="badge badge-normal">NORMAL</span>';
+                    
+                    const typeBadge = notif.type === 'urgent' 
+                        ? '<span class="badge badge-urgent">URGENT</span>' 
+                        : '';
+                    
+                    return `
+                        <div class="notification-item">
+                            <strong>${notif.title} ${priorityBadge} ${typeBadge}</strong>
+                            <p>${notif.message}</p>
+                            <small>
+                                ${notif.type} • ${date} • 
+                                Sent to: ${notif.sentCount || 'N/A'} members
+                            </small>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Failed to load notifications:', error);
+                document.getElementById('recentNotifications').innerHTML = 
+                    '<p style="text-align: center; color: #ef4444;">Failed to load recent notifications</p>';
+            }
+        }
+
+        // Initialize
+        console.log('📋 Loading recent notifications...');
+        loadRecentNotifications();
+        console.log('✅ Notifications page fully initialized');
+    } // End initNotificationsPage
+})(); // End IIFE
+</script>

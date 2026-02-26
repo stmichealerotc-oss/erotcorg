@@ -98,24 +98,29 @@ router.post('/send', authorizeRoles('super-admin', 'admin'), async (req, res) =>
     // Get recipient members
     let memberList;
     if (recipients === 'all') {
-      // Send to all active members with push tokens
+      // Send to all active members
       memberList = await Member.find({
-        status: 'active',
-        'pushTokens.0': { $exists: true }
+        status: 'active'
+      });
+    } else if (recipients === 'active') {
+      // Send to all active members
+      memberList = await Member.find({
+        status: 'active'
       });
     } else if (Array.isArray(recipients)) {
       // Send to specific members
       memberList = await Member.find({
-        _id: { $in: recipients },
-        'pushTokens.0': { $exists: true }
+        _id: { $in: recipients }
       });
     } else {
       return res.status(400).json({ error: 'Invalid recipients format' });
     }
 
     if (memberList.length === 0) {
-      return res.status(400).json({ error: 'No recipients found with push tokens' });
+      return res.status(400).json({ error: 'No recipients found. Please ensure members exist in the database.' });
     }
+
+    console.log(`📤 Sending notification to ${memberList.length} members (push + email)`);
 
     // Create notification record
     const notification = new Notification({
@@ -131,6 +136,8 @@ router.post('/send', authorizeRoles('super-admin', 'admin'), async (req, res) =>
 
     // Prepare push messages
     const messages = [];
+    let pushEligibleCount = 0;
+    let emailEligibleCount = 0;
     
     for (const member of memberList) {
       // Check notification settings
@@ -147,76 +154,135 @@ router.post('/send', authorizeRoles('super-admin', 'admin'), async (req, res) =>
         continue;
       }
 
-      // Add each push token for this member
-      for (const tokenData of member.pushTokens) {
-        if (Expo.isExpoPushToken(tokenData.token)) {
-          messages.push({
-            to: tokenData.token,
-            sound: 'default',
-            title,
-            body,
-            data: data || {},
-            priority: priority === 'high' ? 'high' : 'default',
-            channelId: priority === 'high' ? 'emergency' : 'default'
-          });
+      // Count members eligible for email
+      if (member.email) {
+        emailEligibleCount++;
+      }
 
-          notification.recipients.push({
-            memberId: member._id,
-            pushToken: tokenData.token,
-            status: 'pending'
-          });
+      // Add push tokens for this member
+      if (member.pushTokens && member.pushTokens.length > 0) {
+        for (const tokenData of member.pushTokens) {
+          if (Expo.isExpoPushToken(tokenData.token)) {
+            messages.push({
+              to: tokenData.token,
+              sound: 'default',
+              title,
+              body,
+              data: data || {},
+              priority: priority === 'high' ? 'high' : 'default',
+              channelId: priority === 'high' ? 'emergency' : 'default'
+            });
+
+            notification.recipients.push({
+              memberId: member._id,
+              pushToken: tokenData.token,
+              status: 'pending'
+            });
+            
+            pushEligibleCount++;
+          }
         }
       }
     }
 
-    // Send notifications in chunks
-    const chunks = expo.chunkPushNotifications(messages);
-    let successCount = 0;
-    let failureCount = 0;
+    console.log(`📱 Push notifications: ${pushEligibleCount} eligible`);
+    console.log(`📧 Email notifications: ${emailEligibleCount} eligible`);
 
-    for (const chunk of chunks) {
-      try {
-        const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
-        
-        // Update recipient statuses based on tickets
-        ticketChunk.forEach((ticket, index) => {
-          const recipientIndex = notification.recipients.findIndex(
-            r => r.pushToken === chunk[index].to
-          );
+    // Check if we have at least one delivery method
+    if (pushEligibleCount === 0 && emailEligibleCount === 0) {
+      return res.status(400).json({ 
+        error: 'No valid delivery methods found. Members need either push tokens (mobile app) or email addresses.',
+        details: {
+          totalMembers: memberList.length,
+          withPushTokens: pushEligibleCount,
+          withEmails: emailEligibleCount
+        }
+      });
+    }
 
-          if (recipientIndex >= 0) {
-            if (ticket.status === 'ok') {
-              notification.recipients[recipientIndex].status = 'sent';
-              notification.recipients[recipientIndex].sentAt = new Date();
-              successCount++;
-            } else {
-              notification.recipients[recipientIndex].status = 'failed';
-              notification.recipients[recipientIndex].errorMessage = ticket.message;
-              failureCount++;
+    // Send push notifications in chunks
+    let pushSuccessCount = 0;
+    let pushFailureCount = 0;
+
+    if (messages.length > 0) {
+      const chunks = expo.chunkPushNotifications(messages);
+
+      for (const chunk of chunks) {
+        try {
+          const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+          
+          // Update recipient statuses based on tickets
+          ticketChunk.forEach((ticket, index) => {
+            const recipientIndex = notification.recipients.findIndex(
+              r => r.pushToken === chunk[index].to
+            );
+
+            if (recipientIndex >= 0) {
+              if (ticket.status === 'ok') {
+                notification.recipients[recipientIndex].status = 'sent';
+                notification.recipients[recipientIndex].sentAt = new Date();
+                pushSuccessCount++;
+              } else {
+                notification.recipients[recipientIndex].status = 'failed';
+                notification.recipients[recipientIndex].errorMessage = ticket.message;
+                pushFailureCount++;
+              }
             }
+          });
+        } catch (error) {
+          console.error('❌ Error sending push notification chunk:', error);
+          pushFailureCount += chunk.length;
+        }
+      }
+    }
+
+    // Send email notifications
+    const emailService = require('../utils/emailService');
+    let emailSuccessCount = 0;
+    let emailFailureCount = 0;
+
+    for (const member of memberList) {
+      if (member.email) {
+        try {
+          const emailSent = await emailService.sendNotificationEmail(member, {
+            type,
+            title,
+            body,
+            priority
+          });
+          
+          if (emailSent) {
+            emailSuccessCount++;
+          } else {
+            emailFailureCount++;
           }
-        });
-      } catch (error) {
-        console.error('❌ Error sending push notification chunk:', error);
-        failureCount += chunk.length;
+        } catch (error) {
+          console.error(`❌ Error sending email to ${member.email}:`, error.message);
+          emailFailureCount++;
+        }
       }
     }
 
     // Update notification statistics
-    notification.successCount = successCount;
-    notification.failureCount = failureCount;
+    notification.successCount = pushSuccessCount;
+    notification.failureCount = pushFailureCount;
     notification.sentAt = new Date();
 
     await notification.save();
 
-    console.log(`✅ Notification sent: ${successCount} success, ${failureCount} failed`);
+    console.log(`✅ Notification complete:`);
+    console.log(`   - Push: ${pushSuccessCount} success, ${pushFailureCount} failed`);
+    console.log(`   - Email: ${emailSuccessCount} success, ${emailFailureCount} failed`);
     
     res.json({
       success: true,
       notificationId: notification._id,
-      sent: successCount,
-      failed: failureCount,
-      total: messages.length
+      sent: pushSuccessCount,
+      failed: pushFailureCount,
+      total: messages.length,
+      emailsSent: emailSuccessCount,
+      emailsFailed: emailFailureCount,
+      totalEmails: emailEligibleCount
     });
 
   } catch (error) {
