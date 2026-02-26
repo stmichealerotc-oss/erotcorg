@@ -643,8 +643,17 @@ router.post('/send-receipt-email/:transactionId', authorizeRoles('super-admin', 
     const emailService = require('../utils/emailService');
     const pdfGenerator = require('../utils/pdfGenerator');
 
-    // Generate PDF receipt
-    const pdfBuffer = await pdfGenerator.generateReceiptPDF(transaction, signatureInfo);
+    // Try to generate PDF receipt (may fail on Azure without Chrome)
+    let pdfBuffer = null;
+    let pdfGenerationFailed = false;
+    
+    try {
+      pdfBuffer = await pdfGenerator.generateReceiptPDF(transaction, signatureInfo);
+      console.log('✅ PDF generated successfully');
+    } catch (pdfError) {
+      console.warn('⚠️ PDF generation failed, will send email without PDF attachment:', pdfError.message);
+      pdfGenerationFailed = true;
+    }
 
     // Get payee information
     let payeeName = recipientName || 'Valued Donor';
@@ -660,7 +669,8 @@ router.post('/send-receipt-email/:transactionId', authorizeRoles('super-admin', 
       }
     }
 
-    // Create simple email HTML (PDF is the main receipt)
+    // Create email HTML with receipt details (serves as backup if PDF fails)
+    const transactionDate = new Date(transaction.date).toLocaleDateString();
     const emailHTML = `
       <!DOCTYPE html>
       <html>
@@ -671,7 +681,13 @@ router.post('/send-receipt-email/:transactionId', authorizeRoles('super-admin', 
           .header { text-align: center; border-bottom: 2px solid #4a6fa5; padding-bottom: 20px; margin-bottom: 30px; }
           .church-name { font-size: 24px; font-weight: bold; color: #4a6fa5; margin-bottom: 10px; }
           .content { background: #f8f9fa; padding: 25px; border-radius: 8px; margin: 20px 0; }
+          .receipt-details { background: white; padding: 20px; border-radius: 6px; margin: 20px 0; border: 1px solid #ddd; }
+          .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+          .detail-label { font-weight: bold; color: #666; }
+          .detail-value { color: #333; }
+          .total-row { background: #f8f9fa; padding: 15px; margin-top: 15px; border-radius: 4px; font-size: 18px; font-weight: bold; }
           .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 14px; color: #666; }
+          .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 6px; margin: 15px 0; }
         </style>
       </head>
       <body>
@@ -686,15 +702,53 @@ router.post('/send-receipt-email/:transactionId', authorizeRoles('super-admin', 
           
           <p>Thank you for your generous contribution to St Michael Eritrean Orthodox Church!</p>
           
+          ${pdfGenerationFailed ? `
+          <div class="warning">
+            <strong>Note:</strong> PDF receipt generation is temporarily unavailable. Your receipt details are included below.
+          </div>
+          ` : `
           <p><strong>Please find your official donation receipt attached as a PDF.</strong></p>
+          `}
           
-          <p>This receipt includes:</p>
-          <ul>
-            <li>Transaction details and amount</li>
-            <li>Official church information</li>
-            <li>Authorized signature (if applicable)</li>
-            <li>Tax-deductible contribution notice</li>
-          </ul>
+          <div class="receipt-details">
+            <h3 style="margin-top: 0; color: #4a6fa5;">Receipt Details</h3>
+            <div class="detail-row">
+              <span class="detail-label">Receipt Number:</span>
+              <span class="detail-value">${transaction._id.toString().substring(18)}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Transaction Date:</span>
+              <span class="detail-value">${transactionDate}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Description:</span>
+              <span class="detail-value">${transaction.description}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Category:</span>
+              <span class="detail-value">${transaction.category}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Payment Method:</span>
+              <span class="detail-value">${transaction.paymentMethod}</span>
+            </div>
+            ${transaction.reference ? `
+            <div class="detail-row">
+              <span class="detail-label">Reference:</span>
+              <span class="detail-value">${transaction.reference}</span>
+            </div>
+            ` : ''}
+            <div class="total-row">
+              <div style="display: flex; justify-content: space-between;">
+                <span>Total Contribution:</span>
+                <span>$${transaction.amount.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+          
+          <p style="font-size: 13px; color: #666; font-style: italic;">
+            <strong>Important:</strong> No goods or services were provided in exchange for this contribution.
+          </p>
           
           <p>If you have any questions about this receipt or your contribution, please don't hesitate to contact us.</p>
         </div>
@@ -708,23 +762,33 @@ router.post('/send-receipt-email/:transactionId', authorizeRoles('super-admin', 
       </html>
     `;
 
-    // Send email with PDF attachment
-    await emailService.sendEmail({
+    // Prepare email options
+    const emailOptions = {
       to: recipientEmail,
       subject: `Donation Receipt - St Michael Eritrean Orthodox Church`,
-      html: emailHTML,
-      attachments: [
+      html: emailHTML
+    };
+
+    // Add PDF attachment only if generation succeeded
+    if (pdfBuffer) {
+      emailOptions.attachments = [
         {
           filename: `Receipt_${transaction._id.toString().substring(18)}_${new Date().toISOString().split('T')[0]}.pdf`,
           content: pdfBuffer,
           contentType: 'application/pdf'
         }
-      ]
-    });
+      ];
+    }
+
+    // Send email
+    await emailService.sendEmail(emailOptions);
 
     res.json({ 
       success: true, 
-      message: `Receipt PDF sent successfully to ${recipientEmail}` 
+      message: pdfBuffer 
+        ? `Receipt PDF sent successfully to ${recipientEmail}` 
+        : `Receipt sent successfully to ${recipientEmail} (PDF generation unavailable)`,
+      pdfGenerated: !!pdfBuffer
     });
 
   } catch (error) {
