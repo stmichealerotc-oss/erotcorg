@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "postinstall": "node verify-chromium.js || true",
+    "verify": "node verify-chromium.js"
   },
   "dependencies": {
     "@sparticuz/chromium": "^123.0.1",
