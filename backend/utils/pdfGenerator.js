@@ -36,10 +36,28 @@ class PDFGenerator {
                 if (chromium) {
                     console.log('📦 Loading Chromium binary for cloud environment...');
                     
+                    // Get the executable path first to verify it exists
+                    const executablePath = await chromium.executablePath();
+                    console.log('📍 Chromium executable path:', executablePath);
+                    
+                    // Set font config for Azure environment
+                    await chromium.font(
+                        'https://raw.githack.com/googlei18n/noto-emoji/master/fonts/NotoColorEmoji.ttf'
+                    );
+                    
                     this.browser = await puppeteer.launch({
-                        args: chromium.args,
+                        args: [
+                            ...chromium.args,
+                            '--disable-gpu',
+                            '--disable-dev-shm-usage',
+                            '--disable-setuid-sandbox',
+                            '--no-first-run',
+                            '--no-sandbox',
+                            '--no-zygote',
+                            '--single-process'
+                        ],
                         defaultViewport: chromium.defaultViewport,
-                        executablePath: await chromium.executablePath(),
+                        executablePath: executablePath,
                         headless: chromium.headless,
                         ignoreHTTPSErrors: true,
                     });
