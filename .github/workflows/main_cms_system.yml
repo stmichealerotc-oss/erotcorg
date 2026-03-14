@@ -25,25 +25,25 @@ jobs:
 
       - name: Verify critical files exist
         run: |
+          echo "=== Verifying all route files ==="
+          ls -la backend/routes/
           echo "=== Verifying utils folder ==="
           ls -la backend/utils/
-          echo "=== Verifying qrCodeGenerator ==="
-          cat backend/utils/qrCodeGenerator.js | head -3
-          echo "=== Verifying routes ==="
-          ls -la backend/routes/
+          echo "=== Total backend files ==="
+          find backend -name "*.js" | wc -l
 
       - name: Create deployment package
         run: |
-          # Deploy as a folder with backend/ subfolder so Azure runs: node backend/server.js
+          # Structure: deploy/backend/ so Azure runs: node backend/server.js from wwwroot
           mkdir -p deploy/backend
           cp -r backend/. deploy/backend/
-          # Remove .env so Azure uses its own environment variables
+          # Remove files that should not be deployed
           rm -f deploy/backend/.env
-          # Remove oryx-manifest to prevent Azure from using stale cached build
-          rm -f deploy/backend/oryx-manifest.toml
-          echo "=== Deployment structure ==="
-          ls -la deploy/
+          # Override oryx-manifest to prevent Azure using stale cached build
+          # Setting SCM_DO_BUILD_DURING_DEPLOYMENT=false in .deployment handles this
+          echo "=== Final deployment structure ==="
           ls -la deploy/backend/
+          ls -la deploy/backend/routes/
           ls -la deploy/backend/utils/
 
       - name: Upload artifact for deployment job
@@ -66,12 +66,16 @@ jobs:
 
       - name: Verify deployment package
         run: |
-          echo "=== Downloaded artifact structure ==="
+          echo "=== Artifact structure ==="
           ls -la
           ls -la backend/
+          ls -la backend/routes/
           ls -la backend/utils/
-          echo "=== qrCodeGenerator exists: ==="
-          test -f backend/utils/qrCodeGenerator.js && echo "YES" || echo "NO - MISSING!"
+          echo "=== Key files check ==="
+          test -f backend/server.js && echo "server.js: OK" || echo "server.js: MISSING"
+          test -f backend/routes/contact.js && echo "routes/contact.js: OK" || echo "routes/contact.js: MISSING"
+          test -f backend/utils/qrCodeGenerator.js && echo "utils/qrCodeGenerator.js: OK" || echo "utils/qrCodeGenerator.js: MISSING"
+          test -f backend/.deployment && echo ".deployment: OK" || echo ".deployment: MISSING"
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -81,3 +85,4 @@ jobs:
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_CMS_SYSTEM }}
           package: .
+          startup-command: 'node backend/server.js'
