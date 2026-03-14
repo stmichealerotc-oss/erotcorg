@@ -60,9 +60,11 @@ const allowedOrigins = [
 'https://ashy-cliff-058ad9c00.1.azurestaticapps.net', // Public website
 // Local development
 'http://localhost:3000',
+'http://localhost:3001',
 'http://localhost:5500',
 'http://localhost:8080',
 'http://127.0.0.1:3000',
+'http://127.0.0.1:3001',
 'http://127.0.0.1:5500',
 'http://127.0.0.1:8080'
 ];
@@ -148,6 +150,19 @@ app.use((req, res, next) => {
 
 // Trust proxy
 app.set('trust proxy', 1);
+
+// Explicit OPTIONS handler for all routes (preflight requests)
+app.options('*', cors({
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin) || (origin && origin.includes('azurestaticapps.net'))) {
+      return callback(null, true);
+    }
+    callback(new Error('CORS not allowed'), false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+}));
 
 // Rate limiting - more lenient in development
 const limiter = rateLimit({
