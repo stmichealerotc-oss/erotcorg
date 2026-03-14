@@ -1,20 +1,40 @@
 // Use @sparticuz/chromium for cloud environments (Azure/AWS compatible)
+// On Windows (local dev), skip sparticuz and use regular puppeteer
 let chromium;
 let puppeteer;
 
-try {
-    chromium = require('@sparticuz/chromium');
-    puppeteer = require('puppeteer-core');
-    console.log('✅ Using @sparticuz/chromium for cloud environment');
-} catch (error) {
-    console.log('⚠️ @sparticuz/chromium not available, trying puppeteer:', error.message);
+const isWindows = process.platform === 'win32';
+const isCloudEnv = !isWindows && (process.env.WEBSITE_SITE_NAME || process.env.AZURE_FUNCTIONS_ENVIRONMENT || process.env.NODE_ENV === 'production');
+
+if (isCloudEnv) {
+    try {
+        chromium = require('@sparticuz/chromium');
+        puppeteer = require('puppeteer-core');
+        console.log('✅ Using @sparticuz/chromium for cloud environment');
+    } catch (error) {
+        console.log('⚠️ @sparticuz/chromium not available:', error.message);
+        chromium = null;
+        try {
+            puppeteer = require('puppeteer');
+        } catch (e) {
+            puppeteer = require('puppeteer-core');
+        }
+    }
+} else {
+    // Local development (Windows or non-production Linux)
+    chromium = null;
+    console.log('ℹ️ Local environment detected, using regular puppeteer');
     try {
         puppeteer = require('puppeteer');
-        chromium = null;
-        console.log('ℹ️ Using regular puppeteer (local development)');
-    } catch (puppeteerError) {
-        console.error('❌ No puppeteer available:', puppeteerError.message);
-        throw new Error('PDF generation unavailable: No puppeteer library found');
+        console.log('✅ Using regular puppeteer (local development)');
+    } catch (error) {
+        console.log('⚠️ puppeteer not found, trying puppeteer-core:', error.message);
+        try {
+            puppeteer = require('puppeteer-core');
+        } catch (e) {
+            console.error('❌ No puppeteer available');
+            puppeteer = null;
+        }
     }
 }
 
@@ -28,6 +48,9 @@ class PDFGenerator {
     }
 
     async initBrowser() {
+        if (!puppeteer) {
+            throw new Error('PDF generation unavailable: No puppeteer library found. Run: npm install puppeteer');
+        }
         if (!this.browser) {
             try {
                 console.log('🔄 Initializing Puppeteer browser...');
