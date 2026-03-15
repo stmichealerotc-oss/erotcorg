@@ -2,7 +2,13 @@ const express = require('express');
 const router = express.Router();
 const Transaction = require('../models/Transaction');
 const Member = require('../models/Member'); // ✅ ADD THIS LINE
-const QRCodeGenerator = require('../utils/qrCodeGenerator');
+let QRCodeGenerator;
+try {
+  QRCodeGenerator = require('../utils/qrCodeGenerator');
+} catch (e) {
+  console.warn('⚠️ qrCodeGenerator not available:', e.message);
+  QRCodeGenerator = null;
+}
 const moment = require('moment');
 const mongoose = require('mongoose');
 const { authenticateToken, authorizeRoles, adminOnly, readOnlyAccess, writeAccess } = require('../middleware/auth');

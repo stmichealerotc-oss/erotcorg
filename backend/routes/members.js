@@ -2,7 +2,13 @@ const express = require('express');
 const router = express.Router();
 const Member = require('../models/Member');
 const Transaction = require('../models/Transaction');
-const QRCodeGenerator = require('../utils/qrCodeGenerator');
+let QRCodeGenerator;
+try {
+  QRCodeGenerator = require('../utils/qrCodeGenerator');
+} catch (e) {
+  console.warn('⚠️ qrCodeGenerator not available:', e.message);
+  QRCodeGenerator = null;
+}
 const { authenticateToken, authorizeRoles, committeeOnly, readOnlyAccess, writeAccess } = require('../middleware/auth');
 
 // Public registration endpoint (no authentication required)

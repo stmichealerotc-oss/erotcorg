@@ -40,7 +40,13 @@ if (isCloudEnv) {
 
 const path = require('path');
 const fs = require('fs');
-const QRCodeGenerator = require('./qrCodeGenerator');
+let QRCodeGenerator;
+try {
+  QRCodeGenerator = require('./qrCodeGenerator');
+} catch (e) {
+  console.warn('⚠️ qrCodeGenerator not available:', e.message);
+  QRCodeGenerator = null;
+}
 
 class PDFGenerator {
     constructor() {
