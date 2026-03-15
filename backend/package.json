@@ -4,7 +4,7 @@
   "description": "Backend for Church Management System",
   "main": "server.js",
   "scripts": {
-    "prestart": "rm -f /home/site/wwwroot/oryx-manifest.toml || true",
+    "prestart": "node -e \"try{require('fs').unlinkSync('/home/site/wwwroot/oryx-manifest.toml')}catch(e){}\"",
     "start": "node server.js",
     "dev": "nodemon server.js",
     "postinstall": "node verify-chromium.js || true",
