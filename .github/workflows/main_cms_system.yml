@@ -85,4 +85,3 @@ jobs:
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_CMS_SYSTEM }}
           package: .
-          startup-command: 'node backend/server.js'
