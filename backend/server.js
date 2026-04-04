@@ -358,6 +358,55 @@ app.use('/api/kids-program', kidsProgram2Routes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/articles', articlesRoutes);
 
+// Public member routes (no auth) - must be mounted BEFORE the protected /api/members route
+const express_router_public = require('express').Router();
+const Member = require('./models/Member');
+express_router_public.options('/update/:token', (req, res) => res.status(200).end());
+express_router_public.get('/update/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const member = await Member.findOne({ updateToken: token, updateTokenExpiry: { $gt: new Date() } });
+    if (!member) return res.status(404).json({ success: false, error: 'Invalid or expired update link' });
+    if (member.updateTokenUsed) return res.status(410).json({ success: false, error: 'This update link has already been used.', code: 'TOKEN_ALREADY_USED', usedAt: member.updateTokenUsedAt });
+    res.json({ success: true, member: { id: member._id, displayId: member.displayId, firstName: member.firstName, lastName: member.lastName, email: member.email, phone: member.phone, address: member.address, dob: member.dob, joinDate: member.joinDate, status: member.status, emergencyContactName: member.emergencyContactName, emergencyContactPhone: member.emergencyContactPhone, notes: member.notes } });
+  } catch (e) { res.status(500).json({ success: false, error: 'Failed to load member details' }); }
+});
+express_router_public.put('/update/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const updateData = req.body;
+    const member = await Member.findOne({ updateToken: token, updateTokenExpiry: { $gt: new Date() } });
+    if (!member) return res.status(404).json({ success: false, error: 'Invalid or expired update link' });
+    if (member.updateTokenUsed) return res.status(410).json({ success: false, error: 'This update link has already been used.', code: 'TOKEN_ALREADY_USED' });
+    if (!updateData.updateDeclaration) return res.status(400).json({ success: false, error: 'You must confirm the accuracy of your updated information to proceed' });
+    const allowedFields = ['firstName','lastName','email','phone','address','dob','status','emergencyContactName','emergencyContactPhone','notes'];
+    allowedFields.forEach(field => { if (updateData[field] !== undefined) { member[field] = field === 'dob' && updateData[field] ? new Date(updateData[field]) : updateData[field]; } });
+    member.updateTokenUsed = true;
+    member.updateTokenUsedAt = new Date();
+    member.lastUpdated = new Date();
+    const updated = await member.save();
+    res.json({ success: true, message: 'Member details updated successfully', member: { displayId: updated.displayId, firstName: updated.firstName, lastName: updated.lastName, email: updated.email } });
+  } catch (e) { res.status(500).json({ success: false, error: 'Failed to update member details' }); }
+});
+express_router_public.post('/register', async (req, res) => {
+  // delegate to membersRoutes by falling through — handled below in protected mount
+  // but we need it public, so inline it here
+  try {
+    const { firstName, lastName, email, phone, address, dob, emergencyContactName, emergencyContactPhone, notes, declaration } = req.body;
+    if (!firstName) return res.status(400).json({ success: false, error: 'First name is required' });
+    if (!lastName) return res.status(400).json({ success: false, error: 'Last name is required' });
+    if (!declaration) return res.status(400).json({ success: false, error: 'You must agree to the declaration to complete registration' });
+    if (email) { const existing = await Member.findOne({ email }); if (existing) return res.status(400).json({ success: false, error: 'A member with this email already exists' }); }
+    const crypto = require('crypto');
+    const updateToken = crypto.randomBytes(32).toString('hex');
+    const updateTokenExpiry = new Date(); updateTokenExpiry.setFullYear(updateTokenExpiry.getFullYear() + 1);
+    const newMember = new Member({ firstName, lastName, email, phone, address, dob: dob ? new Date(dob) : undefined, status: 'pending', verificationStatus: 'pending', emergencyContactName, emergencyContactPhone, notes, joinDate: new Date(), updateToken, updateTokenExpiry });
+    const saved = await newMember.save();
+    res.status(201).json({ success: true, message: 'Registration submitted successfully!', member: { id: saved._id, displayId: saved.displayId, firstName: saved.firstName, lastName: saved.lastName, email: saved.email, status: 'pending', verificationStatus: 'pending' } });
+  } catch (e) { res.status(500).json({ success: false, error: 'Registration failed. Please try again.' }); }
+});
+app.use('/api/members', express_router_public);
+
 // ================= PROTECTED CMS API ROUTES =================
 // STEP 5: All CMS routes now require authentication
 const { authenticateToken } = require('./middleware/auth');
