@@ -10,8 +10,9 @@ const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 // Apply authentication to all signature routes
 router.use(authenticateToken);
 
-// Only admin, accountant, treasurer, and super-admin can manage signatures
-router.use(authorizeRoles('super-admin', 'admin', 'accountant', 'secretary'));
+// NOTE: Role restriction is applied per-route below.
+// GET endpoints are open to all authenticated users (members can view their own receipt signatures).
+// POST/DELETE endpoints require admin/accountant roles.
 
 // Ensure signatures directory exists
 const signaturesDir = path.join(__dirname, '../uploads/signatures');
@@ -49,7 +50,7 @@ const upload = multer({
 });
 
 // POST /api/signatures/digital-approval/:transactionId - Add digital approval signature
-router.post('/digital-approval/:transactionId', async (req, res) => {
+router.post('/digital-approval/:transactionId', authorizeRoles('super-admin', 'admin', 'accountant', 'secretary'), async (req, res) => {
     try {
         const { transactionId } = req.params;
         const { signatureTitle } = req.body;
@@ -125,7 +126,7 @@ router.post('/digital-approval/:transactionId', async (req, res) => {
 });
 
 // POST /api/signatures/upload/:transactionId - Upload signature image
-router.post('/upload/:transactionId', upload.single('signature'), async (req, res) => {
+router.post('/upload/:transactionId', authorizeRoles('super-admin', 'admin', 'accountant', 'secretary'), upload.single('signature'), async (req, res) => {
     console.log(`📤 Signature upload request received for transaction: ${req.params.transactionId}`);
     console.log(`📁 File received:`, req.file ? 'YES' : 'NO');
     console.log(`📝 Signature title:`, req.body.signatureTitle);
@@ -247,7 +248,7 @@ router.get('/image/:filename', (req, res) => {
 });
 
 // DELETE /api/signatures/:transactionId - Remove signature from transaction
-router.delete('/:transactionId', async (req, res) => {
+router.delete('/:transactionId', authorizeRoles('super-admin', 'admin', 'accountant', 'secretary'), async (req, res) => {
     try {
         const { transactionId } = req.params;
         

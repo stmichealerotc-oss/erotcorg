@@ -304,10 +304,12 @@ router.post('/:id/generate-update-token', authenticateToken, writeAccess, async 
     
     member.updateToken = updateToken;
     member.updateTokenExpiry = updateTokenExpiry;
+    member.updateTokenUsed = false;
+    member.updateTokenUsedAt = undefined;
     
     await member.save();
     
-    const updateLink = `${process.env.CHURCH_WEBSITE_URL || process.env.FRONTEND_URL || 'https://erotc.org'}/member-update.html?token=${updateToken}`;
+    const updateLink = `${process.env.CHURCH_WEBSITE_URL || process.env.FRONTEND_URL || 'https://erotc.org'}/pages/member-update.html?token=${updateToken}`;
     
     res.json({
       success: true,
