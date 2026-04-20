@@ -1,7 +1,10 @@
 {
+  "platform": {
+    "apiRuntime": "node:22"
+  },
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/images/*.{png,jpg,gif,svg,ico}", "/css/*", "/_next/*", "/fonts/*", "/*.json"]
+    "exclude": ["/_next/*", "/images/*", "/*.ico", "/*.png", "/*.svg", "/*.json"]
   },
   "routes": [
     {
@@ -9,14 +12,12 @@
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
       }
+    },
+    {
+      "route": "/api/*",
+      "allowedRoles": ["anonymous"]
     }
   ],
-  "responseOverrides": {
-    "404": {
-      "rewrite": "/404.html",
-      "statusCode": 404
-    }
-  },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "SAMEORIGIN",

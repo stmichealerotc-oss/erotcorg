@@ -30,6 +30,7 @@ jobs:
           app_location: "orthodox-library-app"
           api_location: ""
           output_location: ""
+          production_branch: "main"
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ secrets.LIBRARY_API_BASE_URL }}
 
