@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getCurrentUser, clearCurrentUser } from "@/lib/auth";
+import { getCurrentUser, clearAuth } from "@/lib/auth";
 import type { User } from "@/models/types";
 
 export function AdminHeader() {
@@ -18,7 +18,7 @@ export function AdminHeader() {
   }, []);
 
   const handleLogout = () => {
-    clearCurrentUser();
+    clearAuth();
     router.push("/login");
   };
 

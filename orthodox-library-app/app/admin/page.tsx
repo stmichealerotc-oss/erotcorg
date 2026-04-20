@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Book {
@@ -51,11 +51,7 @@ export default function AdminPage() {
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
-  useEffect(() => {
-    fetchBooks();
-  }, []);
-
-  const fetchBooks = async () => {
+  const fetchBooks = useCallback(async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/orthodox-library/books`);
       const data = await response.json();
@@ -65,7 +61,11 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Error fetching books:', error);
     }
-  };
+  }, [API_BASE_URL]);
+
+  useEffect(() => {
+    fetchBooks();
+  }, [fetchBooks]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
