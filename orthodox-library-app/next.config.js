@@ -2,7 +2,7 @@
 const path = require('path');
 
 const nextConfig = {
-  // No 'output: export' - let Azure/Oryx handle the Next.js build natively
+  output: 'standalone',
   outputFileTracingRoot: path.join(__dirname),
   env: {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
