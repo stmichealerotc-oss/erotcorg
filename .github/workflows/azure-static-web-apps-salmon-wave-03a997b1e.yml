@@ -42,7 +42,7 @@ jobs:
           action: "upload"
           app_location: "orthodox-library-app"
           api_location: ""
-          output_location: ".next"
+          output_location: "out"
           skip_app_build: true
 
   close_pull_request_job:
