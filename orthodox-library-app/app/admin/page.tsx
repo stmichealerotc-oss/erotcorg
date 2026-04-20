@@ -225,7 +225,7 @@ export default function AdminPage() {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ge'ez (ግዕዝ) *
+                  Ge&apos;ez (ግዕዝ) *
                 </label>
                 <textarea
                   value={formData.translations.gez}
@@ -338,11 +338,11 @@ export default function AdminPage() {
           <div className="mt-8 p-4 bg-blue-50 rounded-lg">
             <h3 className="font-semibold text-blue-900 mb-2">Instructions for Volunteers:</h3>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>1. Select the Anaphora you're working on</li>
-              <li>2. Enter the section name (e.g., "opening", "anaphora", "epiclesis")</li>
+              <li>1. Select the Anaphora you&apos;re working on</li>
+              <li>2. Enter the section name (e.g., &quot;opening&quot;, &quot;anaphora&quot;, &quot;epiclesis&quot;)</li>
               <li>3. Order number will auto-increment after each entry</li>
               <li>4. Fill in all language translations (Amharic is optional)</li>
-              <li>5. Click "Add Block" to save</li>
+              <li>5. Click &quot;Add Block&quot; to save</li>
               <li>6. The form will reset for the next entry</li>
             </ul>
           </div>

@@ -93,7 +93,7 @@ export default function RegisterPage() {
           <p className="text-gray-600 mb-2">Your registration has been received.</p>
           <p className="text-gray-500 text-sm mb-6">
             An administrator will review your profile and assign tasks that match your skills and availability.
-            You'll be able to log in at the volunteer portal once assigned.
+            You&apos;ll be able to log in at the volunteer portal once assigned.
           </p>
           <Link href="/volunteer" className="block bg-green-600 text-white py-2.5 rounded-lg font-semibold hover:bg-green-700 mb-3">
             Go to Volunteer Portal
@@ -365,7 +365,7 @@ export default function RegisterPage() {
               {/* Notes */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Anything else you'd like to share? (optional)
+                  Anything else you&apos;d like to share? (optional)
                 </label>
                 <textarea
                   value={form.notes}

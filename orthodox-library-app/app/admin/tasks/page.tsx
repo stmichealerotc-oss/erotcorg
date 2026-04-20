@@ -388,7 +388,7 @@ export default function AdminTasksPage() {
                   ) : sectionTasks.length === 0 ? (
                     <div className="p-8 text-center text-gray-400">
                       <p className="mb-2">No tasks for this section yet.</p>
-                      <button onClick={() => setPanel('create')} className="text-blue-600 hover:text-blue-800 text-sm font-medium">⚡ Create tasks for "{selectedSection}"</button>
+                      <button onClick={() => setPanel('create')} className="text-blue-600 hover:text-blue-800 text-sm font-medium">⚡ Create tasks for &quot;{selectedSection}&quot;</button>
                     </div>
                   ) : (
                     sectionTasks.map((task, i) => {

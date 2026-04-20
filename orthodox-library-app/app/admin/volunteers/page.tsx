@@ -208,7 +208,7 @@ export default function AdminVolunteersPage() {
 
                   {v.notes && (
                     <p className="text-xs text-gray-500 italic bg-gray-50 p-2 rounded mb-3">
-                      "{v.notes}"
+                      &quot;{v.notes}&quot;
                     </p>
                   )}
 
