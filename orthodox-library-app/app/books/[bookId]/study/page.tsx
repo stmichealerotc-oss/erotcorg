@@ -93,5 +93,3 @@ export default function StudyPage() {
   );
 }
 
-// Required for static export - dynamic routes resolved client-side
-export function generateStaticParams() { return []; }

@@ -85,5 +85,3 @@ export default function ReaderPage() {
   );
 }
 
-// Required for static export - dynamic routes resolved client-side
-export function generateStaticParams() { return []; }

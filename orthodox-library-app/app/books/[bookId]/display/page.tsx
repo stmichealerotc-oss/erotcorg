@@ -121,5 +121,3 @@ export default function DisplayPage() {
   );
 }
 
-// Required for static export - dynamic routes resolved client-side
-export function generateStaticParams() { return []; }
