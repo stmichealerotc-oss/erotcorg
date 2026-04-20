@@ -28,6 +28,9 @@ const kidsProgram2Routes = require('./routes/kidsProgram');
 const contactRoutes = require('./routes/contact');
 const articlesRoutes = require('./routes/articles');
 const notificationRoutes = require('./routes/notifications');
+const libraryRoutes = require('./routes/library');
+const orthodoxLibraryRoutes = require('./routes/orthodoxLibrary');
+const volunteerProfileRoutes = require('./routes/volunteerProfiles');
 // CMS routes
 const membersRoutes = require('./routes/members');
 const accountingRoutes = require('./routes/accounting');
@@ -259,6 +262,23 @@ app.use('/admin', (req, res, next) => {
 app.use('/cms', express.static(kidsAdminPath)); // Kids Program Admin
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// ---------- ORTHODOX LIBRARY PROXY ----------
+// This routes all requests starting with /library to a separate Next.js process
+// running on port 3002 (development) or configured via LIBRARY_PORT env var.
+const { createProxyMiddleware } = require('http-proxy-middleware');
+const libraryPort = process.env.LIBRARY_PORT || 3002;
+const libraryTarget = `http://localhost:${libraryPort}`;
+
+app.use('/library', createProxyMiddleware({
+  target: libraryTarget,
+  changeOrigin: true,
+  ws: true,
+  // preserve the /library prefix so the Next.js app sees its basePath
+  pathRewrite: {
+    '^/library': '/library'
+  }
+}));
+
 // Admin panel - serve index.html for Church Management System
 app.get('/admin', (req, res) => {
     const indexHtmlPath = path.join(adminPath, 'index.html');
@@ -357,6 +377,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/kids-program', kidsProgram2Routes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/articles', articlesRoutes);
+app.use('/api/library', libraryRoutes); // Orthodox Library (public access)
+app.use('/api/orthodox-library', orthodoxLibraryRoutes); // Orthodox Library API (public + admin)
+app.use('/api/volunteers', volunteerProfileRoutes); // Volunteer profiles & registration
 
 // Public member routes (no auth) - must be mounted BEFORE the protected /api/members route
 const express_router_public = require('express').Router();

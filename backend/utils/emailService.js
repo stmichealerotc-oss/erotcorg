@@ -759,6 +759,96 @@ class EmailService {
             return false;
         }
     }
+
+    async sendMemberUpdateLinkEmail(member, updateLink) {
+        console.log('📧 Sending member update link email to:', member.email);
+
+        const mailOptions = {
+            from: `"St. Michael Eritrean Orthodox Tewahedo Church" <${process.env.SMTP_USER}>`,
+            to: member.email,
+            subject: 'Update Your Member Details - St. Michael Eritrean Orthodox Tewahedo Church',
+            html: `
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #f8f9fa;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+                        <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">
+                            🏛️ St. Michael Eritrean Orthodox Tewahedo Church
+                        </h1>
+                        <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Member Details Update</p>
+                    </div>
+
+                    <div style="padding: 40px 30px; background: white;">
+                        <h2 style="color: #2d3748; margin-bottom: 20px; font-size: 24px;">Dear ${member.firstName} ${member.lastName || ''},</h2>
+
+                        <p style="color: #4a5568; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                            The church office has sent you a secure link to update your member details. Please click the button below to review and update your information.
+                        </p>
+
+                        <div style="text-align: center; margin: 35px 0;">
+                            <a href="${updateLink}"
+                               style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px 35px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+                                ✏️ Update My Details
+                            </a>
+                        </div>
+
+                        <div style="background: linear-gradient(135deg, #fff3cd, #ffeaa7); padding: 20px; border-radius: 10px; border: 1px solid #f6ad55; margin: 25px 0;">
+                            <div style="display: flex; align-items: flex-start; gap: 10px;">
+                                <span style="color: #d69e2e; font-size: 20px;">⚠️</span>
+                                <div>
+                                    <p style="margin: 0 0 10px 0; color: #744210; font-weight: 600;">Please Note:</p>
+                                    <ul style="margin: 0; padding-left: 20px; color: #744210;">
+                                        <li>This link is valid for <strong>1 year</strong></li>
+                                        <li>It can only be used <strong>once</strong> — after submitting, the link will expire</li>
+                                        <li>If you need to make further changes, contact the church office for a new link</li>
+                                        <li>Do not share this link with anyone</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                            <h3 style="color: #4a5568; margin: 0 0 10px 0; font-size: 16px;">Having trouble with the button?</h3>
+                            <p style="color: #718096; margin: 0 0 8px 0; font-size: 14px;">Copy and paste this link into your browser:</p>
+                            <p style="word-break: break-all; background: white; padding: 10px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; color: #4a5568; margin: 0; border: 1px solid #e2e8f0;">
+                                ${updateLink}
+                            </p>
+                        </div>
+
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                            <h3 style="color: #4a5568; margin: 0 0 10px 0; font-size: 18px;">Need Help?</h3>
+                            <p style="color: #718096; margin: 0; font-size: 14px;">
+                                If you have any questions, please contact us at
+                                <a href="mailto:stmichaelerotc@gmail.com" style="color: #667eea;">stmichaelerotc@gmail.com</a>
+                                or call <a href="tel:0470275305" style="color: #667eea;">0470 275 305</a>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style="background: #2d3748; color: white; padding: 20px; text-align: center; font-size: 14px; border-radius: 0 0 10px 10px;">
+                        <p style="margin: 0;">
+                            <strong>St. Michael Eritrean Orthodox Tewahedo Church</strong><br>
+                            60 Osborne Street, Joondanna, WA 6060<br>
+                            ABN: 80798549161 | Email: stmichaelerotc@gmail.com<br>
+                            <a href="https://erotc.org" style="color: #90cdf4;">erotc.org</a>
+                        </p>
+                        <p style="margin: 15px 0 0 0; color: #a0aec0;">
+                            Church Management System © ${new Date().getFullYear()}
+                        </p>
+                    </div>
+                </div>
+            `
+        };
+
+        try {
+            const info = await this.transporter.sendMail(mailOptions);
+            console.log('✅ Member update link email sent to:', member.email);
+            console.log('📧 Message ID:', info.messageId);
+            return true;
+        } catch (error) {
+            console.error('❌ Failed to send member update link email to:', member.email);
+            console.error('❌ Error details:', error.message);
+            return false;
+        }
+    }
 }
 
 module.exports = new EmailService();

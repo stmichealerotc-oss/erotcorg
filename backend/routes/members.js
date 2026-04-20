@@ -311,11 +311,29 @@ router.post('/:id/generate-update-token', authenticateToken, writeAccess, async 
     
     const updateLink = `${process.env.CHURCH_WEBSITE_URL || process.env.FRONTEND_URL || 'https://erotc.org'}/pages/member-update.html?token=${updateToken}`;
     
+    // Optionally send the link via email if requested and member has an email
+    let emailSent = false;
+    let emailError = null;
+    if (req.body.sendEmail && member.email) {
+      try {
+        const emailService = require('../utils/emailService');
+        emailSent = await emailService.sendMemberUpdateLinkEmail(member, updateLink);
+      } catch (emailErr) {
+        console.error('❌ Failed to send update link email:', emailErr.message);
+        emailError = emailErr.message;
+      }
+    }
+    
     res.json({
       success: true,
       updateToken,
       updateLink,
-      message: 'Update token generated successfully'
+      emailSent,
+      emailError: emailError || undefined,
+      memberEmail: member.email || null,
+      message: emailSent
+        ? 'Update token generated and email sent successfully'
+        : 'Update token generated successfully'
     });
     
   } catch (error) {
@@ -324,6 +342,48 @@ router.post('/:id/generate-update-token', authenticateToken, writeAccess, async 
       success: false, 
       error: 'Failed to generate update token' 
     });
+  }
+});
+
+// Send existing update link via email (admin only)
+router.post('/:id/send-update-link-email', authenticateToken, writeAccess, async (req, res) => {
+  try {
+    const member = await Member.findById(req.params.id);
+    
+    if (!member) {
+      return res.status(404).json({ success: false, error: 'Member not found' });
+    }
+    
+    if (!member.email) {
+      return res.status(400).json({ success: false, error: 'Member does not have an email address on file' });
+    }
+    
+    if (!member.updateToken || !member.updateTokenExpiry || member.updateTokenExpiry < new Date()) {
+      return res.status(400).json({ success: false, error: 'No valid update token exists. Please generate a new update link first.' });
+    }
+    
+    if (member.updateTokenUsed) {
+      return res.status(400).json({ success: false, error: 'The current update link has already been used. Please generate a new one.' });
+    }
+    
+    const updateLink = `${process.env.CHURCH_WEBSITE_URL || process.env.FRONTEND_URL || 'https://erotc.org'}/pages/member-update.html?token=${member.updateToken}`;
+    
+    const emailService = require('../utils/emailService');
+    const emailSent = await emailService.sendMemberUpdateLinkEmail(member, updateLink);
+    
+    if (!emailSent) {
+      return res.status(500).json({ success: false, error: 'Failed to send email. Check SMTP configuration.' });
+    }
+    
+    res.json({
+      success: true,
+      message: `Update link email sent to ${member.email}`,
+      memberEmail: member.email
+    });
+    
+  } catch (error) {
+    console.error('❌ Error sending update link email:', error);
+    res.status(500).json({ success: false, error: 'Failed to send update link email' });
   }
 });
 
