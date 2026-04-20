@@ -6,11 +6,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getCurrentUser, clearAuth } from "@/lib/auth";
-import type { User } from "@/models/types";
+import { getCurrentUser, clearAuth, type AuthUser } from "@/lib/auth";
 
 export function AdminHeader() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const router = useRouter();
 
   useEffect(() => {
