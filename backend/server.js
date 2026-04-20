@@ -62,6 +62,7 @@ const allowedOrigins = [
 'https://agreeable-plant-06f731700.2.azurestaticapps.net', // Admin panel
 'https://ashy-cliff-058ad9c00.1.azurestaticapps.net', // Public website
 'https://salmon-wave-03a997b1e.azurestaticapps.net', // Orthodox Library SWA
+'https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net', // Backend (self)
 'https://library.erotc.org', // Orthodox Library (custom domain)
 // Local development
 'http://localhost:3000',
