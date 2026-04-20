@@ -1,10 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // note: not using static export; app will run as a normal Next.js server
-  // by default Next.js exposes any env vars prefixed with NEXT_PUBLIC to the client
+  output: 'standalone',
   env: {
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001",
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
   },
+  // Suppress workspace root warning
+  outputFileTracingRoot: require('path').join(__dirname),
 };
 
 module.exports = nextConfig;
