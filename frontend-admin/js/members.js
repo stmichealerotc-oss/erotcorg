@@ -347,7 +347,11 @@ class MembersPage {
         const memberNumber = member.memberNumber || 'Pending';
         
         const totalContributions = member.totalContributions || 0;
-        const joinDate = member.joinDate ? new Date(member.joinDate).toLocaleDateString() : 'N/A';
+        const joinDate = member.joinDate
+            ? new Date(member.joinDate).toLocaleDateString()
+            : member.createdAt
+                ? new Date(member.createdAt).toLocaleDateString()
+                : 'N/A';
 
         return `
             <tr>
@@ -778,7 +782,8 @@ async generateUpdateLink(memberId) {
 
             if (response.ok && result.success) {
                 // Show modal with the update link
-                this.showUpdateLinkModal(result.updateLink, result.updateToken);
+                this._currentUpdateMemberId = memberId;
+                this.showUpdateLinkModal(result.updateLink, result.updateToken, result.memberEmail);
             } else {
                 throw new Error(result.error || `HTTP ${response.status}: Failed to generate update link`);
             }
@@ -805,7 +810,8 @@ async generateUpdateLink(memberId) {
 
             if (response.ok && result.success) {
                 // Show modal with the update link
-                this.showUpdateLinkModal(result.updateLink, result.updateToken);
+                this._currentUpdateMemberId = memberId;
+                this.showUpdateLinkModal(result.updateLink, result.updateToken, result.memberEmail);
             } else {
                 throw new Error(result.error || `HTTP ${response.status}: Failed to generate update link`);
             }
@@ -817,7 +823,19 @@ async generateUpdateLink(memberId) {
     }
 }
 
-showUpdateLinkModal(updateLink, updateToken) {
+showUpdateLinkModal(updateLink, updateToken, memberEmail) {
+    const hasEmail = memberEmail && memberEmail.trim() !== '';
+    const emailSection = hasEmail
+        ? `<div style="margin-top: 1rem; padding: 0.75rem 1rem; background: #f0fff4; border: 1px solid #9ae6b4; border-radius: 5px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                <span style="color: #276749; font-size: 0.9rem;"><i class="fas fa-envelope"></i> Send directly to: <strong>${memberEmail}</strong></span>
+                <button class="btn btn-success" id="send-email-btn" onclick="membersPage.sendUpdateLinkEmail()" style="white-space: nowrap;">
+                    <i class="fas fa-paper-plane"></i> Send via Email
+                </button>
+           </div>`
+        : `<div style="margin-top: 1rem; padding: 0.75rem 1rem; background: #fff5f5; border: 1px solid #feb2b2; border-radius: 5px; color: #c53030; font-size: 0.9rem;">
+                <i class="fas fa-exclamation-circle"></i> No email address on file for this member. Copy the link and share it manually.
+           </div>`;
+
     // Create modal HTML
     const modalHTML = `
         <div id="update-link-modal" class="modal" style="display: block;">
@@ -839,10 +857,12 @@ showUpdateLinkModal(updateLink, updateToken) {
                             </button>
                         </div>
                     </div>
+
+                    ${emailSection}
                     
-                    <div class="alert alert-info" style="background: #d1ecf1; color: #0c5460; padding: 0.75rem; border-radius: 5px; border: 1px solid #bee5eb;">
+                    <div class="alert alert-info" style="background: #d1ecf1; color: #0c5460; padding: 0.75rem; border-radius: 5px; border: 1px solid #bee5eb; margin-top: 1rem;">
                         <i class="fas fa-info-circle"></i>
-                        <strong>Note:</strong> This link is valid for 1 year and allows the member to update their details once. After they submit the form, it will be hidden and they won't be able to access it again.
+                        <strong>Note:</strong> This link is valid for 1 year and allows the member to update their details once. After they submit the form, the link will expire.
                     </div>
                     
                     <div class="modal-actions" style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: flex-end;">
@@ -866,6 +886,62 @@ showUpdateLinkModal(updateLink, updateToken) {
     
     // Add modal to page
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    this._updateLinkMemberId = this._currentUpdateMemberId || null;
+}
+
+async sendUpdateLinkEmail() {
+    const memberId = this._updateLinkMemberId;
+    if (!memberId) {
+        alert('Unable to determine member. Please close and try again.');
+        return;
+    }
+
+    const btn = document.getElementById('send-email-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    }
+
+    try {
+        const token = (window.authSystem && window.authSystem.getToken())
+            || localStorage.getItem('authToken')
+            || sessionStorage.getItem('authToken')
+            || localStorage.getItem('token');
+
+        if (!token) throw new Error('No authentication token found. Please login again.');
+
+        const response = await fetch(`${API_BASE_URL}/members/${memberId}/send-update-link-email`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-check"></i> Email Sent!';
+                btn.style.background = '#276749';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send via Email';
+                    btn.style.background = '';
+                }, 3000);
+            }
+        } else {
+            throw new Error(result.error || 'Failed to send email');
+        }
+    } catch (error) {
+        console.error('❌ Error sending update link email:', error);
+        alert(`Error sending email: ${error.message}`);
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send via Email';
+        }
+    }
 }
 
 copyUpdateLink() {

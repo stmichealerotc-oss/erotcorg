@@ -174,6 +174,7 @@ router.get('/update/:token', async (req, res) => {
         address: member.address,
         dob: member.dob,
         joinDate: member.joinDate,
+        createdAt: member.createdAt,
         status: member.status,
         emergencyContactName: member.emergencyContactName,
         emergencyContactPhone: member.emergencyContactPhone,

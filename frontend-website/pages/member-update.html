@@ -288,6 +288,14 @@
                     day: 'numeric' 
                 });
                 document.getElementById('memberSince').textContent = formattedDate;
+            } else if (member.createdAt) {
+                const createdAt = new Date(member.createdAt);
+                const formattedDate = createdAt.toLocaleDateString('en-AU', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                document.getElementById('memberSince').textContent = formattedDate;
             } else {
                 document.getElementById('memberSince').textContent = 'Not specified';
             }
