@@ -20,19 +20,6 @@ jobs:
           submodules: true
           lfs: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install and Build
-        run: |
-          cd orthodox-library-app
-          npm ci
-          npm run build
-        env:
-          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.LIBRARY_API_BASE_URL }}
-
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -42,8 +29,9 @@ jobs:
           action: "upload"
           app_location: "orthodox-library-app"
           api_location: ""
-          output_location: "out"
-          skip_app_build: true
+          output_location: ""
+        env:
+          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.LIBRARY_API_BASE_URL }}
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
