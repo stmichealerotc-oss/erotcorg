@@ -173,6 +173,68 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// ── POST /api/documents/:id/send-to-sign — send final file to DocuSeal ───
+router.post('/:id/send-to-sign', async (req, res) => {
+  try {
+    const { signerName, signerEmail, fileVersion } = req.body;
+    const doc = await ChurchDocument.findById(req.params.id);
+    if (!doc) return res.status(404).json({ success: false, error: 'Document not found' });
+
+    if (doc.status !== 'final') {
+      return res.status(400).json({ success: false, error: 'Only final documents can be sent for signing. Update status to final first.' });
+    }
+
+    const finals = doc.files.filter(f => f.type === 'final');
+    const fileEntry = fileVersion
+      ? finals.find(f => f.version === Number(fileVersion))
+      : finals[finals.length - 1];
+
+    if (!fileEntry) return res.status(400).json({ success: false, error: 'No final file found. Upload a final version first.' });
+    if (!signerName || !signerEmail) return res.status(400).json({ success: false, error: 'signerName and signerEmail are required.' });
+
+    const docusealUrl = process.env.DOCUSEAL_URL || 'https://sign.erotc.org';
+    const docusealToken = process.env.DOCUSEAL_API_TOKEN;
+    if (!docusealToken) return res.status(500).json({ success: false, error: 'DOCUSEAL_API_TOKEN not configured in environment.' });
+
+    // Generate 24h SAS URL for DocuSeal to fetch the document
+    const { generateSAS } = require('../utils/blob');
+    const sasUrl = generateSAS(fileEntry.blobPath, 60 * 24);
+
+    const payload = {
+      send_email: true,
+      submitters: [{ name: signerName, email: signerEmail, role: 'Signer' }],
+      documents: [{
+        name: fileEntry.originalName || `${doc.fileNo}.pdf`,
+        url: sasUrl
+      }]
+    };
+
+    const dsRes = await fetch(`${docusealUrl}/api/submissions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Auth-Token': docusealToken },
+      body: JSON.stringify(payload)
+    });
+
+    const dsData = await dsRes.json();
+    if (!dsRes.ok) return res.status(dsRes.status).json({ success: false, error: dsData.error || 'DocuSeal error', details: dsData });
+
+    // Track submission on document
+    const submission = Array.isArray(dsData) ? dsData[0] : dsData;
+    doc.docusealSubmissionId = String(submission.submission_id || submission.id || '');
+    doc.docusealStatus = 'pending';
+    await doc.save();
+
+    res.json({
+      success: true,
+      message: `Sent to ${signerEmail} for signing`,
+      submissionId: doc.docusealSubmissionId,
+      signingUrl: submission.embed_src || submission.url || null
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ── DELETE /api/documents/:id — archive (soft delete) ─────────────────────
 router.delete('/:id', async (req, res) => {
   try {

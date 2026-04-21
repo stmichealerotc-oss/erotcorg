@@ -54,6 +54,13 @@ const ChurchDocumentSchema = new mongoose.Schema({
   accessRoles: {
     type: [String],
     default: ['admin', 'super-admin']
+  },
+  // DocuSeal signing tracking
+  docusealSubmissionId: { type: String },
+  docusealStatus: {
+    type: String,
+    enum: ['pending', 'completed', 'declined', null],
+    default: null
   }
 }, { timestamps: true });
 

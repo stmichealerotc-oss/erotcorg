@@ -1,6 +1,5 @@
 /**
  * Church Document Registry
- * Handles listing, creating, updating and file uploads
  */
 
 const Documents = (() => {
@@ -8,13 +7,10 @@ const Documents = (() => {
   let currentPage = 1;
   let debounceTimer = null;
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
-
   function authHeaders() {
     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
     return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   }
-
   function authToken() {
     return localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || '';
   }
@@ -36,9 +32,24 @@ const Documents = (() => {
     archived: 'background:#e2e3e5;color:#383d41;'
   };
 
+  const FILE_ICONS = {
+    'application/pdf': '📄',
+    'application/msword': '📝',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '📝',
+    'image/jpeg': '🖼️',
+    'image/png': '🖼️'
+  };
+
   function formatDate(d) {
     if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-AU', { day:'2-digit', month:'short', year:'numeric' });
+    return new Date(d).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function formatBytes(b) {
+    if (!b) return '';
+    if (b < 1024) return b + ' B';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+    return (b / (1024 * 1024)).toFixed(1) + ' MB';
   }
 
   // ── Load / List ──────────────────────────────────────────────────────────
@@ -62,7 +73,6 @@ const Documents = (() => {
     try {
       const res  = await fetch(`${API}/api/documents?${params}`, { headers: authHeaders() });
       const data = await res.json();
-
       if (!data.success) throw new Error(data.error);
 
       if (data.data.length === 0) {
@@ -72,7 +82,7 @@ const Documents = (() => {
       }
 
       tbody.innerHTML = data.data.map(doc => `
-        <tr style="border-bottom:1px solid #f0f0f0;transition:background .15s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background=''">
+        <tr style="border-bottom:1px solid #f0f0f0;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background=''">
           <td style="padding:10px 12px;white-space:nowrap;">
             <span style="font-weight:700;color:#2c3e50;font-family:monospace;">${doc.fileNo}</span>
             ${doc.refNo ? `<br><span style="font-size:.75rem;color:#888;">${doc.refNo}</span>` : ''}
@@ -91,27 +101,36 @@ const Documents = (() => {
           </td>
           <td style="padding:10px 12px;">
             ${doc.files && doc.files.length > 0
-              ? `<span style="color:#27ae60;font-size:.8rem;"><i class="fas fa-paperclip"></i> ${doc.files.length} file${doc.files.length > 1 ? 's' : ''}</span>`
+              ? `<span style="color:#27ae60;font-size:.8rem;cursor:pointer;" onclick="Documents.openEdit('${doc._id}')">
+                  <i class="fas fa-paperclip"></i> ${doc.files.length} file${doc.files.length > 1 ? 's' : ''}
+                </span>`
               : '<span style="color:#ccc;font-size:.8rem;">none</span>'}
           </td>
-          <td style="padding:10px 12px;text-align:center;white-space:nowrap;">
-            <button onclick="Documents.openUpload('${doc._id}','${doc.title.replace(/'/g,"\\'")}','${doc.fileNo}')"
-              title="Upload file" style="background:#27ae60;color:#fff;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;margin-right:4px;">
-              <i class="fas fa-upload"></i>
+          <td style="padding:10px 12px;text-align:center;white-space:nowrap;position:relative;">
+            <button onclick="Documents.toggleMenu('${doc._id}', event)" style="background:none;border:none;color:#666;font-size:1.1rem;cursor:pointer;padding:4px 8px;border-radius:4px;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='none'">
+              <i class="fas fa-ellipsis-v"></i>
             </button>
-            <button onclick="Documents.openEdit('${doc._id}')"
-              title="Edit" style="background:#3498db;color:#fff;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;margin-right:4px;">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button onclick="Documents.archive('${doc._id}','${doc.fileNo}')"
-              title="Archive" style="background:#e74c3c;color:#fff;border:none;padding:5px 8px;border-radius:4px;cursor:pointer;">
-              <i class="fas fa-archive"></i>
-            </button>
+            <div id="menu-${doc._id}" style="display:none;position:absolute;right:10px;top:35px;background:#fff;border:1px solid #ddd;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:100;min-width:170px;" onclick="event.stopPropagation()">
+              <button onclick="Documents.openEdit('${doc._id}');Documents.closeAllMenus();"
+                style="width:100%;text-align:left;padding:9px 14px;border:none;background:none;cursor:pointer;font-size:.82rem;color:#333;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px;"
+                onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='none'">
+                <i class="fas fa-edit" style="width:14px;color:#3498db;"></i> Edit / View Files
+              </button>
+              <button onclick="Documents.openUpload('${doc._id}','${doc.title.replace(/'/g,"\\'")}','${doc.fileNo}');Documents.closeAllMenus();"
+                style="width:100%;text-align:left;padding:9px 14px;border:none;background:none;cursor:pointer;font-size:.82rem;color:#333;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px;"
+                onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='none'">
+                <i class="fas fa-upload" style="width:14px;color:#27ae60;"></i> Upload Files
+              </button>
+              <button onclick="Documents.archive('${doc._id}','${doc.fileNo}');Documents.closeAllMenus();"
+                style="width:100%;text-align:left;padding:9px 14px;border:none;background:none;cursor:pointer;font-size:.82rem;color:#e74c3c;display:flex;align-items:center;gap:8px;"
+                onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='none'">
+                <i class="fas fa-archive" style="width:14px;"></i> Archive
+              </button>
+            </div>
           </td>
         </tr>
       `).join('');
 
-      // Pagination
       const pag = document.getElementById('doc-pagination');
       pag.innerHTML = `
         <span>${data.total} document${data.total !== 1 ? 's' : ''} · Page ${data.page} of ${data.pages}</span>
@@ -141,10 +160,12 @@ const Documents = (() => {
     document.getElementById('doc-category').value = 'outgoing-letter';
     document.getElementById('doc-direction').value = 'outgoing';
     document.getElementById('doc-date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('doc-status').value = 'draft';
     document.getElementById('doc-refno').value = '';
     document.getElementById('doc-fromto').value = '';
     document.getElementById('doc-subject').value = '';
     document.getElementById('doc-notes').value = '';
+    document.getElementById('doc-files-section').style.display = 'none';
     document.getElementById('doc-modal-error').style.display = 'none';
     document.getElementById('doc-modal').style.display = 'block';
   }
@@ -156,20 +177,74 @@ const Documents = (() => {
       if (!data.success) throw new Error(data.error);
       const d = data.data;
 
-      document.getElementById('doc-edit-id').value = id;
+      document.getElementById('doc-edit-id').value  = id;
       document.getElementById('doc-modal-title').innerHTML = '<i class="fas fa-edit"></i> Edit Document';
-      document.getElementById('doc-title').value   = d.title || '';
+      document.getElementById('doc-title').value    = d.title || '';
       document.getElementById('doc-category').value = d.category || 'outgoing-letter';
       document.getElementById('doc-direction').value = d.direction || 'outgoing';
-      document.getElementById('doc-date').value    = d.date ? d.date.split('T')[0] : '';
-      document.getElementById('doc-refno').value   = d.refNo || '';
-      document.getElementById('doc-fromto').value  = d.fromTo || '';
-      document.getElementById('doc-subject').value = d.subject || '';
-      document.getElementById('doc-notes').value   = d.notes || '';
+      document.getElementById('doc-date').value     = d.date ? d.date.split('T')[0] : '';
+      document.getElementById('doc-status').value   = d.status || 'draft';
+      document.getElementById('doc-refno').value    = d.refNo || '';
+      document.getElementById('doc-fromto').value   = d.fromTo || '';
+      document.getElementById('doc-subject').value  = d.subject || '';
+      document.getElementById('doc-notes').value    = d.notes || '';
       document.getElementById('doc-modal-error').style.display = 'none';
+
+      // FIX 2: Show attached files list
+      renderFilesList(id, d.files || []);
+
       document.getElementById('doc-modal').style.display = 'block';
     } catch (err) {
       alert('Failed to load document: ' + err.message);
+    }
+  }
+
+  // FIX 2: Render files list with download buttons
+  function renderFilesList(docId, files) {
+    const section = document.getElementById('doc-files-section');
+    const list    = document.getElementById('doc-files-list');
+
+    if (!files || files.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+    list.innerHTML = files.map((f, i) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;${i > 0 ? 'border-top:1px solid #f0f0f0;' : ''}">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:1.1rem;">${FILE_ICONS[f.mimeType] || '📎'}</span>
+          <div>
+            <div style="font-size:.82rem;font-weight:600;color:#333;">${f.originalName || f.blobPath}</div>
+            <div style="font-size:.75rem;color:#888;">
+              ${f.type} · v${f.version} · ${formatBytes(f.sizeBytes)} · ${formatDate(f.uploadedAt)}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="Documents.downloadFile('${docId}','${f.type}',${f.version})"
+            style="background:#3498db;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:.78rem;white-space:nowrap;">
+            <i class="fas fa-download"></i> Download
+          </button>
+          ${f.type === 'final' ? `
+          <button onclick="Documents.openSendToSign('${docId}',${f.version})"
+            style="background:#8e44ad;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:.78rem;white-space:nowrap;">
+            <i class="fas fa-pen-nib"></i> Send to Sign
+          </button>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function downloadFile(docId, type, version) {
+    try {
+      const res  = await fetch(`${API}/api/documents/${docId}/download?type=${type}&version=${version}`, { headers: authHeaders() });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      // Open SAS URL in new tab
+      window.open(data.url, '_blank');
+    } catch (err) {
+      alert('Download failed: ' + err.message);
     }
   }
 
@@ -178,11 +253,12 @@ const Documents = (() => {
   }
 
   async function save() {
-    const id      = document.getElementById('doc-edit-id').value;
-    const title   = document.getElementById('doc-title').value.trim();
+    const id       = document.getElementById('doc-edit-id').value;
+    const title    = document.getElementById('doc-title').value.trim();
     const category = document.getElementById('doc-category').value;
     const direction = document.getElementById('doc-direction').value;
-    const date    = document.getElementById('doc-date').value;
+    const date     = document.getElementById('doc-date').value;
+    const status   = document.getElementById('doc-status').value;
 
     const errEl = document.getElementById('doc-modal-error');
     if (!title || !date) {
@@ -192,10 +268,7 @@ const Documents = (() => {
     }
 
     const body = {
-      title,
-      category,
-      direction,
-      date,
+      title, category, direction, date, status,
       refNo:   document.getElementById('doc-refno').value.trim(),
       fromTo:  document.getElementById('doc-fromto').value.trim(),
       subject: document.getElementById('doc-subject').value.trim(),
@@ -212,7 +285,6 @@ const Documents = (() => {
       const res    = await fetch(url, { method, headers: authHeaders(), body: JSON.stringify(body) });
       const data   = await res.json();
       if (!data.success) throw new Error(data.error);
-
       closeModal();
       load(currentPage);
     } catch (err) {
@@ -231,6 +303,7 @@ const Documents = (() => {
     document.getElementById('upload-doc-title').textContent = `${fileNo} — ${title}`;
     document.getElementById('upload-type').value = 'draft';
     document.getElementById('upload-file').value = '';
+    document.getElementById('upload-file-preview').innerHTML = '';
     document.getElementById('upload-progress').style.display = 'none';
     document.getElementById('upload-error').style.display = 'none';
     document.getElementById('upload-modal').style.display = 'block';
@@ -240,51 +313,163 @@ const Documents = (() => {
     document.getElementById('upload-modal').style.display = 'none';
   }
 
-  async function uploadFile() {
+  // FIX 3: Preview selected files before upload
+  function previewFiles() {
+    const input   = document.getElementById('upload-file');
+    const preview = document.getElementById('upload-file-preview');
+    const files   = Array.from(input.files);
+
+    if (files.length > 5) {
+      document.getElementById('upload-error').textContent = 'Maximum 5 files allowed.';
+      document.getElementById('upload-error').style.display = 'block';
+      input.value = '';
+      preview.innerHTML = '';
+      return;
+    }
+
+    document.getElementById('upload-error').style.display = 'none';
+    preview.innerHTML = files.map(f => `
+      <div style="display:flex;align-items:center;gap:6px;padding:4px 0;font-size:.8rem;color:#555;">
+        <span>${FILE_ICONS[f.type] || '📎'}</span>
+        <span>${f.name}</span>
+        <span style="color:#aaa;">(${formatBytes(f.size)})</span>
+      </div>
+    `).join('');
+  }
+
+  // FIX 3: Upload multiple files sequentially
+  async function uploadFiles() {
     const id       = document.getElementById('upload-doc-id').value;
     const fileType = document.getElementById('upload-type').value;
-    const fileInput = document.getElementById('upload-file');
+    const input    = document.getElementById('upload-file');
+    const files    = Array.from(input.files);
     const errEl    = document.getElementById('upload-error');
     const progEl   = document.getElementById('upload-progress');
     const barEl    = document.getElementById('upload-bar');
     const statusEl = document.getElementById('upload-status');
 
-    if (!fileInput.files[0]) {
-      errEl.textContent = 'Please select a file.';
+    if (files.length === 0) {
+      errEl.textContent = 'Please select at least one file.';
       errEl.style.display = 'block';
       return;
     }
-
-    const formData = new FormData();
-    formData.append('file', fileInput.files[0]);
-    formData.append('fileType', fileType);
 
     const btn = document.getElementById('upload-btn');
     btn.disabled = true;
     errEl.style.display = 'none';
     progEl.style.display = 'block';
-    barEl.style.width = '30%';
-    statusEl.textContent = 'Uploading…';
+
+    let uploaded = 0;
+    const errors = [];
+
+    for (const file of files) {
+      statusEl.textContent = `Uploading ${file.name} (${uploaded + 1}/${files.length})…`;
+      barEl.style.width = `${Math.round((uploaded / files.length) * 100)}%`;
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('fileType', fileType);
+
+        const token = authToken();
+        const res = await fetch(`${API}/api/documents/${id}/upload`, {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: formData
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+        uploaded++;
+      } catch (err) {
+        errors.push(`${file.name}: ${err.message}`);
+      }
+    }
+
+    barEl.style.width = '100%';
+
+    if (errors.length > 0) {
+      errEl.innerHTML = errors.join('<br>');
+      errEl.style.display = 'block';
+      statusEl.textContent = `${uploaded}/${files.length} uploaded with errors.`;
+    } else {
+      statusEl.textContent = `✓ ${uploaded} file${uploaded > 1 ? 's' : ''} uploaded successfully`;
+      setTimeout(() => { closeUpload(); load(currentPage); }, 1000);
+    }
+
+    btn.disabled = false;
+  }
+
+  // ── Dropdown menu ────────────────────────────────────────────────────────
+
+  function toggleMenu(id, event) {
+    if (event) event.stopPropagation();
+    const menu = document.getElementById(`menu-${id}`);
+    const isOpen = menu && menu.style.display === 'block';
+    closeAllMenus();
+    if (menu && !isOpen) menu.style.display = 'block';
+  }
+
+  function closeAllMenus() {
+    document.querySelectorAll('[id^="menu-"]').forEach(m => m.style.display = 'none');
+  }
+
+  // ── Send to DocuSeal ─────────────────────────────────────────────────────
+
+  function openSendToSign(docId, fileVersion) {
+    document.getElementById('sign-doc-id').value = docId;
+    document.getElementById('sign-file-version').value = fileVersion;
+    document.getElementById('sign-signer-name').value = '';
+    document.getElementById('sign-signer-email').value = '';
+    document.getElementById('sign-error').style.display = 'none';
+    document.getElementById('sign-success').style.display = 'none';
+    document.getElementById('sign-modal').style.display = 'block';
+  }
+
+  function closeSign() {
+    document.getElementById('sign-modal').style.display = 'none';
+  }
+
+  async function sendToSign() {
+    const docId       = document.getElementById('sign-doc-id').value;
+    const fileVersion = document.getElementById('sign-file-version').value;
+    const signerName  = document.getElementById('sign-signer-name').value.trim();
+    const signerEmail = document.getElementById('sign-signer-email').value.trim();
+    const errEl       = document.getElementById('sign-error');
+    const successEl   = document.getElementById('sign-success');
+
+    if (!signerName || !signerEmail) {
+      errEl.textContent = 'Signer name and email are required.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const btn = document.getElementById('sign-send-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+    errEl.style.display = 'none';
 
     try {
-      const token = authToken();
-      const res = await fetch(`${API}/api/documents/${id}/upload`, {
+      const res = await fetch(`${API}/api/documents/${docId}/send-to-sign`, {
         method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData
+        headers: authHeaders(),
+        body: JSON.stringify({ fileVersion: Number(fileVersion), signerName, signerEmail })
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
 
-      barEl.style.width = '100%';
-      statusEl.textContent = `✓ Uploaded: ${data.blobPath}`;
-      setTimeout(() => { closeUpload(); load(currentPage); }, 1200);
+      successEl.innerHTML = `
+        ✓ Sent to <strong>${signerEmail}</strong> for signing.<br>
+        <span style="font-size:.78rem;color:#666;">Submission ID: ${data.submissionId || '—'}</span>
+        ${data.signingUrl ? `<br><a href="${data.signingUrl}" target="_blank" style="font-size:.78rem;">Open signing link</a>` : ''}
+      `;
+      successEl.style.display = 'block';
+      setTimeout(() => { closeSign(); load(currentPage); }, 3000);
     } catch (err) {
       errEl.textContent = err.message;
       errEl.style.display = 'block';
-      progEl.style.display = 'none';
     } finally {
       btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-pen-nib"></i> Send for Signing';
     }
   }
 
@@ -304,16 +489,20 @@ const Documents = (() => {
 
   // ── Init ─────────────────────────────────────────────────────────────────
 
-  function init() {
-    load(1);
-  }
+  function init() { load(1); }
 
-  return { init, load, debounceLoad, openNewModal, openEdit, closeModal, save, openUpload, closeUpload, uploadFile, archive };
+  return { init, load, debounceLoad, openNewModal, openEdit, closeModal, save, openUpload, closeUpload, previewFiles, uploadFiles, downloadFile, openSendToSign, closeSign, sendToSign, toggleMenu, closeAllMenus, archive };
 })();
 
-// Auto-init when loaded as a page fragment
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', Documents.init);
 } else {
   Documents.init();
 }
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('[id^="menu-"]') && !e.target.closest('.fa-ellipsis-v') && !e.target.closest('button[onclick*="toggleMenu"]')) {
+    Documents.closeAllMenus();
+  }
+});
