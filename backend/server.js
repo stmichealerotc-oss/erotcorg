@@ -31,6 +31,7 @@ const notificationRoutes = require('./routes/notifications');
 const libraryRoutes = require('./routes/library');
 const orthodoxLibraryRoutes = require('./routes/orthodoxLibrary');
 const volunteerProfileRoutes = require('./routes/volunteerProfiles');
+const documentsRoutes = require('./routes/documents');
 // CMS routes
 const membersRoutes = require('./routes/members');
 const accountingRoutes = require('./routes/accounting');
@@ -383,6 +384,7 @@ app.use('/api/articles', articlesRoutes);
 app.use('/api/library', libraryRoutes); // Orthodox Library (public access)
 app.use('/api/orthodox-library', orthodoxLibraryRoutes); // Orthodox Library API (public + admin)
 app.use('/api/volunteers', volunteerProfileRoutes); // Volunteer profiles & registration
+app.use('/api/documents', documentsRoutes); // Church document registry
 
 // Public member routes (no auth) - must be mounted BEFORE the protected /api/members route
 const express_router_public = require('express').Router();
