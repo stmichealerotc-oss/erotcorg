@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document Registry</title>
+</head>
+<body>
+
+<!-- ── TOOLBAR ─────────────────────────────────────────────────────────── -->
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+  <div>
+    <h2 style="margin:0;font-size:1.4rem;"><i class="fas fa-folder-open"></i> Document Registry</h2>
+    <p style="margin:4px 0 0;color:#666;font-size:.85rem;">Church letters, minutes, circulars and official files</p>
+  </div>
+  <button class="btn btn-primary" onclick="Documents.openNewModal()">
+    <i class="fas fa-plus"></i> New Document
+  </button>
+</div>
+
+<!-- ── FILTERS ─────────────────────────────────────────────────────────── -->
+<div class="card" style="padding:14px 16px;margin-bottom:16px;">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+    <input id="doc-search" type="text" placeholder="Search title, file no, from/to…"
+      style="flex:1;min-width:180px;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem;"
+      oninput="Documents.debounceLoad()" />
+    <select id="doc-filter-category" onchange="Documents.load()"
+      style="padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem;">
+      <option value="">All Categories</option>
+      <option value="outgoing-letter">Outgoing Letter</option>
+      <option value="incoming-letter">Incoming Letter</option>
+      <option value="minutes">Minutes</option>
+      <option value="circular">Circular</option>
+      <option value="report">Report</option>
+      <option value="legal">Legal</option>
+      <option value="other">Other</option>
+    </select>
+    <select id="doc-filter-status" onchange="Documents.load()"
+      style="padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem;">
+      <option value="">All Statuses</option>
+      <option value="draft">Draft</option>
+      <option value="final">Final</option>
+      <option value="signed">Signed</option>
+      <option value="archived">Archived</option>
+    </select>
+    <input id="doc-filter-year" type="number" placeholder="Year" min="2000" max="2099"
+      style="width:90px;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem;"
+      onchange="Documents.load()" />
+  </div>
+</div>
+
+<!-- ── TABLE ───────────────────────────────────────────────────────────── -->
+<div class="card" style="overflow:hidden;">
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
+      <thead>
+        <tr style="background:#f8f9fa;border-bottom:2px solid #e9ecef;">
+          <th style="padding:10px 12px;text-align:left;white-space:nowrap;">File No</th>
+          <th style="padding:10px 12px;text-align:left;">Title / Subject</th>
+          <th style="padding:10px 12px;text-align:left;">Category</th>
+          <th style="padding:10px 12px;text-align:left;">From / To</th>
+          <th style="padding:10px 12px;text-align:left;">Date</th>
+          <th style="padding:10px 12px;text-align:left;">Status</th>
+          <th style="padding:10px 12px;text-align:left;">Files</th>
+          <th style="padding:10px 12px;text-align:center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="doc-table-body">
+        <tr><td colspan="8" style="padding:30px;text-align:center;color:#999;">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div id="doc-pagination" style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #eee;font-size:.82rem;color:#666;"></div>
+</div>
+
+<!-- ── NEW / EDIT MODAL ────────────────────────────────────────────────── -->
+<div id="doc-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;overflow-y:auto;">
+  <div style="background:#fff;max-width:560px;margin:40px auto;border-radius:10px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+    <div style="background:#2c3e50;color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
+      <h3 id="doc-modal-title" style="margin:0;font-size:1rem;"><i class="fas fa-file-alt"></i> New Document</h3>
+      <button onclick="Documents.closeModal()" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;">×</button>
+    </div>
+    <div style="padding:20px;">
+      <input type="hidden" id="doc-edit-id" />
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+
+        <div style="grid-column:1/-1;">
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Title *</label>
+          <input id="doc-title" type="text" placeholder="e.g. Letter to Diocese Office"
+            style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;" />
+        </div>
+
+        <div>
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Category *</label>
+          <select id="doc-category" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;">
+            <option value="outgoing-letter">Outgoing Letter</option>
+            <option value="incoming-letter">Incoming Letter</option>
+            <option value="minutes">Minutes</option>
+            <option value="circular">Circular</option>
+            <option value="report">Report</option>
+            <option value="legal">Legal</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Direction *</label>
+          <select id="doc-direction" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;">
+            <option value="outgoing">Outgoing</option>
+            <option value="incoming">Incoming</option>
+            <option value="internal">Internal</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Date *</label>
+          <input id="doc-date" type="date" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;" />
+        </div>
+
+        <div>
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Ref No (optional)</label>
+          <input id="doc-refno" type="text" placeholder="e.g. 003/26"
+            style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;" />
+        </div>
+
+        <div style="grid-column:1/-1;">
+          <label style="font-size:.82rem;font-weight:600;color:#555;">From / To</label>
+          <input id="doc-fromto" type="text" placeholder="e.g. Diocese of Eritrea"
+            style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;" />
+        </div>
+
+        <div style="grid-column:1/-1;">
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Subject</label>
+          <input id="doc-subject" type="text" placeholder="Brief subject line"
+            style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;" />
+        </div>
+
+        <div style="grid-column:1/-1;">
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Notes</label>
+          <textarea id="doc-notes" rows="2" placeholder="Internal notes…"
+            style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;resize:vertical;"></textarea>
+        </div>
+      </div>
+
+      <div id="doc-modal-error" style="display:none;background:#fee;border:1px solid #fcc;color:#c00;padding:8px 12px;border-radius:6px;margin-top:12px;font-size:.82rem;"></div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+        <button onclick="Documents.closeModal()" class="btn btn-secondary">Cancel</button>
+        <button onclick="Documents.save()" class="btn btn-primary" id="doc-save-btn">
+          <i class="fas fa-save"></i> Save Document
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── UPLOAD MODAL ────────────────────────────────────────────────────── -->
+<div id="upload-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;">
+  <div style="background:#fff;max-width:440px;margin:80px auto;border-radius:10px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+    <div style="background:#27ae60;color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
+      <h3 style="margin:0;font-size:1rem;"><i class="fas fa-upload"></i> Upload File</h3>
+      <button onclick="Documents.closeUpload()" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;">×</button>
+    </div>
+    <div style="padding:20px;">
+      <input type="hidden" id="upload-doc-id" />
+      <p id="upload-doc-title" style="font-weight:600;margin:0 0 14px;color:#333;"></p>
+
+      <div style="margin-bottom:12px;">
+        <label style="font-size:.82rem;font-weight:600;color:#555;">File Type</label>
+        <select id="upload-type" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;">
+          <option value="draft">Draft</option>
+          <option value="final">Final</option>
+          <option value="signed">Signed</option>
+          <option value="attachment">Attachment</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="font-size:.82rem;font-weight:600;color:#555;">File (PDF, Word, JPG, PNG — max 20MB)</label>
+        <input id="upload-file" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+          style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;" />
+      </div>
+
+      <div id="upload-progress" style="display:none;margin-bottom:12px;">
+        <div style="background:#eee;border-radius:4px;height:8px;">
+          <div id="upload-bar" style="background:#27ae60;height:8px;border-radius:4px;width:0%;transition:width .3s;"></div>
+        </div>
+        <p id="upload-status" style="font-size:.78rem;color:#666;margin:4px 0 0;"></p>
+      </div>
+
+      <div id="upload-error" style="display:none;background:#fee;border:1px solid #fcc;color:#c00;padding:8px 12px;border-radius:6px;font-size:.82rem;margin-bottom:12px;"></div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button onclick="Documents.closeUpload()" class="btn btn-secondary">Cancel</button>
+        <button onclick="Documents.uploadFile()" class="btn btn-primary" id="upload-btn">
+          <i class="fas fa-upload"></i> Upload
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

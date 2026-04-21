@@ -37,7 +37,7 @@ router.get('/', async (req, res) => {
     const total = await ChurchDocument.countDocuments(filter);
     const docs = await ChurchDocument.find(filter)
       .select('-files.url') // don't expose raw blob URLs
-      .sort({ date: -1 })
+      .sort({ _id: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit))
       .populate('createdBy', 'name email');

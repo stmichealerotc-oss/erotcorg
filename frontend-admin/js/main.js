@@ -274,7 +274,8 @@ class MainApp {
                 'reports': 'generatereport',  // Fixed: reports should load generatereport.html
                 'taskmanagement': 'taskmanagement',
                 'userManagement': 'user-management',
-                'generatereport': 'generatereport'
+                'generatereport': 'generatereport',
+                'documents': 'documents'
             };
             
             const fileName = pageFileMap[page] || page;
@@ -334,6 +335,9 @@ class MainApp {
                 break;
             case 'taskmanagement':
                 await this.loadModule('taskmanagement');
+                break;
+            case 'documents':
+                await this.loadModule('documents');
                 break;
             case 'userManagement':
             case 'user-management':
