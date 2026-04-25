@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 
 const FileVersionSchema = new mongoose.Schema({
   type: {
@@ -6,8 +6,8 @@ const FileVersionSchema = new mongoose.Schema({
     enum: ['draft', 'final', 'signed', 'attachment'],
     required: true
   },
-  url: { type: String, required: true },
-  blobPath: { type: String, required: true }, // e.g. 2026/OUT/001/final.pdf
+  url: { type: String },
+  blobPath: { type: String }, // e.g. 2026/OUT/001/final.pdf
   originalName: String,
   mimeType: String,
   sizeBytes: Number,
@@ -32,7 +32,7 @@ const ChurchDocumentSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['minutes', 'incoming-letter', 'outgoing-letter', 'circular', 'report', 'legal', 'other']
+    enum: ['minutes', 'incoming-letter', 'outgoing-letter', 'circular', 'report', 'legal', 'resolution', 'other']
   },
   direction: {
     type: String,

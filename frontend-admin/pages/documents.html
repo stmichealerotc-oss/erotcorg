@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -24,24 +24,18 @@
     <input id="doc-search" type="text" placeholder="Search title, file no, from/to…"
       style="flex:1;min-width:180px;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem;"
       oninput="Documents.debounceLoad()" />
-    <select id="doc-filter-category" onchange="Documents.load()"
+<select id="doc-filter-category" onchange="Documents.load()"
       style="padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem;">
       <option value="">All Categories</option>
-      <option value="outgoing-letter">Outgoing Letter</option>
-      <option value="incoming-letter">Incoming Letter</option>
-      <option value="minutes">Minutes</option>
-      <option value="circular">Circular</option>
-      <option value="report">Report</option>
-      <option value="legal">Legal</option>
-      <option value="other">Other</option>
-    </select>
-    <select id="doc-filter-status" onchange="Documents.load()"
-      style="padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem;">
-      <option value="">All Statuses</option>
-      <option value="draft">Draft</option>
-      <option value="final">Final</option>
-      <option value="signed">Signed</option>
-      <option value="archived">Archived</option>
+      <option value="outgoing-letter">📤 Outgoing Letter</option>
+      <option value="incoming-letter">📥 Incoming Letter</option>
+      <option value="minutes">📝 Minutes</option>
+      <option value="resolution">✅ Resolution</option>
+      <option value="financial-report">💰 Financial Report</option>
+      <option value="circular">📢 Circular</option>
+      <option value="report">📊 Report</option>
+      <option value="legal">⚖️ Legal</option>
+      <option value="other">📄 Other</option>
     </select>
     <input id="doc-filter-year" type="number" placeholder="Year" min="2000" max="2099"
       style="width:90px;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem;"
@@ -99,7 +93,8 @@
             <option value="circular">Circular</option>
             <option value="report">Report</option>
             <option value="legal">Legal</option>
-            <option value="other">Other</option>
+            <option value="resolution">Resolution</option>
+      <option value="other">Other</option>
           </select>
         </div>
 
@@ -227,8 +222,8 @@
 </html>
 
 <!-- ── SEND TO SIGN MODAL ──────────────────────────────────────────────── -->
-<div id="sign-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1001;">
-  <div style="background:#fff;max-width:420px;margin:100px auto;border-radius:10px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+<div id="sign-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1001;overflow-y:auto;">
+  <div style="background:#fff;max-width:500px;margin:60px auto;border-radius:10px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.2);">
     <div style="background:#8e44ad;color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
       <h3 style="margin:0;font-size:1rem;"><i class="fas fa-pen-nib"></i> Send for Signing</h3>
       <button onclick="Documents.closeSign()" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;">×</button>
@@ -238,25 +233,46 @@
       <input type="hidden" id="sign-file-version" />
 
       <p style="font-size:.82rem;color:#666;margin:0 0 14px;">
-        The <strong>final</strong> file will be sent to DocuSeal at
-        <a href="https://sign.erotc.org" target="_blank" style="color:#8e44ad;">sign.erotc.org</a>
-        for electronic signing.
+        The <strong>final</strong> file will be sent to
+        <a href="https://sign.erotc.org" target="_blank" style="color:#8e44ad;">DocuSeal</a>
+        for electronic signing. Signers receive an email with a signing link.
       </p>
 
-      <div style="margin-bottom:12px;">
-        <label style="font-size:.82rem;font-weight:600;color:#555;">Signer Name *</label>
-        <input id="sign-signer-name" type="text" placeholder="e.g. Fr. Tesfay Haile"
-          style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;" />
-      </div>
-
+      <!-- Signing order -->
       <div style="margin-bottom:14px;">
-        <label style="font-size:.82rem;font-weight:600;color:#555;">Signer Email *</label>
-        <input id="sign-signer-email" type="email" placeholder="signer@example.com"
-          style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;" />
+        <label style="font-size:.82rem;font-weight:600;color:#555;">Signing Order</label>
+        <select id="sign-order" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;font-size:.82rem;">
+          <option value="sequential">Sequential — sign one after another</option>
+      <p style="font-size:.82rem;color:#666;margin:0 0 14px;">
+        The <strong>final</strong> file will be sent to
+        <a href="https://sign.erotc.org" target="_blank" style="color:#8e44ad;">DocuSeal</a>
+        for electronic signing. Signers receive an email with a signing link.
+      </p>
+
+      <!-- Template ID (optional) -->
+      <div style="margin-bottom:14px;padding:10px 12px;background:#f5eef8;border-radius:6px;border:1px solid #d7bde2;">
+        <label style="font-size:.82rem;font-weight:600;color:#6c3483;">
+          DocuSeal Template ID
+          <span style="font-weight:400;color:#888;"> — optional</span>
+        </label>
+        <input id="sign-template-id" type="text" placeholder="e.g. 5  (leave blank to use uploaded PDF)"
+          style="width:100%;padding:7px 10px;border:1px solid #d7bde2;border-radius:4px;margin-top:6px;font-size:.82rem;box-sizing:border-box;background:#fff;" />
+        <p style="font-size:.75rem;color:#888;margin:4px 0 0;">
+          Get the ID from <a href="https://sign.erotc.org" target="_blank" style="color:#8e44ad;">sign.erotc.org</a> → Templates → open template → copy ID from URL
+        </p>
+      </div> Signers list -->
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Signers</label>
+          <button onclick="Documents.addSigner()" style="background:#8e44ad;color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:.78rem;">
+            <i class="fas fa-plus"></i> Add Signer
+          </button>
+        </div>
+        <div id="sign-signers-list"></div>
       </div>
 
       <div id="sign-error" style="display:none;background:#fee;border:1px solid #fcc;color:#c00;padding:8px 12px;border-radius:6px;font-size:.82rem;margin-bottom:12px;"></div>
-      <div id="sign-success" style="display:none;background:#d4edda;border:1px solid #c3e6cb;color:#155724;padding:10px 12px;border-radius:6px;font-size:.82rem;margin-bottom:12px;line-height:1.5;"></div>
+      <div id="sign-success" style="display:none;background:#d4edda;border:1px solid #c3e6cb;color:#155724;padding:10px 12px;border-radius:6px;font-size:.82rem;margin-bottom:12px;line-height:1.6;"></div>
 
       <div style="display:flex;gap:10px;justify-content:flex-end;">
         <button onclick="Documents.closeSign()" class="btn btn-secondary">Cancel</button>

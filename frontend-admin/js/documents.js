@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Church Document Registry
  */
 
@@ -121,6 +121,12 @@ const Documents = (() => {
                 onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='none'">
                 <i class="fas fa-upload" style="width:14px;color:#27ae60;"></i> Upload Files
               </button>
+              ${doc.status === 'final' ? `
+              <button onclick="Documents.openSendToSign('${doc._id}', null);Documents.closeAllMenus();"
+                style="width:100%;text-align:left;padding:9px 14px;border:none;background:none;cursor:pointer;font-size:.82rem;color:#8e44ad;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px;"
+                onmouseover="this.style.background='#f5eef8'" onmouseout="this.style.background='none'">
+                <i class="fas fa-pen-nib" style="width:14px;"></i> Send to Sign
+              </button>` : ''}
               <button onclick="Documents.archive('${doc._id}','${doc.fileNo}');Documents.closeAllMenus();"
                 style="width:100%;text-align:left;padding:9px 14px;border:none;background:none;cursor:pointer;font-size:.82rem;color:#e74c3c;display:flex;align-items:center;gap:8px;"
                 onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='none'">
@@ -413,16 +419,59 @@ const Documents = (() => {
     document.querySelectorAll('[id^="menu-"]').forEach(m => m.style.display = 'none');
   }
 
-  // ── Send to DocuSeal ─────────────────────────────────────────────────────
+  // ── Send to DocuSeal (multi-signer) ──────────────────────────────────────
+
+  const SIGNER_ROLES = ['Chairperson', 'Secretary', 'Treasurer', 'President', 'Witness', 'Signer'];
+  let _signerCount = 0;
 
   function openSendToSign(docId, fileVersion) {
     document.getElementById('sign-doc-id').value = docId;
-    document.getElementById('sign-file-version').value = fileVersion;
-    document.getElementById('sign-signer-name').value = '';
-    document.getElementById('sign-signer-email').value = '';
+    document.getElementById('sign-file-version').value = fileVersion || '';
+    document.getElementById('sign-order').value = 'sequential';
+    document.getElementById('sign-template-id').value = '';
     document.getElementById('sign-error').style.display = 'none';
     document.getElementById('sign-success').style.display = 'none';
+    _signerCount = 0;
+    document.getElementById('sign-signers-list').innerHTML = '';
+    addSigner(); // start with one row
     document.getElementById('sign-modal').style.display = 'block';
+  }
+
+  function addSigner() {
+    _signerCount++;
+    const idx  = _signerCount;
+    const list = document.getElementById('sign-signers-list');
+    const div  = document.createElement('div');
+    div.id = `signer-row-${idx}`;
+    div.style.cssText = 'border:1px solid #e8e8e8;border-radius:6px;padding:10px 12px;margin-bottom:8px;background:#fafafa;';
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:.78rem;font-weight:600;color:#8e44ad;">Signer ${idx}</span>
+        ${idx > 1 ? `<button type="button" onclick="document.getElementById('signer-row-${idx}').remove()"
+          style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:.8rem;padding:0;">
+          <i class="fas fa-times"></i> Remove</button>` : ''}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div>
+          <label style="font-size:.75rem;color:#666;display:block;margin-bottom:2px;">Name *</label>
+          <input type="text" id="signer-name-${idx}" placeholder="Full name"
+            style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:.82rem;box-sizing:border-box;" />
+        </div>
+        <div>
+          <label style="font-size:.75rem;color:#666;display:block;margin-bottom:2px;">Email *</label>
+          <input type="email" id="signer-email-${idx}" placeholder="email@example.com"
+            style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:.82rem;box-sizing:border-box;" />
+        </div>
+        <div>
+          <label style="font-size:.75rem;color:#666;display:block;margin-bottom:2px;">Role</label>
+          <select id="signer-role-${idx}"
+            style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:.82rem;">
+            ${SIGNER_ROLES.map(r => `<option value="${r}">${r}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    `;
+    list.appendChild(div);
   }
 
   function closeSign() {
@@ -432,13 +481,28 @@ const Documents = (() => {
   async function sendToSign() {
     const docId       = document.getElementById('sign-doc-id').value;
     const fileVersion = document.getElementById('sign-file-version').value;
-    const signerName  = document.getElementById('sign-signer-name').value.trim();
-    const signerEmail = document.getElementById('sign-signer-email').value.trim();
+    const order       = document.getElementById('sign-order').value;
     const errEl       = document.getElementById('sign-error');
     const successEl   = document.getElementById('sign-success');
 
-    if (!signerName || !signerEmail) {
-      errEl.textContent = 'Signer name and email are required.';
+    // Collect all signer rows
+    const rows   = document.querySelectorAll('[id^="signer-row-"]');
+    const signers = [];
+    for (const row of rows) {
+      const idx   = row.id.replace('signer-row-', '');
+      const name  = document.getElementById(`signer-name-${idx}`)?.value.trim();
+      const email = document.getElementById(`signer-email-${idx}`)?.value.trim();
+      const role  = document.getElementById(`signer-role-${idx}`)?.value || 'Signer';
+      if (!name || !email) {
+        errEl.textContent = `Signer ${idx}: name and email are required.`;
+        errEl.style.display = 'block';
+        return;
+      }
+      signers.push({ name, email, role });
+    }
+
+    if (signers.length === 0) {
+      errEl.textContent = 'Add at least one signer.';
       errEl.style.display = 'block';
       return;
     }
@@ -452,18 +516,27 @@ const Documents = (() => {
       const res = await fetch(`${API}/api/documents/${docId}/send-to-sign`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ fileVersion: Number(fileVersion), signerName, signerEmail })
+        body: JSON.stringify({
+          signers,
+          order,
+          fileVersion: fileVersion ? Number(fileVersion) : undefined
+        })
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
 
+      const signerSummary = signers.map((s, i) =>
+        `${order === 'sequential' ? `${i + 1}. ` : ''}${s.role}: ${s.name}`
+      ).join(order === 'sequential' ? ' → ' : ', ');
+
       successEl.innerHTML = `
-        ✓ Sent to <strong>${signerEmail}</strong> for signing.<br>
-        <span style="font-size:.78rem;color:#666;">Submission ID: ${data.submissionId || '—'}</span>
-        ${data.signingUrl ? `<br><a href="${data.signingUrl}" target="_blank" style="font-size:.78rem;">Open signing link</a>` : ''}
+        ✓ Sent to <strong>${signers.length} signer${signers.length > 1 ? 's' : ''}</strong><br>
+        <span style="font-size:.78rem;color:#555;">${signerSummary}</span><br>
+        <span style="font-size:.75rem;color:#888;">Submission ID: ${data.submissionId || '—'}</span>
+        ${data.signingUrl ? `<br><a href="${data.signingUrl}" target="_blank" style="font-size:.78rem;color:#8e44ad;">Open signing link ↗</a>` : ''}
       `;
       successEl.style.display = 'block';
-      setTimeout(() => { closeSign(); load(currentPage); }, 3000);
+      setTimeout(() => { closeSign(); load(currentPage); }, 3500);
     } catch (err) {
       errEl.textContent = err.message;
       errEl.style.display = 'block';
@@ -491,7 +564,7 @@ const Documents = (() => {
 
   function init() { load(1); }
 
-  return { init, load, debounceLoad, openNewModal, openEdit, closeModal, save, openUpload, closeUpload, previewFiles, uploadFiles, downloadFile, openSendToSign, closeSign, sendToSign, toggleMenu, closeAllMenus, archive };
+  return { init, load, debounceLoad, openNewModal, openEdit, closeModal, save, openUpload, closeUpload, previewFiles, uploadFiles, downloadFile, openSendToSign, addSigner, closeSign, sendToSign, toggleMenu, closeAllMenus, archive };
 })();
 
 if (document.readyState === 'loading') {

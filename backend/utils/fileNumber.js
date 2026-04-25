@@ -2,13 +2,15 @@ const Counter = require('../models/Counter');
 
 // Map category to short type code
 const CATEGORY_TYPE = {
-  'outgoing-letter': 'OUT',
-  'incoming-letter': 'IN',
-  'minutes':         'MIN',
-  'circular':        'CIR',
-  'report':          'REP',
-  'legal':           'LEG',
-  'other':           'OUT' // fallback
+  'outgoing-letter':   'OUT',
+  'incoming-letter':   'IN',
+  'minutes':           'MIN',
+  'resolution':        'RES',
+  'financial-report':  'FIN',
+  'circular':          'CIR',
+  'report':            'REP',
+  'legal':             'LEG',
+  'other':             'GEN'
 };
 
 /**
@@ -17,7 +19,7 @@ const CATEGORY_TYPE = {
  * @returns {string} e.g. "STM-2026-OUT-001"
  */
 async function getNextFileNumber(category) {
-  const type = CATEGORY_TYPE[category] || 'OUT';
+  const type = CATEGORY_TYPE[category] || 'GEN';
   const year = new Date().getFullYear();
 
   const counter = await Counter.findOneAndUpdate(

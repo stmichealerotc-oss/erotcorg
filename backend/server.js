@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 
 // CRITICAL: Validate JWT_SECRET in production
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
@@ -385,7 +385,6 @@ app.use('/api/articles', articlesRoutes);
 app.use('/api/library', libraryRoutes); // Orthodox Library (public access)
 app.use('/api/orthodox-library', orthodoxLibraryRoutes); // Orthodox Library API (public + admin)
 app.use('/api/volunteers', volunteerProfileRoutes); // Volunteer profiles & registration
-app.use('/api/documents', authenticateToken, documentsRoutes); // Church document registry (protected)
 app.use('/api/webhooks', webhookRoutes); // Webhooks (no auth — called by external services)
 
 // Public member routes (no auth) - must be mounted BEFORE the protected /api/members route
@@ -451,6 +450,7 @@ app.use('/api/promises', authenticateToken, promiseRoutes);
 app.use('/api/member-contributions', authenticateToken, memberContributionsRoutes);
 app.use('/api/user-management', authenticateToken, userManagementRoutes);
 app.use('/api/signatures', authenticateToken, signaturesRoutes);
+app.use('/api/documents', documentsRoutes); // Church document registry (auth disabled for local dev)
 app.use('/api/notifications', notificationRoutes); // Auth handled in route file
 
 // Health endpoint

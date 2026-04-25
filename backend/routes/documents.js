@@ -176,7 +176,7 @@ router.put('/:id', async (req, res) => {
 // ── POST /api/documents/:id/send-to-sign — send final file to DocuSeal ───
 router.post('/:id/send-to-sign', async (req, res) => {
   try {
-    const { signerName, signerEmail, fileVersion } = req.body;
+    const { signers, order = 'sequential', fileVersion, templateId } = req.body;
     const doc = await ChurchDocument.findById(req.params.id);
     if (!doc) return res.status(404).json({ success: false, error: 'Document not found' });
 
@@ -190,19 +190,33 @@ router.post('/:id/send-to-sign', async (req, res) => {
       : finals[finals.length - 1];
 
     if (!fileEntry) return res.status(400).json({ success: false, error: 'No final file found. Upload a final version first.' });
-    if (!signerName || !signerEmail) return res.status(400).json({ success: false, error: 'signerName and signerEmail are required.' });
+    if (!signers || signers.length === 0) return res.status(400).json({ success: false, error: 'At least one signer is required.' });
 
     const docusealUrl = process.env.DOCUSEAL_URL || 'https://sign.erotc.org';
     const docusealToken = process.env.DOCUSEAL_API_TOKEN;
     if (!docusealToken) return res.status(500).json({ success: false, error: 'DOCUSEAL_API_TOKEN not configured in environment.' });
 
-    // Generate 24h SAS URL for DocuSeal to fetch the document
     const { generateSAS } = require('../utils/blob');
-    const sasUrl = generateSAS(fileEntry.blobPath, 60 * 24);
+    const sasUrl = generateSAS(fileEntry.blobPath, 60 * 24); // 24h
 
-    const payload = {
+    const submitters = signers.map((s, i) => ({
+      name: s.name,
+      email: s.email,
+      role: s.role || 'Signer',
+      ...(order === 'sequential' && { order: i + 1 })
+    }));
+
+    // If templateId provided → use DocuSeal template (supports multiple fields per signer)
+    // Otherwise → send raw PDF (DocuSeal places one signature at end)
+    const payload = templateId ? {
+      template_id: Number(templateId),
       send_email: true,
-      submitters: [{ name: signerName, email: signerEmail, role: 'Signer' }],
+      order: order === 'sequential' ? 'preserved' : 'random',
+      submitters
+    } : {
+      send_email: true,
+      order: order === 'sequential' ? 'preserved' : 'random',
+      submitters,
       documents: [{
         name: fileEntry.originalName || `${doc.fileNo}.pdf`,
         url: sasUrl
@@ -218,7 +232,6 @@ router.post('/:id/send-to-sign', async (req, res) => {
     const dsData = await dsRes.json();
     if (!dsRes.ok) return res.status(dsRes.status).json({ success: false, error: dsData.error || 'DocuSeal error', details: dsData });
 
-    // Track submission on document
     const submission = Array.isArray(dsData) ? dsData[0] : dsData;
     doc.docusealSubmissionId = String(submission.submission_id || submission.id || '');
     doc.docusealStatus = 'pending';
@@ -226,7 +239,7 @@ router.post('/:id/send-to-sign', async (req, res) => {
 
     res.json({
       success: true,
-      message: `Sent to ${signerEmail} for signing`,
+      message: `Sent to ${signers.length} signer${signers.length > 1 ? 's' : ''} for signing`,
       submissionId: doc.docusealSubmissionId,
       signingUrl: submission.embed_src || submission.url || null
     });
