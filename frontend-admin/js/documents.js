@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Church Document Registry
  */
 
@@ -9,8 +9,7 @@ const Documents = (() => {
 
   function authHeaders() {
     const token = authToken();
-    return { 'Content-Type': 'application/json', ...(token ? { Authorization: \Bearer \\ } : {}) };
-  }` } : {}) };
+    return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
   }
   function authToken() {
     return window.authSystem?.getToken()
