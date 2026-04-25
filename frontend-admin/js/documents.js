@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Church Document Registry
  */
 
@@ -8,11 +8,14 @@ const Documents = (() => {
   let debounceTimer = null;
 
   function authHeaders() {
-    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-    return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+    const token = authToken();
+    return { 'Content-Type': 'application/json', ...(token ? { Authorization: \Bearer \\ } : {}) };
+  }` } : {}) };
   }
   function authToken() {
-    return localStorage.getItem('authToken') || sessionStorage.getItem('authToken') || '';
+    return window.authSystem?.getToken()
+      || localStorage.getItem('authToken') || sessionStorage.getItem('authToken')
+      || localStorage.getItem('token') || sessionStorage.getItem('token') || '';
   }
 
   const CATEGORY_LABELS = {
