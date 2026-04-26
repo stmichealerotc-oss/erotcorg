@@ -3,7 +3,9 @@
  */
 
 const Documents = (() => {
-  const API = window.API_BASE_URL || 'http://localhost:3001';
+  const API = (window.Config ? window.Config.getApiBaseUrl().replace(/\/api$/, '') : null)
+    || window.API_BASE_URL
+    || 'http://localhost:3001';
   let currentPage = 1;
   let debounceTimer = null;
 
