@@ -2,6 +2,12 @@
 // On Windows (local dev), skip sparticuz and use regular puppeteer
 let chromium;
 let puppeteer;
+let PDFDocument;
+try {
+    PDFDocument = require('pdfkit');
+} catch (e) {
+    PDFDocument = null;
+}
 
 const isWindows = process.platform === 'win32';
 const isCloudEnv = !isWindows && (process.env.WEBSITE_SITE_NAME || process.env.AZURE_FUNCTIONS_ENVIRONMENT || process.env.NODE_ENV === 'production');
@@ -133,7 +139,100 @@ class PDFGenerator {
         return this.browser;
     }
 
+    // Pure Node.js PDF generation using pdfkit — no Chrome required
+    generateReceiptPDFWithPDFKit(transaction) {
+        return new Promise((resolve, reject) => {
+            if (!PDFDocument) return reject(new Error('pdfkit not installed'));
+
+            const doc = new PDFDocument({ size: 'A4', margin: 50 });
+            const chunks = [];
+            doc.on('data', chunk => chunks.push(chunk));
+            doc.on('end', () => resolve(Buffer.concat(chunks)));
+            doc.on('error', reject);
+
+            const blue = '#4a6fa5';
+            const grey = '#666666';
+            const receiptId = transaction._id.toString().substring(18);
+            const date = new Date(transaction.date).toLocaleDateString('en-AU', { day: '2-digit', month: 'long', year: 'numeric' });
+            const amount = `$${Number(transaction.amount).toFixed(2)}`;
+
+            // Header
+            doc.fontSize(20).fillColor(blue).text('St Michael Eritrean Orthodox Church', { align: 'center' });
+            doc.fontSize(10).fillColor(grey)
+               .text('60 Osborne Street, Joondanna, WA 6060', { align: 'center' })
+               .text('ABN: 80798549161  |  stmichaelerotc@gmail.com  |  erotc.org', { align: 'center' });
+
+            doc.moveDown(0.5);
+            doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor(blue).lineWidth(2).stroke();
+            doc.moveDown(0.5);
+
+            // Title
+            doc.fontSize(16).fillColor(blue).text('DONATION RECEIPT', { align: 'center' });
+            doc.moveDown(1);
+
+            // Receipt details table
+            const labelX = 50;
+            const valueX = 250;
+            const rowHeight = 28;
+            let y = doc.y;
+
+            const rows = [
+                ['Receipt Number:', receiptId],
+                ['Transaction Date:', date],
+                ['Description:', transaction.description || '—'],
+                ['Category:', transaction.category || '—'],
+                ['Payment Method:', transaction.paymentMethod || '—'],
+            ];
+            if (transaction.reference) rows.push(['Reference:', transaction.reference]);
+
+            rows.forEach((row, i) => {
+                const bg = i % 2 === 0 ? '#f8f9fa' : '#ffffff';
+                doc.rect(50, y, 495, rowHeight).fillColor(bg).fill();
+                doc.fontSize(11).fillColor(grey).text(row[0], labelX, y + 8, { width: 190 });
+                doc.fontSize(11).fillColor('#333333').text(row[1], valueX, y + 8, { width: 295 });
+                y += rowHeight;
+            });
+
+            // Total row
+            doc.rect(50, y, 495, 36).fillColor(blue).fill();
+            doc.fontSize(13).fillColor('#ffffff')
+               .text('Total Contribution:', labelX, y + 10, { width: 190 })
+               .text(amount, valueX, y + 10, { width: 295 });
+            y += 50;
+
+            doc.y = y;
+            doc.moveDown(1);
+
+            // Footer note
+            doc.fontSize(10).fillColor(grey)
+               .text('Important: No goods or services were provided in exchange for this contribution.', { align: 'center', italics: true });
+
+            doc.moveDown(1);
+            doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#dddddd').lineWidth(1).stroke();
+            doc.moveDown(0.5);
+            doc.fontSize(10).fillColor(grey)
+               .text('Blessings and Peace,', { align: 'center' })
+               .text('St Michael Eritrean Orthodox Church', { align: 'center' })
+               .text('stmichaelerotc@gmail.com  |  erotc.org', { align: 'center' });
+
+            doc.end();
+        });
+    }
+
     async generateReceiptPDF(transaction, signatureInfo = null) {
+        // Try pdfkit first — no Chrome needed, works reliably on Azure
+        if (PDFDocument) {
+            try {
+                console.log('🔄 Generating PDF with pdfkit...');
+                const buffer = await this.generateReceiptPDFWithPDFKit(transaction);
+                console.log(`✅ pdfkit PDF generated (${buffer.length} bytes)`);
+                return buffer;
+            } catch (pdfkitError) {
+                console.warn('⚠️ pdfkit failed, falling back to Puppeteer:', pdfkitError.message);
+            }
+        }
+
+        // Fallback: Puppeteer / headless Chrome
         let browser = null;
         let page = null;
         
