@@ -140,7 +140,8 @@ class PDFGenerator {
     }
 
     // Pure Node.js PDF generation using pdfkit — no Chrome required
-    generateReceiptPDFWithPDFKit(transaction) {
+    // Matches the existing receipt layout: header, info row, donor, table, signature, QR, footer
+    generateReceiptPDFWithPDFKit(transaction, signatureInfo = null) {
         return new Promise((resolve, reject) => {
             if (!PDFDocument) return reject(new Error('pdfkit not installed'));
 
@@ -152,68 +153,146 @@ class PDFGenerator {
 
             const blue = '#4a6fa5';
             const grey = '#666666';
+            const lightGrey = '#f8f9fa';
+            const dark = '#333333';
+            const L = 50, R = 545, W = 495;
+
             const receiptId = transaction._id.toString().substring(18);
-            const date = new Date(transaction.date).toLocaleDateString('en-AU', { day: '2-digit', month: 'long', year: 'numeric' });
+            const txDate = new Date(transaction.date).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const receiptDate = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
             const amount = `$${Number(transaction.amount).toFixed(2)}`;
 
-            // Header
-            doc.fontSize(20).fillColor(blue).text('St Michael Eritrean Orthodox Church', { align: 'center' });
-            doc.fontSize(10).fillColor(grey)
+            // ── Church name & address header ──────────────────────────────
+            doc.fontSize(18).fillColor(blue).font('Helvetica-Bold')
+               .text('St Michael Eritrean Orthodox Church', { align: 'center' });
+            doc.fontSize(9).fillColor(grey).font('Helvetica')
                .text('60 Osborne Street, Joondanna, WA 6060', { align: 'center' })
                .text('ABN: 80798549161  |  stmichaelerotc@gmail.com  |  erotc.org', { align: 'center' });
 
-            doc.moveDown(0.5);
-            doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor(blue).lineWidth(2).stroke();
-            doc.moveDown(0.5);
+            doc.moveDown(0.4);
+            doc.moveTo(L, doc.y).lineTo(R, doc.y).strokeColor(blue).lineWidth(2).stroke();
+            doc.moveDown(0.6);
 
-            // Title
-            doc.fontSize(16).fillColor(blue).text('DONATION RECEIPT', { align: 'center' });
-            doc.moveDown(1);
+            // ── Title ─────────────────────────────────────────────────────
+            doc.fontSize(14).fillColor(dark).font('Helvetica-Bold')
+               .text('DONATION RECEIPT', { align: 'center' });
+            doc.moveDown(0.8);
 
-            // Receipt details table
-            const labelX = 50;
-            const valueX = 250;
-            const rowHeight = 28;
+            // ── Info row: Receipt Date | Transaction Date | Receipt # ─────
             let y = doc.y;
+            doc.rect(L, y, W, 28).fillColor(lightGrey).fill();
+            doc.rect(L, y, W, 28).strokeColor('#dddddd').lineWidth(0.5).stroke();
 
-            const rows = [
-                ['Receipt Number:', receiptId],
-                ['Transaction Date:', date],
-                ['Description:', transaction.description || '—'],
-                ['Category:', transaction.category || '—'],
-                ['Payment Method:', transaction.paymentMethod || '—'],
-            ];
-            if (transaction.reference) rows.push(['Reference:', transaction.reference]);
+            doc.fontSize(9).fillColor(grey).font('Helvetica-Bold');
+            doc.text('Receipt Date:', L + 8, y + 5, { width: 120 });
+            doc.text('Transaction Date:', L + 175, y + 5, { width: 130 });
+            doc.text('Receipt #:', L + 355, y + 5, { width: 130 });
 
-            rows.forEach((row, i) => {
-                const bg = i % 2 === 0 ? '#f8f9fa' : '#ffffff';
-                doc.rect(50, y, 495, rowHeight).fillColor(bg).fill();
-                doc.fontSize(11).fillColor(grey).text(row[0], labelX, y + 8, { width: 190 });
-                doc.fontSize(11).fillColor('#333333').text(row[1], valueX, y + 8, { width: 295 });
-                y += rowHeight;
-            });
+            doc.fontSize(9).fillColor(dark).font('Helvetica');
+            doc.text(receiptDate, L + 8, y + 16, { width: 120 });
+            doc.text(txDate, L + 175, y + 16, { width: 130 });
+            doc.text(receiptId, L + 355, y + 16, { width: 130 });
+            y += 36;
+
+            // ── Donor info ────────────────────────────────────────────────
+            let donorName = 'Valued Donor';
+            let donorAddress = '';
+            if (transaction.payee) {
+                if (transaction.payee.type === 'member' && transaction.payee.memberId && typeof transaction.payee.memberId === 'object') {
+                    const m = transaction.payee.memberId;
+                    donorName = `${m.firstName || ''} ${m.lastName || ''}`.trim();
+                    if (m.address) donorAddress = m.address;
+                } else {
+                    donorName = transaction.payee.name || donorName;
+                }
+            }
+
+            doc.rect(L, y, W, 28).fillColor('#ffffff').fill();
+            doc.rect(L, y, W, 28).strokeColor('#dddddd').lineWidth(0.5).stroke();
+            doc.fontSize(9).fillColor(grey).font('Helvetica-Bold').text('Donor Name:', L + 8, y + 9, { width: 100 });
+            doc.fontSize(9).fillColor(dark).font('Helvetica').text(donorName, L + 110, y + 9, { width: 380 });
+            y += 28;
+
+            if (donorAddress) {
+                doc.rect(L, y, W, 24).fillColor(lightGrey).fill();
+                doc.rect(L, y, W, 24).strokeColor('#dddddd').lineWidth(0.5).stroke();
+                doc.fontSize(9).fillColor(grey).font('Helvetica-Bold').text('Address:', L + 8, y + 7, { width: 100 });
+                doc.fontSize(9).fillColor(dark).font('Helvetica').text(donorAddress, L + 110, y + 7, { width: 380 });
+                y += 24;
+            }
+
+            y += 14;
+
+            // ── Contribution Details table ────────────────────────────────
+            doc.fontSize(11).fillColor(dark).font('Helvetica-Bold').text('Contribution Details', L, y);
+            y += 18;
+
+            // Table header
+            const cols = { date: L, desc: L + 75, cat: L + 255, pay: L + 335, amt: L + 430 };
+            doc.rect(L, y, W, 22).fillColor(blue).fill();
+            doc.fontSize(8).fillColor('#ffffff').font('Helvetica-Bold');
+            doc.text('Date',           cols.date + 4, y + 7, { width: 70 });
+            doc.text('Description',    cols.desc + 4, y + 7, { width: 175 });
+            doc.text('Category',       cols.cat  + 4, y + 7, { width: 75 });
+            doc.text('Payment Method', cols.pay  + 4, y + 7, { width: 90 });
+            doc.text('Amount',         cols.amt  + 4, y + 7, { width: 65 });
+            y += 22;
+
+            // Table row
+            doc.rect(L, y, W, 24).fillColor(lightGrey).fill();
+            doc.rect(L, y, W, 24).strokeColor('#dddddd').lineWidth(0.5).stroke();
+            doc.fontSize(8).fillColor(dark).font('Helvetica');
+            doc.text(txDate,                              cols.date + 4, y + 8, { width: 70 });
+            doc.text(transaction.description || '—',     cols.desc + 4, y + 8, { width: 175 });
+            doc.text(transaction.category || '—',        cols.cat  + 4, y + 8, { width: 75 });
+            doc.text(transaction.paymentMethod || '—',   cols.pay  + 4, y + 8, { width: 90 });
+            doc.fontSize(8).font('Helvetica-Bold').text(amount, cols.amt + 4, y + 8, { width: 65 });
+            y += 24;
 
             // Total row
-            doc.rect(50, y, 495, 36).fillColor(blue).fill();
-            doc.fontSize(13).fillColor('#ffffff')
-               .text('Total Contribution:', labelX, y + 10, { width: 190 })
-               .text(amount, valueX, y + 10, { width: 295 });
-            y += 50;
+            doc.rect(L, y, W, 24).fillColor('#f0f0f0').fill();
+            doc.rect(L, y, W, 24).strokeColor('#dddddd').lineWidth(0.5).stroke();
+            doc.fontSize(9).fillColor(dark).font('Helvetica-Bold')
+               .text('Total Contribution', L + 4, y + 8, { width: 420 })
+               .text(amount, cols.amt + 4, y + 8, { width: 65 });
+            y += 32;
 
-            doc.y = y;
-            doc.moveDown(1);
+            // ── Important notice ──────────────────────────────────────────
+            doc.rect(L, y, W, 28).fillColor('#fff8e1').fill();
+            doc.rect(L, y, W, 28).strokeColor('#ffe082').lineWidth(0.5).stroke();
+            doc.fontSize(8).fillColor('#7a6000').font('Helvetica-Bold').text('Important Notice: ', L + 8, y + 10, { continued: true });
+            doc.font('Helvetica').text('No goods or services were provided in exchange for this contribution.');
+            y += 38;
 
-            // Footer note
-            doc.fontSize(10).fillColor(grey)
-               .text('Important: No goods or services were provided in exchange for this contribution.', { align: 'center', italics: true });
+            // ── Signature section ─────────────────────────────────────────
+            if (signatureInfo && signatureInfo.signerName) {
+                doc.rect(L, y, W, 70).fillColor('#ffffff').fill();
+                doc.rect(L, y, W, 70).strokeColor('#dddddd').lineWidth(0.5).stroke();
+                doc.fontSize(10).fillColor(blue).font('Helvetica-Bold').text('Authorized Signature', L + 10, y + 8);
+                doc.moveDown(0.3);
+                const sigY = y + 28;
+                doc.moveTo(L + 10, sigY + 18).lineTo(L + 160, sigY + 18).strokeColor(dark).lineWidth(1).stroke();
+                doc.fontSize(10).fillColor(dark).font('Helvetica-Bold').text(signatureInfo.signerName, L + 10, sigY + 20);
+                doc.fontSize(9).fillColor(grey).font('Helvetica').text(signatureInfo.signerRole || 'Chairperson', L + 10, sigY + 32);
+                const approvedDate = signatureInfo.signedAt
+                    ? new Date(signatureInfo.signedAt).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                    : receiptDate;
+                doc.text(`Digitally approved: ${approvedDate}`, L + 10, sigY + 44);
+                y += 80;
+            }
 
-            doc.moveDown(1);
-            doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#dddddd').lineWidth(1).stroke();
-            doc.moveDown(0.5);
-            doc.fontSize(10).fillColor(grey)
-               .text('Blessings and Peace,', { align: 'center' })
-               .text('St Michael Eritrean Orthodox Church', { align: 'center' })
-               .text('stmichaelerotc@gmail.com  |  erotc.org', { align: 'center' });
+            // ── Footer ────────────────────────────────────────────────────
+            y += 10;
+            doc.moveTo(L, y).lineTo(R, y).strokeColor('#dddddd').lineWidth(1).stroke();
+            y += 10;
+            doc.fontSize(9).fillColor(grey).font('Helvetica')
+               .text('Thank you for your generous contribution!', L, y, { align: 'center', width: W });
+            doc.fontSize(9).fillColor(dark).font('Helvetica-Bold')
+               .text('St Michael Eritrean Orthodox Church', L, y + 14, { align: 'center', width: W });
+            doc.fontSize(8).fillColor(grey).font('Helvetica')
+               .text('60 Osborne Street, Joondanna, WA 6060  |  ABN: 80798549161', L, y + 26, { align: 'center', width: W })
+               .text('stmichaelerotc@gmail.com  |  erotc.org', L, y + 36, { align: 'center', width: W })
+               .text(`Generated on ${receiptDate}`, L, y + 48, { align: 'center', width: W });
 
             doc.end();
         });
@@ -224,7 +303,7 @@ class PDFGenerator {
         if (PDFDocument) {
             try {
                 console.log('🔄 Generating PDF with pdfkit...');
-                const buffer = await this.generateReceiptPDFWithPDFKit(transaction);
+                const buffer = await this.generateReceiptPDFWithPDFKit(transaction, signatureInfo);
                 console.log(`✅ pdfkit PDF generated (${buffer.length} bytes)`);
                 return buffer;
             } catch (pdfkitError) {
