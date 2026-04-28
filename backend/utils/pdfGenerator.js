@@ -1003,7 +1003,141 @@ class PDFGenerator {
         `;
     }
 
+    // Pure Node.js bank statement PDF using pdfkit
+    generateBankStatementPDFWithPDFKit(data) {
+        return new Promise((resolve, reject) => {
+            if (!PDFDocument) return reject(new Error('pdfkit not installed'));
+
+            const doc = new PDFDocument({ size: 'A4', margin: 40 });
+            const chunks = [];
+            doc.on('data', chunk => chunks.push(chunk));
+            doc.on('end', () => resolve(Buffer.concat(chunks)));
+            doc.on('error', reject);
+
+            const { startDate, endDate, openingBalance, closingBalance, totalDebits, totalCredits, transactions, churchName, churchAddress, churchABN } = data;
+
+            const blue = '#4a6fa5';
+            const grey = '#666666';
+            const L = 40, R = 555, W = 515;
+
+            // Header
+            doc.fontSize(18).fillColor(blue).font('Helvetica-Bold')
+               .text(churchName || 'St. Michael Eritrean Orthodox Tewahedo Church', { align: 'center' });
+            doc.fontSize(10).fillColor(grey).font('Helvetica')
+               .text(churchAddress || '60 Osborne Street, Joondanna, WA 6060', { align: 'center' })
+               .text(churchABN || 'ABN: 80 798 549 161', { align: 'center' });
+            doc.moveDown(0.3);
+            doc.moveTo(L, doc.y).lineTo(R, doc.y).strokeColor(blue).lineWidth(2).stroke();
+            doc.moveDown(0.5);
+
+            // Title
+            doc.fontSize(14).fillColor('#333333').font('Helvetica-Bold')
+               .text('FINANCIAL STATEMENT', { align: 'center' });
+            doc.moveDown(0.8);
+
+            // Summary section
+            const startStr = new Date(startDate).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+            const endStr = new Date(endDate).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+            
+            let y = doc.y;
+            doc.rect(L, y, W, 60).fillColor('#f8f9fa').fill();
+            doc.rect(L, y, W, 60).strokeColor('#dddddd').lineWidth(0.5).stroke();
+
+            doc.fontSize(11).fillColor('#333333').font('Helvetica-Bold')
+               .text(`Period: ${startStr} to ${endStr}`, L + 10, y + 10, { width: W - 20 });
+
+            const summaryY = y + 28;
+            const col1 = L + 10, col2 = L + 140, col3 = L + 280, col4 = L + 420;
+            doc.fontSize(9).fillColor(grey).font('Helvetica');
+            doc.text('Opening Balance:', col1, summaryY);
+            doc.text('Total Credits:', col2, summaryY);
+            doc.text('Total Debits:', col3, summaryY);
+            doc.text('Closing Balance:', col4, summaryY);
+
+            doc.fontSize(10).fillColor('#333333').font('Helvetica-Bold');
+            doc.text(`$${Number(openingBalance || 0).toFixed(2)}`, col1, summaryY + 12);
+            doc.text(`$${Number(totalCredits).toFixed(2)}`, col2, summaryY + 12);
+            doc.text(`$${Number(totalDebits).toFixed(2)}`, col3, summaryY + 12);
+            doc.text(`$${Number(closingBalance).toFixed(2)}`, col4, summaryY + 12);
+
+            y += 70;
+
+            // Table header
+            const cols = { date: L, desc: L + 70, ref: L + 260, debit: L + 330, credit: L + 405, balance: L + 480 };
+            doc.rect(L, y, W, 20).fillColor(blue).fill();
+            doc.fontSize(8).fillColor('#ffffff').font('Helvetica-Bold');
+            doc.text('Date', cols.date + 3, y + 6, { width: 65 });
+            doc.text('Description', cols.desc + 3, y + 6, { width: 185 });
+            doc.text('Ref', cols.ref + 3, y + 6, { width: 65 });
+            doc.text('Debit', cols.debit + 3, y + 6, { width: 70, align: 'right' });
+            doc.text('Credit', cols.credit + 3, y + 6, { width: 70, align: 'right' });
+            doc.text('Balance', cols.balance + 3, y + 6, { width: 70, align: 'right' });
+            y += 20;
+
+            // Transactions
+            let runningBalance = openingBalance || 0;
+            transactions.forEach((tx, i) => {
+                const bg = i % 2 === 0 ? '#ffffff' : '#f8f9fa';
+                const rowHeight = 18;
+
+                if (y + rowHeight > 750) {
+                    doc.addPage();
+                    y = 40;
+                }
+
+                doc.rect(L, y, W, rowHeight).fillColor(bg).fill();
+                doc.rect(L, y, W, rowHeight).strokeColor('#dddddd').lineWidth(0.3).stroke();
+
+                const txDate = new Date(tx.date).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const desc = (tx.description || 'No description').substring(0, 40);
+                const ref = (tx.reference || '-').substring(0, 15);
+
+                let debit = '-', credit = '-';
+                if (tx.type === 'expense') {
+                    debit = tx.amount.toFixed(2);
+                    runningBalance -= tx.amount;
+                } else {
+                    credit = tx.amount.toFixed(2);
+                    runningBalance += tx.amount;
+                }
+
+                doc.fontSize(7).fillColor('#333333').font('Helvetica');
+                doc.text(txDate, cols.date + 3, y + 5, { width: 65 });
+                doc.text(desc, cols.desc + 3, y + 5, { width: 185 });
+                doc.text(ref, cols.ref + 3, y + 5, { width: 65 });
+                doc.text(debit, cols.debit + 3, y + 5, { width: 70, align: 'right' });
+                doc.text(credit, cols.credit + 3, y + 5, { width: 70, align: 'right' });
+                doc.text(runningBalance.toFixed(2), cols.balance + 3, y + 5, { width: 70, align: 'right' });
+
+                y += rowHeight;
+            });
+
+            // Footer
+            y += 10;
+            doc.moveTo(L, y).lineTo(R, y).strokeColor('#dddddd').lineWidth(1).stroke();
+            y += 8;
+            const genDate = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+            doc.fontSize(8).fillColor(grey).font('Helvetica')
+               .text(`Generated on ${genDate}`, L, y, { align: 'center', width: W });
+
+            doc.end();
+        });
+    }
+
     async generateBankStatementPDF(htmlContent) {
+        // Try pdfkit-based generation first (no Chrome needed)
+        if (PDFDocument && typeof htmlContent === 'object' && htmlContent.transactions) {
+            try {
+                console.log('🔄 Generating bank statement with pdfkit...');
+                const buffer = await this.generateBankStatementPDFWithPDFKit(htmlContent);
+                console.log(`✅ pdfkit bank statement generated (${buffer.length} bytes)`);
+                return buffer;
+            } catch (pdfkitError) {
+                console.warn('⚠️ pdfkit bank statement failed, falling back to Puppeteer:', pdfkitError.message);
+            }
+        }
+
+        // Fallback: Puppeteer-based HTML rendering
         let browser = null;
         let page = null;
         

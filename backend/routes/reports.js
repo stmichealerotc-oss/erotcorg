@@ -1013,19 +1013,23 @@ router.post('/generate-pdf', authenticateToken, async (req, res) => {
         // Generate PDF using puppeteer (use singleton instance, not constructor)
         const pdfGenerator = require('../utils/pdfGenerator');
         
-        console.log('🔄 Generating PDF with Puppeteer...');
+        console.log('🔄 Generating PDF...');
         
-        // Test: Try generating a simple PDF first
-        try {
-            console.log('🧪 Testing simple PDF generation...');
-            const testHTML = '<html><body><h1>Test PDF</h1><p>This is a test.</p></body></html>';
-            const testPdfBuffer = await pdfGenerator.generateBankStatementPDF(testHTML);
-            console.log('✅ Test PDF generated successfully, size:', testPdfBuffer.length);
-        } catch (testError) {
-            console.error('❌ Test PDF generation failed:', testError.message);
-        }
+        // Pass data object directly for pdfkit, or HTML for Puppeteer fallback
+        const pdfData = {
+            startDate,
+            endDate,
+            openingBalance: runningBalance,
+            closingBalance,
+            totalDebits,
+            totalCredits,
+            transactions,
+            churchName: churchName || 'St. Michael Eritrean Orthodox Tewahedo Church',
+            churchAddress: churchAddress || '60 Osborne Street, Joondanna, WA 6060',
+            churchABN: churchABN || 'ABN: 80 798 549 161'
+        };
         
-        const pdfBuffer = await pdfGenerator.generateBankStatementPDF(statementHTML);
+        const pdfBuffer = await pdfGenerator.generateBankStatementPDF(pdfData);
         
         console.log('✅ PDF generated successfully, size:', pdfBuffer.length, 'bytes');
         console.log('🔍 PDF buffer type:', typeof pdfBuffer);
