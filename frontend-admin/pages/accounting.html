@@ -659,173 +659,331 @@
 
     <!-- MODALS -->
 
-    <!-- UPDATED TRANSACTION MODAL WITH PAYEE TRACKING -->
-        <div id="transaction-modal" class="modal">
-            <div class="modal-content">
-                <h3>Add New Transaction</h3>
-                <form id="transaction-form">
-                    <div class="form-group">
-                        <label for="transaction-type">Type *</label>
-                        <select id="transaction-type" required onchange="accountingPage.togglePayeeFields()">
-                            <option value="income">Income</option>
-                            <option value="expense">Expense</option>
-                        </select>
-                    </div>
+    <!-- TRANSACTION MODAL — centered, 3-step wizard -->
+    <style>
+        /* ── Wizard modal overlay ── */
+        #transaction-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.52);
+            z-index: 1050;
+            align-items: center;
+            justify-content: center;
+        }
+        #transaction-modal.show { display: flex !important; }
+        #transaction-modal .txn-box {
+            background: #fff;
+            width: 92%;
+            max-width: 540px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 16px 48px rgba(0,0,0,.28);
+            display: flex;
+            flex-direction: column;
+            max-height: 92vh;
+            animation: modalSlideIn .25s ease-out;
+        }
+        /* Step bar */
+        .txn-steps {
+            display: flex;
+            align-items: center;
+            background: #f0f4fa;
+            padding: 12px 20px;
+            flex-shrink: 0;
+        }
+        .txn-step { flex: 1; text-align: center; font-size: .74rem; color: #aaa; }
+        .txn-step.active { color: #4a6fa5; font-weight: 700; }
+        .txn-step.done   { color: #28a745; font-weight: 600; }
+        .txn-step-dot {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: #ddd; color: #888;
+            display: inline-flex; align-items: center; justify-content: center;
+            margin-bottom: 3px; font-size: .72rem; font-weight: 700;
+            transition: background .2s, color .2s;
+        }
+        .txn-step.active .txn-step-dot { background: #4a6fa5; color: #fff; }
+        .txn-step.done   .txn-step-dot { background: #28a745; color: #fff; }
+        .txn-step-sep { flex: 0 0 20px; text-align: center; color: #ccc; font-size: 1rem; padding-bottom: 18px; }
+        /* Review table */
+        .txn-review-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+        .txn-review-table td { padding: 7px 4px; vertical-align: top; }
+        .txn-review-table td:first-child { color: #888; width: 110px; white-space: nowrap; }
+        .txn-review-table td:last-child  { font-weight: 500; }
+        .txn-review-amount { font-size: 1.15rem; font-weight: 700; color: #4a6fa5; }
+    </style>
 
-                    <!-- PAYEE/RECIPIENT SECTION - NEW -->
-                    <div class="form-group">
-                        <label id="payee-label">Payee *</label>
-                        <div class="search-container">
-                            <input type="text" id="payee-search" placeholder="Search members or enter name..." 
-                                   oninput="accountingPage.searchMembers(this.value)">
-                            <div id="member-search-results" class="search-results"></div>
-                        </div>
-                        <div class="payee-options">
-                            <label>
-                                <input type="radio" name="payee-type" value="member" checked> Member
-                            </label>
-                            <label>
-                                <input type="radio" name="payee-type" value="external"> External
-                            </label>
-                        </div>
-                        <input type="hidden" id="selected-member-id">
-                        
-                        <!-- External payee additional fields -->
-                        <div id="external-payee-fields" class="external-payee-fields">
-                            <div class="form-group">
-                                <label for="external-payee-email">Email (Optional)</label>
-                                <input type="email" id="external-payee-email">
-                            </div>
-                            <div class="form-group">
-                                <label for="external-payee-phone">Phone (Optional)</label>
-                                <input type="tel" id="external-payee-phone">
-                            </div>
-                        </div>
-                    </div>
+    <div id="transaction-modal">
+      <div class="txn-box">
 
-                    <div class="form-group">
-                        <label for="transaction-description">Description *</label>
-                        <select id="transaction-description" required onchange="accountingPage.handleDescriptionChange()">
-                            <option value="">Select or enter description...</option>
-                        </select>
-                        
-                        <!-- Custom description input for "Other" or custom descriptions -->
-                        <div id="custom-description-input" class="form-group" style="display: none; margin-top: 10px;">
-                            <label for="custom-description">Custom Description *</label>
-                            <input type="text" id="custom-description" placeholder="Enter custom description" maxlength="100">
-                            <small style="color: #666;">Maximum 100 characters</small>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="transaction-category">Category *</label>
-                        <select id="transaction-category" required onchange="accountingPage.handleCategoryChange()">
-                            <option value="">Select a category...</option>
-                            <!-- Income Categories -->
-                            <optgroup label="Income" id="income-categories">
-                                <option value="tithe">Tithe</option>
-                                <option value="offering">Offering</option>
-                                <option value="donation">Donation</option>
-                                <option value="pledge">Pledge</option>
-                                <option value="building">Building Fund</option>
-                                <option value="missions">Missions</option>
-                                <option value="youth_activity">Youth Activity Fees</option>
-                                <option value="cultural_events">Cultural / Community Events</option>
-                                <option value="fundraising">Fundraising Event</option>
-                                <option value="special_donations">Special Donations</option>
-                                <option value="membership">Membership Fees</option>
-                                <option value="other">Other (Specify)</option>
-                            </optgroup>
-                            <!-- Expense Categories -->
-                            <optgroup label="Expenses" id="expense-categories">
-                                <option value="honorarium">Honorarium (Clergy/Volunteers)</option>
-                                <option value="utilities">Utilities</option>
-                                <option value="salaries">Salaries</option>
-                                <option value="supplies">Supplies</option>
-                                <option value="benevolence">Benevolence / Aid</option>
-                                <option value="building">Building / Maintenance</option>
-                                <option value="youth_programs">Youth Program Expenses</option>
-                                <option value="cultural_events">Cultural / Community Expenses</option>
-                                <option value="maintenance">Maintenance & Repairs</option>
-                                <option value="office_expenses">Office / Admin Expenses</option>
-                                <option value="insurance">Insurance</option>
-                                <option value="technology">Technology / IT</option>
-                                <option value="training">Training / Workshops</option>
-                                <option value="volunteer_support">Volunteer Support</option>
-                                <option value="events">Events</option>
-                                <option value="other">Other (Specify)</option>
-                            </optgroup>
-                        </select>
-                        
-                        <!-- Custom category input for "Other" -->
-                        <div id="other-category-input" class="form-group" style="display: none; margin-top: 10px;">
-                            <label for="custom-category">Specify Category *</label>
-                            <input type="text" id="custom-category" placeholder="Enter custom category description" maxlength="50">
-                            <small style="color: #666;">Maximum 50 characters</small>
-                        </div>
-                    </div>
-                    
-                    <!-- MULTI-MONTH SELECTOR (shows only for Tithe/Monthly categories) -->
-                    <div id="month-selector-container" class="form-group" style="display: none;">
-                        <label>Select Months to Pay:</label>
-                        <div id="month-checkboxes" style="max-height: 250px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; background: #f9f9f9;">
-                            <!-- Month checkboxes will be dynamically generated here -->
-                        </div>
-                        <div style="margin-top: 10px; padding: 10px; background: #e8f4f8; border-radius: 4px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span><strong>Amount per month:</strong></span>
-                                <input type="number" id="amount-per-month" step="0.01" min="0.01" value="100" 
-                                       style="width: 100px; padding: 5px;" 
-                                       onchange="accountingPage.updateMultiMonthTotal()">
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span><strong>Months selected:</strong></span>
-                                <span id="months-selected-count">0</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; color: #4a6fa5;">
-                                <span>Total Amount:</span>
-                                <span id="multi-month-total">$0.00</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="transaction-amount">Amount *</label>
-                        <input type="number" id="transaction-amount" step="0.01" min="0.01" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="payment-method">Payment Method</label>
-                        <select id="payment-method">
-                            <option value="cash">Cash</option>
-                            <option value="check">Check</option>
-                            <option value="card">Card</option>
-                            <option value="online">Online</option>
-                            <option value="transfer">Transfer</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="transaction-reference">Reference</label>
-                        <input type="text" id="transaction-reference" placeholder="Check #, Transaction ID, etc.">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="transaction-note">Notes</label>
-                        <textarea id="transaction-note" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn" onclick="accountingPage.closeModal()">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Add Transaction</button>
-                    </div>
-                </form>
-            </div>
+        <!-- Header -->
+        <div style="background:#4a6fa5;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+          <h3 id="txn-modal-title" style="margin:0;font-size:1rem;font-weight:600;">
+            <i class="fas fa-exchange-alt"></i> Add Transaction
+          </h3>
+          <button onclick="TxnWizard.close()" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;line-height:1;padding:0 4px;">×</button>
         </div>
-   
 
+        <!-- Step bar -->
+        <div class="txn-steps">
+          <div class="txn-step active" id="txn-ind-1">
+            <div class="txn-step-dot">1</div><div>Type &amp; Payee</div>
+          </div>
+          <div class="txn-step-sep">›</div>
+          <div class="txn-step" id="txn-ind-2">
+            <div class="txn-step-dot">2</div><div>Details</div>
+          </div>
+          <div class="txn-step-sep">›</div>
+          <div class="txn-step" id="txn-ind-3">
+            <div class="txn-step-dot">3</div><div>Review</div>
+          </div>
+        </div>
 
-    <!-- MODALS -->
+        <!-- Scrollable body -->
+        <div style="overflow-y:auto;flex:1;padding:20px 24px;">
+          <form id="transaction-form">
+
+            <!-- ── Step 1: Type & Payee ── -->
+            <div id="txn-panel-1">
+              <div class="form-group">
+                <label for="transaction-type">Transaction Type *</label>
+                <select id="transaction-type" required onchange="accountingPage.togglePayeeFields()">
+                  <option value="income">Income</option>
+                  <option value="expense">Expense</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label id="payee-label">Payee / Recipient *</label>
+                <div class="search-container">
+                  <input type="text" id="payee-search" placeholder="Search members or enter name..."
+                         oninput="accountingPage.searchMembers(this.value)">
+                  <div id="member-search-results" class="search-results"></div>
+                </div>
+                <div class="payee-options">
+                  <label><input type="radio" name="payee-type" value="member" checked> Member</label>
+                  <label><input type="radio" name="payee-type" value="external"> External</label>
+                </div>
+                <input type="hidden" id="selected-member-id">
+                <div id="external-payee-fields" class="external-payee-fields">
+                  <div class="form-group">
+                    <label for="external-payee-email">Email (Optional)</label>
+                    <input type="email" id="external-payee-email">
+                  </div>
+                  <div class="form-group">
+                    <label for="external-payee-phone">Phone (Optional)</label>
+                    <input type="tel" id="external-payee-phone">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Step 2: Details ── -->
+            <div id="txn-panel-2" style="display:none;">
+              <div class="form-group">
+                <label for="transaction-description">Description *</label>
+                <select id="transaction-description" required onchange="accountingPage.handleDescriptionChange()">
+                  <option value="">Select or enter description...</option>
+                </select>
+                <div id="custom-description-input" class="form-group" style="display:none;margin-top:10px;">
+                  <label for="custom-description">Custom Description *</label>
+                  <input type="text" id="custom-description" placeholder="Enter custom description" maxlength="100">
+                  <small style="color:#666;">Maximum 100 characters</small>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="transaction-category">Category *</label>
+                <select id="transaction-category" required onchange="accountingPage.handleCategoryChange()">
+                  <option value="">Select a category...</option>
+                  <optgroup label="Income" id="income-categories">
+                    <option value="tithe">Tithe</option>
+                    <option value="offering">Offering</option>
+                    <option value="donation">Donation</option>
+                    <option value="pledge">Pledge</option>
+                    <option value="building">Building Fund</option>
+                    <option value="missions">Missions</option>
+                    <option value="youth_activity">Youth Activity Fees</option>
+                    <option value="cultural_events">Cultural / Community Events</option>
+                    <option value="fundraising">Fundraising Event</option>
+                    <option value="food_sale">Food Sale</option>
+                    <option value="special_donations">Special Donations</option>
+                    <option value="membership">Membership Fees</option>
+                    <option value="other">Other (Specify)</option>
+                  </optgroup>
+                  <optgroup label="Expenses" id="expense-categories">
+                    <option value="honorarium">Honorarium (Clergy/Volunteers)</option>
+                    <option value="utilities">Utilities</option>
+                    <option value="salaries">Salaries</option>
+                    <option value="supplies">Supplies</option>
+                    <option value="benevolence">Benevolence / Aid</option>
+                    <option value="building">Building / Maintenance</option>
+                    <option value="youth_programs">Youth Program Expenses</option>
+                    <option value="cultural_events">Cultural / Community Expenses</option>
+                    <option value="maintenance">Maintenance &amp; Repairs</option>
+                    <option value="office_expenses">Office / Admin Expenses</option>
+                    <option value="insurance">Insurance</option>
+                    <option value="technology">Technology / IT</option>
+                    <option value="training">Training / Workshops</option>
+                    <option value="volunteer_support">Volunteer Support</option>
+                    <option value="events">Events</option>
+                    <option value="other">Other (Specify)</option>
+                  </optgroup>
+                </select>
+                <div id="other-category-input" class="form-group" style="display:none;margin-top:10px;">
+                  <label for="custom-category">Specify Category *</label>
+                  <input type="text" id="custom-category" placeholder="Enter custom category description" maxlength="50">
+                  <small style="color:#666;">Maximum 50 characters</small>
+                </div>
+              </div>
+              <!-- Multi-month selector -->
+              <div id="month-selector-container" class="form-group" style="display:none;">
+                <label style="font-weight:600;color:#333;">Months Covered</label>
+
+                <!-- Mode toggle -->
+                <div style="display:flex;gap:6px;margin:6px 0 12px;">
+                  <button type="button" id="ms-mode-range" onclick="accountingPage.setMonthMode('range')"
+                    style="flex:1;padding:6px;border:2px solid #4a6fa5;border-radius:6px;background:#4a6fa5;color:#fff;font-size:.8rem;cursor:pointer;font-weight:600;">
+                    From / To Range
+                  </button>
+                  <button type="button" id="ms-mode-pick" onclick="accountingPage.setMonthMode('pick')"
+                    style="flex:1;padding:6px;border:2px solid #4a6fa5;border-radius:6px;background:#fff;color:#4a6fa5;font-size:.8rem;cursor:pointer;font-weight:600;">
+                    Pick Individual Months
+                  </button>
+                </div>
+
+                <!-- Range mode -->
+                <div id="ms-range-ui">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                    <div>
+                      <label style="font-size:.78rem;color:#666;display:block;margin-bottom:3px;">From</label>
+                      <div style="display:flex;gap:4px;">
+                        <select id="ms-from-month" onchange="accountingPage.updateMultiMonthTotal()"
+                          style="flex:1;padding:6px;border:1px solid #ddd;border-radius:5px;font-size:.82rem;">
+                        </select>
+                        <select id="ms-from-year" onchange="accountingPage.updateMultiMonthTotal()"
+                          style="width:72px;padding:6px;border:1px solid #ddd;border-radius:5px;font-size:.82rem;">
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label style="font-size:.78rem;color:#666;display:block;margin-bottom:3px;">To</label>
+                      <div style="display:flex;gap:4px;">
+                        <select id="ms-to-month" onchange="accountingPage.updateMultiMonthTotal()"
+                          style="flex:1;padding:6px;border:1px solid #ddd;border-radius:5px;font-size:.82rem;">
+                        </select>
+                        <select id="ms-to-year" onchange="accountingPage.updateMultiMonthTotal()"
+                          style="width:72px;padding:6px;border:1px solid #ddd;border-radius:5px;font-size:.82rem;">
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Individual pick mode -->
+                <div id="ms-pick-ui" style="display:none;">
+                  <!-- Year tabs -->
+                  <div id="ms-year-tabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+                  <!-- Add year row -->
+                  <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+                    <input id="ms-add-year-input" type="number" placeholder="Add year e.g. 2026"
+                      style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:.82rem;"
+                      min="2000" max="2099">
+                    <button type="button" onclick="accountingPage.addPickYear()"
+                      style="padding:6px 12px;background:#4a6fa5;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:.82rem;white-space:nowrap;">
+                      + Add Year
+                    </button>
+                  </div>
+                  <!-- 12-month grid for active year -->
+                  <div id="month-checkboxes" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;"></div>
+                </div>
+
+                <!-- Summary bar -->
+                <div style="margin-top:10px;padding:10px 12px;background:#e8f4f8;border-radius:6px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <span style="font-size:.82rem;color:#555;"><strong>Amount per month:</strong></span>
+                    <input type="number" id="amount-per-month" step="0.01" min="0.01" value="100"
+                           style="width:90px;padding:5px 7px;border:1px solid #c5d8ea;border-radius:4px;font-size:.85rem;text-align:right;"
+                           onchange="accountingPage.updateMultiMonthTotal()">
+                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:.82rem;color:#555;margin-bottom:4px;">
+                    <span>Months selected:</span>
+                    <span id="months-selected-count" style="font-weight:600;">0</span>
+                  </div>
+                  <div id="ms-month-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;min-height:20px;"></div>
+                  <div style="display:flex;justify-content:space-between;font-size:1rem;font-weight:700;color:#4a6fa5;border-top:1px solid #c5d8ea;padding-top:6px;">
+                    <span>Total Amount:</span>
+                    <span id="multi-month-total">$0.00</span>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="transaction-amount">Amount *</label>
+                <input type="number" id="transaction-amount" step="0.01" min="0.01" required>
+              </div>
+              <div class="form-group">
+                <label for="payment-method">Payment Method</label>
+                <select id="payment-method">
+                  <option value="cash">Cash</option>
+                  <option value="check">Check</option>
+                  <option value="card">Card</option>
+                  <option value="online">Online</option>
+                  <option value="transfer">Transfer</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="transaction-reference">Reference</label>
+                <input type="text" id="transaction-reference" placeholder="Check #, Transaction ID, etc.">
+              </div>
+              <div class="form-group">
+                <label for="transaction-note">Notes</label>
+                <textarea id="transaction-note" rows="3"></textarea>
+              </div>
+            </div>
+
+            <!-- ── Step 3: Review ── -->
+            <div id="txn-panel-3" style="display:none;">
+              <div style="background:#f8f9fa;border-radius:8px;padding:16px 18px;">
+                <table class="txn-review-table">
+                  <tr><td>Type</td>        <td id="rev-type"></td></tr>
+                  <tr><td>Payee</td>       <td id="rev-payee"></td></tr>
+                  <tr><td>Category</td>    <td id="rev-category"></td></tr>
+                  <tr><td>Description</td> <td id="rev-description"></td></tr>
+                  <tr><td>Amount</td>      <td id="rev-amount" class="txn-review-amount"></td></tr>
+                  <tr><td>Method</td>      <td id="rev-method"></td></tr>
+                  <tr><td>Reference</td>   <td id="rev-reference"></td></tr>
+                  <tr><td>Notes</td>       <td id="rev-notes" style="white-space:pre-wrap;"></td></tr>
+                </table>
+              </div>
+              <p style="font-size:.8rem;color:#999;margin-top:12px;text-align:center;">
+                Please confirm the details above before saving.
+              </p>
+            </div>
+
+          <!-- Hidden submit button so accounting.js querySelector works -->
+          <button type="submit" style="display:none;" aria-hidden="true"></button>
+          </form>
+        </div>
+
+        <!-- Footer -->
+        <div style="padding:12px 20px;border-top:1px solid #eee;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;background:#fafafa;">
+          <button id="txn-btn-back" onclick="TxnWizard.prev()" class="btn btn-secondary" style="display:none;">
+            <i class="fas fa-arrow-left"></i> Back
+          </button>
+          <span></span>
+          <div style="display:flex;gap:8px;">
+            <button type="button" onclick="TxnWizard.close()" class="btn">Cancel</button>
+            <button id="txn-btn-next" onclick="TxnWizard.next()" class="btn btn-primary">
+              Next <i class="fas fa-arrow-right"></i>
+            </button>
+            <button id="txn-btn-save" onclick="TxnWizard.submit()" class="btn btn-primary" style="display:none;">
+              <i class="fas fa-save"></i> Save Transaction
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    
 
 <!-- Add Promise Modal -->
 <div id="promise-modal" class="modal">

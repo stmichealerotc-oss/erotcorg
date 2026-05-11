@@ -186,7 +186,9 @@ router.post('/', async (req, res) => {
       amount: parseFloat(amount),
       category,
       description: description || '',
-      dueDate: new Date(dueDate),
+      dueDate: moment(dueDate, ['DD/MM/YYYY', 'MM/DD/YYYY', moment.ISO_8601], true).isValid()
+               ? moment(dueDate, ['DD/MM/YYYY', 'MM/DD/YYYY', moment.ISO_8601]).toDate()
+               : new Date(dueDate),
       promiseDate: new Date()
     };
     

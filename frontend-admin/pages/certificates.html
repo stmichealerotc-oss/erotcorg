@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Certificates</title>
+  <style>
+    .cert-badge {
+      display:inline-block;padding:2px 8px;border-radius:4px;font-size:.75rem;font-weight:600;
+    }
+    .cert-badge.draft    { background:#fff3cd;color:#856404; }
+    .cert-badge.signed   { background:#d4edda;color:#155724; }
+    .cert-badge.issued   { background:#d1ecf1;color:#0c5460; }
+    .cert-type-badge {
+      display:inline-block;padding:2px 8px;border-radius:4px;font-size:.75rem;
+      background:#e8f4f8;color:#2c6e8a;font-weight:600;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── TOOLBAR ─────────────────────────────────────────────────────────── -->
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+  <div>
+    <h2 style="margin:0;font-size:1.4rem;"><i class="fas fa-certificate"></i> Certificates</h2>
+    <p style="margin:4px 0 0;color:#666;font-size:.85rem;">Baptism, marriage, membership and other church certificates</p>
+  </div>
+  <button class="btn btn-primary" onclick="Certificates.openNew()">
+    <i class="fas fa-plus"></i> New Certificate
+  </button>
+</div>
+
+<!-- ── FILTERS ─────────────────────────────────────────────────────────── -->
+<div class="card" style="padding:14px 16px;margin-bottom:16px;">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+    <input id="cert-search" type="text" placeholder="Search member name or certificate no…"
+      style="flex:1;min-width:180px;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem;"
+      oninput="Certificates.debounceLoad()" />
+    <select id="cert-filter-type" onchange="Certificates.load()"
+      style="padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem;">
+      <option value="">All Types</option>
+      <option value="baptism">✝ Baptism</option>
+      <option value="marriage">💍 Marriage</option>
+      <option value="membership">🏛 Membership</option>
+      <option value="chrismation">🕊 Chrismation</option>
+      <option value="death">🕯 Memorial</option>
+      <option value="other">📄 Other</option>
+    </select>
+    <select id="cert-filter-status" onchange="Certificates.load()"
+      style="padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem;">
+      <option value="">All Status</option>
+      <option value="draft">Draft</option>
+      <option value="signed">Signed</option>
+      <option value="issued">Issued</option>
+    </select>
+    <input id="cert-filter-year" type="number" placeholder="Year" min="2000" max="2099"
+      style="width:90px;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem;"
+      onchange="Certificates.load()" />
+  </div>
+</div>
+
+<!-- ── TABLE ───────────────────────────────────────────────────────────── -->
+<div class="card" style="overflow:hidden;">
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
+      <thead>
+        <tr style="background:#f8f9fa;border-bottom:2px solid #e9ecef;">
+          <th style="padding:10px 12px;text-align:left;white-space:nowrap;">Cert No</th>
+          <th style="padding:10px 12px;text-align:left;">Type</th>
+          <th style="padding:10px 12px;text-align:left;">Member(s)</th>
+          <th style="padding:10px 12px;text-align:left;">Event Date</th>
+          <th style="padding:10px 12px;text-align:left;">Officiant</th>
+          <th style="padding:10px 12px;text-align:left;">Status</th>
+          <th style="padding:10px 12px;text-align:center;">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="cert-table-body">
+        <tr><td colspan="7" style="padding:30px;text-align:center;color:#999;">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div id="cert-pagination" style="padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #eee;font-size:.82rem;color:#666;"></div>
+</div>
+
+<!-- ── NEW / EDIT MODAL ────────────────────────────────────────────────── -->
+<div id="cert-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;align-items:center;justify-content:center;">
+  <div style="background:#fff;width:90%;max-width:560px;border-radius:12px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.25);display:flex;flex-direction:column;max-height:92vh;">
+
+    <div style="background:#2c3e50;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <h3 id="cert-modal-title" style="margin:0;font-size:1rem;"><i class="fas fa-certificate"></i> New Certificate</h3>
+      <button onclick="Certificates.closeModal()" style="background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;line-height:1;">×</button>
+    </div>
+
+    <div style="overflow-y:auto;flex:1;padding:20px 24px;">
+      <input type="hidden" id="cert-edit-id" />
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+
+        <div style="grid-column:1/-1;">
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Certificate Type *</label>
+          <select id="cert-type" onchange="Certificates.onTypeChange()"
+            style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;">
+            <option value="">Select type…</option>
+            <option value="baptism">✝ Baptism</option>
+            <option value="marriage">💍 Marriage</option>
+            <option value="membership">🏛 Membership</option>
+            <option value="chrismation">🕊 Chrismation</option>
+            <option value="death">🕯 Memorial</option>
+            <option value="other">📄 Other</option>
+          </select>
+        </div>
+
+        <div style="grid-column:1/-1;">
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Primary Member *</label>
+          <div style="position:relative;margin-top:4px;">
+            <input id="cert-member-search" type="text" placeholder="Search member…"
+              style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;"
+              oninput="Certificates.searchMember(this.value, 'primary')" />
+            <div id="cert-member-results" style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-top:none;max-height:160px;overflow-y:auto;z-index:100;display:none;box-shadow:0 4px 8px rgba(0,0,0,.1);border-radius:0 0 6px 6px;"></div>
+          </div>
+          <input type="hidden" id="cert-primary-member-id" />
+        </div>
+
+        <div id="cert-secondary-member-row" style="grid-column:1/-1;display:none;">
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Spouse (Second Member)</label>
+          <div style="position:relative;margin-top:4px;">
+            <input id="cert-member2-search" type="text" placeholder="Search spouse member…"
+              style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;"
+              oninput="Certificates.searchMember(this.value, 'secondary')" />
+            <div id="cert-member2-results" style="position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-top:none;max-height:160px;overflow-y:auto;z-index:100;display:none;box-shadow:0 4px 8px rgba(0,0,0,.1);border-radius:0 0 6px 6px;"></div>
+          </div>
+          <input type="hidden" id="cert-secondary-member-id" />
+        </div>
+
+        <div>
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Event Date *</label>
+          <input id="cert-event-date" type="date"
+            style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;" />
+        </div>
+
+        <div>
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Officiant</label>
+          <input id="cert-officiant" type="text" placeholder="Priest / officiant name"
+            style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;" />
+        </div>
+
+        <div id="cert-godparents-row" style="grid-column:1/-1;display:none;">
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Godparents</label>
+          <input id="cert-godparents" type="text" placeholder="Comma-separated names"
+            style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;" />
+        </div>
+
+        <div style="grid-column:1/-1;">
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Witnesses</label>
+          <input id="cert-witnesses" type="text" placeholder="Comma-separated names"
+            style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;" />
+        </div>
+
+        <div style="grid-column:1/-1;">
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Notes</label>
+          <textarea id="cert-notes" rows="2"
+            style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;resize:vertical;"></textarea>
+        </div>
+
+        <div>
+          <label style="font-size:.82rem;font-weight:600;color:#555;">Fee ($)</label>
+          <input id="cert-fee" type="number" min="0" step="0.01" value="0"
+            style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;" />
+        </div>
+
+      </div>
+
+      <div id="cert-modal-error" style="display:none;background:#fee;border:1px solid #fcc;color:#c00;padding:8px 12px;border-radius:6px;margin-top:12px;font-size:.82rem;"></div>
+    </div>
+
+    <div style="padding:12px 20px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;background:#fafafa;">
+      <button onclick="Certificates.closeModal()" class="btn btn-secondary">Cancel</button>
+      <button onclick="Certificates.save()" class="btn btn-primary" id="cert-save-btn">
+        <i class="fas fa-save"></i> Save Certificate
+      </button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

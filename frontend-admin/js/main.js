@@ -339,6 +339,9 @@ class MainApp {
             case 'documents':
                 await this.loadModule('documents');
                 break;
+            case 'certificates':
+                await this.loadModule('certificates');
+                break;
             case 'userManagement':
             case 'user-management':
                 await this.loadModule('user-management');

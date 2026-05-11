@@ -1008,7 +1008,7 @@ class PDFGenerator {
         return new Promise((resolve, reject) => {
             if (!PDFDocument) return reject(new Error('pdfkit not installed'));
 
-            const doc = new PDFDocument({ size: 'A4', margin: 40 });
+            const doc = new PDFDocument({ size: 'A4', margin: 25 });
             const chunks = [];
             doc.on('data', chunk => chunks.push(chunk));
             doc.on('end', () => resolve(Buffer.concat(chunks)));
@@ -1018,8 +1018,8 @@ class PDFGenerator {
 
             const blue = '#4a6fa5';
             const grey = '#666666';
-            // Page width A4 = 595pt, margins 40 each side → usable = 515
-            const L = 40, W = 515, R = L + W;
+            // A4 = 595pt, margins 25 each side → usable = 545
+            const L = 25, W = 545, R = L + W;
 
             // ── Header ────────────────────────────────────────────────────
             doc.fontSize(18).fillColor(blue).font('Helvetica-Bold')
@@ -1051,7 +1051,7 @@ class PDFGenerator {
                .text(`${startStr} to ${endStr}`, L + 10, y + 22, { width: W - 20 });
 
             // 4-column summary row
-            const s1 = L + 10, s2 = L + 140, s3 = L + 290, s4 = L + 400;
+            const s1 = L + 10, s2 = L + 150, s3 = L + 300, s4 = L + 420;
             const sY = y + 44;
             doc.fontSize(9).fillColor(grey).font('Helvetica');
             doc.text('Opening Balance:', s1, sY, { width: 120 });
@@ -1067,14 +1067,14 @@ class PDFGenerator {
             y += 78;
 
             // ── Table columns (must sum to W = 515) ───────────────────────
-            // date=65, desc=195, ref=90, debit=55, credit=55, balance=55 → total=515
+            // date=65, desc=215, ref=70, debit=55, credit=55, balance=85 → total=545
             const cDate    = L;
             const cDesc    = L + 65;
-            const cRef     = L + 260;
+            const cRef     = L + 280;
             const cDebit   = L + 350;
             const cCredit  = L + 405;
             const cBalance = L + 460;
-            const wDate=65, wDesc=195, wRef=90, wDebit=55, wCredit=55, wBalance=55;
+            const wDate=65, wDesc=215, wRef=70, wDebit=55, wCredit=55, wBalance=85;
 
             // Table header row
             doc.rect(L, y, W, 20).fillColor(blue).fill();
@@ -1123,7 +1123,12 @@ class PDFGenerator {
                 doc.rect(L, y, W, rowHeight).strokeColor('#dddddd').lineWidth(0.3).stroke();
 
                 const txDate = new Date(tx.date).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                const desc   = (tx.description || 'No description').substring(0, 45);
+                const payeeName = tx.payee?.name
+                    || (tx.payee?.memberId && typeof tx.payee.memberId === 'object'
+                        ? `${tx.payee.memberId.firstName || ''} ${tx.payee.memberId.lastName || ''}`.trim()
+                        : null);
+                const rawDesc = tx.description || 'No description';
+                const desc = payeeName ? `${rawDesc} (${payeeName})`.substring(0, 55) : rawDesc.substring(0, 55);
                 const ref    = (tx.reference || '-').substring(0, 18);
 
                 let debit = '-', credit = '-';

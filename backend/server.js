@@ -32,6 +32,7 @@ const libraryRoutes = require('./routes/library');
 const orthodoxLibraryRoutes = require('./routes/orthodoxLibrary');
 const volunteerProfileRoutes = require('./routes/volunteerProfiles');
 const documentsRoutes = require('./routes/documents');
+const certificatesRoutes = require('./routes/certificates');
 const webhookRoutes = require('./routes/webhooks');
 // CMS routes
 const membersRoutes = require('./routes/members');
@@ -450,7 +451,8 @@ app.use('/api/promises', authenticateToken, promiseRoutes);
 app.use('/api/member-contributions', authenticateToken, memberContributionsRoutes);
 app.use('/api/user-management', authenticateToken, userManagementRoutes);
 app.use('/api/signatures', authenticateToken, signaturesRoutes);
-app.use('/api/documents', authenticateToken, documentsRoutes); // Church document registry
+app.use('/api/documents',     authenticateToken, documentsRoutes);
+app.use('/api/certificates', authenticateToken, certificatesRoutes); // Church document registry
 app.use('/api/notifications', notificationRoutes); // Auth handled in route file
 
 // Health endpoint

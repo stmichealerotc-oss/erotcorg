@@ -953,15 +953,22 @@ isExpenseCategory(category) {
 getTransactionDescription() {
     const descriptionSelect = document.getElementById('transaction-description');
     const customDescription = document.getElementById('custom-description');
-    
+
     if (descriptionSelect.value === 'custom') {
-        return customDescription.value.trim();
-    } else if (descriptionSelect.value === '') {
-        // If no selection, require user to select something
-        throw new Error('Please select or enter a description');
-    } else {
+        const custom = customDescription ? customDescription.value.trim() : '';
+        if (custom) return custom;
+        // Fall back to category label if custom is also empty
+    }
+
+    if (descriptionSelect.value && descriptionSelect.value !== '') {
         return descriptionSelect.value;
     }
+
+    // Last resort: use the category value as description
+    const cat = document.getElementById('transaction-category');
+    if (cat && cat.value) return cat.value;
+
+    throw new Error('Please select or enter a description');
 }
 
 // Handle description dropdown change
@@ -1315,128 +1322,268 @@ toggleMonthSelector() {
     
     if (isTitheOrMonthly && isIncome) {
         monthSelectorContainer.style.display = 'block';
-        this.generateMonthCheckboxes();
+        this._monthMode = this._monthMode || 'range';
+        this._initRangeDropdowns();
+        this.updateMultiMonthTotal();
     } else {
         monthSelectorContainer.style.display = 'none';
     }
 }
 
 // Generate month checkboxes dynamically
-generateMonthCheckboxes() {
-    const container = document.getElementById('month-checkboxes');
-    if (!container) return;
-    
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth(); // 0-11
-    
-    const months = [];
-    
-    // Generate last 12 months + current + next 3 months (16 months total)
-    for (let i = -12; i <= 3; i++) {
-        const date = new Date(currentYear, currentMonth + i, 1);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const monthLabel = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-        
-        let status = '';
-        let statusClass = '';
-        if (i < 0) {
-            status = ` (Overdue - ${Math.abs(i)} month${Math.abs(i) > 1 ? 's' : ''})`;
-            statusClass = 'overdue';
-        } else if (i === 0) {
-            status = ' (Current Month)';
-            statusClass = 'current';
+// ── Month selector mode ───────────────────────────────────────────────────────
+setMonthMode(mode) {
+    this._monthMode = mode;
+    const rangeUI  = document.getElementById('ms-range-ui');
+    const pickUI   = document.getElementById('ms-pick-ui');
+    const btnRange = document.getElementById('ms-mode-range');
+    const btnPick  = document.getElementById('ms-mode-pick');
+    if (!rangeUI || !pickUI) return;
+    if (mode === 'range') {
+        rangeUI.style.display = '';
+        pickUI.style.display  = 'none';
+        if (btnRange) { btnRange.style.background = '#4a6fa5'; btnRange.style.color = '#fff'; }
+        if (btnPick)  { btnPick.style.background  = '#fff';    btnPick.style.color  = '#4a6fa5'; }
+    } else {
+        rangeUI.style.display = 'none';
+        pickUI.style.display  = '';
+        if (btnRange) { btnRange.style.background = '#fff';    btnRange.style.color = '#4a6fa5'; }
+        if (btnPick)  { btnPick.style.background  = '#4a6fa5'; btnPick.style.color  = '#fff'; }
+        // Init pick mode: default to current year
+        if (!this._pickYears || !this._pickYears.length) {
+            this._pickYears = [new Date().getFullYear()];
         }
-        
-        months.push({
-            key: monthKey,
-            label: monthLabel,
-            status: status,
-            statusClass: statusClass,
-            isOverdue: i < 0,
-            isCurrent: i === 0
-        });
+        if (!this._pickedKeys) this._pickedKeys = {};
+        this._pickActiveYear = this._pickActiveYear || this._pickYears[0];
+        this._renderYearTabs();
+        this._renderPickYear(this._pickActiveYear);
     }
-    
-    // Build HTML
-    container.innerHTML = months.map(month => `
-        <div style="padding: 8px; border-bottom: 1px solid #e0e0e0; ${month.isCurrent ? 'background: #e8f4f8;' : ''}">
-            <label style="display: flex; align-items: center; cursor: pointer; user-select: none;">
-                <input type="checkbox" 
-                       class="month-checkbox" 
-                       value="${month.key}" 
-                       ${month.isCurrent ? 'checked' : ''}
-                       onchange="accountingPage.updateMultiMonthTotal()"
-                       style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
-                <span style="flex: 1; ${month.isOverdue ? 'color: #dc3545; font-weight: 600;' : ''}">
-                    ${month.label}${month.status}
-                </span>
-            </label>
-        </div>
-    `).join('');
-    
-    // Initialize total
     this.updateMultiMonthTotal();
 }
 
-// Update multi-month total calculation
-updateMultiMonthTotal() {
-    const checkboxes = document.querySelectorAll('.month-checkbox:checked');
-    const amountPerMonth = parseFloat(document.getElementById('amount-per-month')?.value || 0);
-    const count = checkboxes.length;
-    const total = count * amountPerMonth;
-    
-    // Update display
-    document.getElementById('months-selected-count').textContent = count;
-    document.getElementById('multi-month-total').textContent = `$${total.toFixed(2)}`;
-    
-    // Update main amount field
-    const amountField = document.getElementById('transaction-amount');
-    if (amountField && count > 0) {
-        amountField.value = total.toFixed(2);
+
+generateMonthCheckboxes() {
+    // Called when switching to pick mode — render the active year grid
+    this._renderPickYear(this._pickActiveYear || new Date().getFullYear());
+}
+
+// Render year tab buttons
+_renderYearTabs() {
+    const tabsEl = document.getElementById('ms-year-tabs');
+    if (!tabsEl) return;
+    const years = this._pickYears || [];
+    const active = this._pickActiveYear || new Date().getFullYear();
+    tabsEl.innerHTML = years.map(function(y) {
+        const isActive = y === active;
+        return '<button type="button" onclick="accountingPage._switchPickYear(' + y + ')"'
+             + ' style="padding:4px 12px;border-radius:5px;border:2px solid #4a6fa5;cursor:pointer;font-size:.8rem;font-weight:600;'
+             + (isActive ? 'background:#4a6fa5;color:#fff;' : 'background:#fff;color:#4a6fa5;') + '">'
+             + y + '</button>';
+    }).join('');
+}
+
+// Render 12-month grid for a given year
+_renderPickYear(year) {
+    const container = document.getElementById('month-checkboxes');
+    if (!container) return;
+    const MSHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const now = new Date();
+    const cy  = now.getFullYear();
+    const cm  = now.getMonth();
+    // Get currently checked keys so we preserve selections across year switches
+    const checked = this._pickedKeys || {};
+    let html = '';
+    for (let m = 0; m < 12; m++) {
+        const key     = year + '-' + String(m + 1).padStart(2, '0');
+        const isPast  = year < cy || (year === cy && m < cm);
+        const isCur   = year === cy && m === cm;
+        const isChk   = checked[key] ? ' checked' : (isCur && !Object.keys(checked).length ? ' checked' : '');
+        if (isCur && !Object.keys(checked).length && isChk) checked[key] = true;
+        const bg   = isCur  ? '#e8f4f8' : isPast ? '#fff8f8' : '#f9f9f9';
+        const clr  = isPast ? '#dc3545' : isCur  ? '#4a6fa5' : '#333';
+        const bdr  = checked[key] ? '2px solid #4a6fa5' : '1px solid #ddd';
+        html += '<button type="button" class="ms-month-btn" data-key="' + key + '"'
+              + ' onclick="accountingPage._togglePickMonth(\'' + key + '\', this)"'
+              + ' style="padding:8px 4px;border:' + bdr + ';border-radius:6px;cursor:pointer;'
+              + 'background:' + (checked[key] ? '#4a6fa5' : bg) + ';'
+              + 'color:' + (checked[key] ? '#fff' : clr) + ';'
+              + 'font-size:.78rem;font-weight:600;text-align:center;transition:all .15s;">'
+              + MSHORT[m] + '</button>';
     }
-    
-    // Auto-generate description
+    container.innerHTML = html;
+    this.updateMultiMonthTotal();
+}
+
+// Toggle a month button in pick mode
+_togglePickMonth(key, btn) {
+    if (!this._pickedKeys) this._pickedKeys = {};
+    if (this._pickedKeys[key]) {
+        delete this._pickedKeys[key];
+        btn.style.background = '#f9f9f9';
+        btn.style.color = '#333';
+        btn.style.border = '1px solid #ddd';
+    } else {
+        this._pickedKeys[key] = true;
+        btn.style.background = '#4a6fa5';
+        btn.style.color = '#fff';
+        btn.style.border = '2px solid #4a6fa5';
+    }
+    this.updateMultiMonthTotal();
+}
+
+// Switch active year in pick mode
+_switchPickYear(year) {
+    this._pickActiveYear = year;
+    this._renderYearTabs();
+    this._renderPickYear(year);
+}
+
+// Add a new year to pick mode
+addPickYear() {
+    const input = document.getElementById('ms-add-year-input');
+    if (!input) return;
+    const y = parseInt(input.value);
+    if (!y || y < 2000 || y > 2099) { alert('Enter a valid year (2000–2099)'); return; }
+    if (!this._pickYears) this._pickYears = [];
+    if (this._pickYears.indexOf(y) === -1) {
+        this._pickYears.push(y);
+        this._pickYears.sort();
+    }
+    input.value = '';
+    this._switchPickYear(y);
+}
+
+
+_initRangeDropdowns() {
+    const MSHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const now = new Date();
+    const cy  = now.getFullYear();
+    const cm  = now.getMonth();
+    ['ms-from-month','ms-to-month'].forEach(function(id) {
+        const sel = document.getElementById(id);
+        if (!sel || sel.options.length > 0) return;
+        MSHORT.forEach(function(m, i) {
+            const opt = document.createElement('option');
+            opt.value = i; opt.textContent = m; sel.appendChild(opt);
+        });
+    });
+    ['ms-from-year','ms-to-year'].forEach(function(id) {
+        const sel = document.getElementById(id);
+        if (!sel || sel.options.length > 0) return;
+        for (let y = cy - 5; y <= cy + 2; y++) {
+            const opt = document.createElement('option');
+            opt.value = y; opt.textContent = y; sel.appendChild(opt);
+        }
+    });
+    const fromM = document.getElementById('ms-from-month');
+    const fromY = document.getElementById('ms-from-year');
+    const toM   = document.getElementById('ms-to-month');
+    const toY   = document.getElementById('ms-to-year');
+    if (fromM) fromM.value = cm;
+    if (fromY) fromY.value = cy;
+    if (toM)   toM.value   = cm;
+    if (toY)   toY.value   = cy;
+}
+
+
+_getSelectedMonths() {
+    if (this._monthMode === 'pick') {
+        return Object.keys(this._pickedKeys || {}).sort();
+    }
+    const fromM = parseInt(document.getElementById('ms-from-month') ? document.getElementById('ms-from-month').value : new Date().getMonth());
+    const fromY = parseInt(document.getElementById('ms-from-year')  ? document.getElementById('ms-from-year').value  : new Date().getFullYear());
+    const toM   = parseInt(document.getElementById('ms-to-month')   ? document.getElementById('ms-to-month').value   : new Date().getMonth());
+    const toY   = parseInt(document.getElementById('ms-to-year')    ? document.getElementById('ms-to-year').value    : new Date().getFullYear());
+    const result = [];
+    let y = fromY, m = fromM, iter = 0;
+    while ((y < toY || (y === toY && m <= toM)) && iter++ < 120) {
+        result.push(y + '-' + String(m + 1).padStart(2, '0'));
+        m++; if (m > 11) { m = 0; y++; }
+    }
+    return result;
+}
+
+
+updateMultiMonthTotal() {
+    const selected = this._getSelectedMonths();
+    const count    = selected.length;
+    const amtEl    = document.getElementById('amount-per-month');
+    const amountPerMonth = parseFloat(amtEl ? amtEl.value : 0) || 0;
+    const total    = count * amountPerMonth;
+    const MSHORT   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    const countEl = document.getElementById('months-selected-count');
+    if (countEl) countEl.textContent = count;
+
+    const totalEl = document.getElementById('multi-month-total');
+    if (totalEl) totalEl.textContent = '$' + total.toFixed(2);
+
+    const tagsEl = document.getElementById('ms-month-tags');
+    if (tagsEl) {
+        tagsEl.innerHTML = selected.map(function(key) {
+            const parts = key.split('-');
+            return '<span style="background:#4a6fa5;color:#fff;border-radius:4px;padding:2px 7px;font-size:.74rem;">'
+                 + MSHORT[parseInt(parts[1]) - 1] + ' ' + parts[0] + '</span>';
+        }).join('');
+    }
+
+    const amountField = document.getElementById('transaction-amount');
+    if (amountField && count > 0) amountField.value = total.toFixed(2);
+
     this.updateMultiMonthDescription();
 }
 
-// Auto-generate description for multi-month payments
+
 updateMultiMonthDescription() {
-    const checkboxes = Array.from(document.querySelectorAll('.month-checkbox:checked'));
-    const descriptionSelect = document.getElementById('transaction-description');
-    const customDescInput = document.getElementById('custom-description');
-    
-    if (checkboxes.length === 0) return;
-    
-    // Sort months chronologically
-    const selectedMonths = checkboxes
-        .map(cb => cb.value)
-        .sort();
-    
-    let description = '';
-    if (selectedMonths.length === 1) {
-        // Single month
-        const date = new Date(selectedMonths[0] + '-01');
-        description = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    var selected = this._getSelectedMonths();
+    if (selected.length === 0) return;
+    var MSHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var description = '';
+
+    if (selected.length === 1) {
+        var p = selected[0].split('-');
+        description = MSHORT[parseInt(p[1]) - 1] + ' ' + p[0];
     } else {
-        // Multiple months
-        const firstDate = new Date(selectedMonths[0] + '-01');
-        const lastDate = new Date(selectedMonths[selectedMonths.length - 1] + '-01');
-        description = `${firstDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - ${lastDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} (${selectedMonths.length} months)`;
-    }
-    
-    // Set description
-    if (descriptionSelect) {
-        descriptionSelect.value = 'custom';
-        const customDescContainer = document.getElementById('custom-description-input');
-        if (customDescContainer) {
-            customDescContainer.style.display = 'block';
+        // Detect if months are consecutive
+        var isConsecutive = true;
+        for (var k = 1; k < selected.length; k++) {
+            var prev = selected[k - 1].split('-');
+            var curr = selected[k].split('-');
+            var prevDate = new Date(parseInt(prev[0]), parseInt(prev[1]) - 1, 1);
+            prevDate.setMonth(prevDate.getMonth() + 1);
+            if (prevDate.getFullYear() !== parseInt(curr[0]) ||
+                prevDate.getMonth()    !== parseInt(curr[1]) - 1) {
+                isConsecutive = false;
+                break;
+            }
+        }
+
+        if (isConsecutive) {
+            // Compact range: Apr 2024 – Oct 2024 (7 months)
+            var fp = selected[0].split('-');
+            var lp = selected[selected.length - 1].split('-');
+            description = MSHORT[parseInt(fp[1]) - 1] + ' ' + fp[0]
+                        + ' – ' + MSHORT[parseInt(lp[1]) - 1] + ' ' + lp[0]
+                        + ' (' + selected.length + ' month' + (selected.length > 1 ? 's' : '') + ')';
+        } else {
+            // Non-consecutive: list every month
+            description = selected.map(function(key) {
+                var p = key.split('-');
+                return MSHORT[parseInt(p[1]) - 1] + ' ' + p[0];
+            }).join(', ');
         }
     }
-    if (customDescInput) {
-        customDescInput.value = description;
-    }
+
+    var descSel = document.getElementById('transaction-description');
+    if (descSel) descSel.value = 'custom';
+    var customContainer = document.getElementById('custom-description-input');
+    if (customContainer) customContainer.style.display = 'block';
+    var customInput = document.getElementById('custom-description');
+    if (customInput) customInput.value = description;
 }
+
+
+// ── END month selector ────────────────────────────────────────────────────────
 
 // Member Contributions Functions
 showAddContributionForm() {
@@ -1464,7 +1611,7 @@ showAddContributionForm() {
     }
     
     // Show modal
-    document.getElementById('contribution-modal').style.display = 'block';
+    document.getElementById('contribution-modal').style.display = 'flex';
     
     console.log('✅ Contribution form opened and initialized');
 }
@@ -1571,7 +1718,14 @@ async addContribution() {
         description: document.getElementById('contribution-description').value,
         quantity: parseInt(document.getElementById('contribution-quantity').value) || 1,
         value: parseFloat(document.getElementById('contribution-value').value),
-        date: document.getElementById('contribution-date').value,
+        date: (function() {
+            var raw = document.getElementById('contribution-date').value;
+            if (!raw) return new Date().toISOString();
+            // Convert DD/MM/YYYY to ISO
+            var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(raw);
+            if (m) return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1])).toISOString();
+            return new Date(raw).toISOString();
+        })(),
         notes: document.getElementById('contribution-notes').value,
         issueReceipt: document.getElementById('issue-receipt').checked
     };
@@ -1620,7 +1774,7 @@ async loadContributions() {
         this.displayContributions(contributions);
     } catch (error) {
         console.error('Error loading contributions:', error);
-        document.getElementById('contributions-list').innerHTML = '<tr><td colspan="8">Error loading contributions</td></tr>';
+        const _cl = document.getElementById('contributions-list'); if (_cl) _cl.innerHTML = '<tr><td colspan="8">Error loading contributions</td></tr>';
     }
 }
 
@@ -2138,12 +2292,17 @@ async addTransaction() {
     console.log('🔒 Set isSubmitting to true (Call ID:', callId, ')');
 
     // Disable the submit button to prevent multiple clicks
-    const submitBtn = document.querySelector('#transaction-form button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting...';
+    const submitBtn = document.querySelector('#transaction-form button[type="submit"]') ||
+                       document.getElementById('txn-btn-save');
+    const originalText = submitBtn ? submitBtn.textContent : '';
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting...'; }
 
     const form = document.getElementById('transaction-form');
+    if (!form) {
+        console.error('❌ transaction-form not found in DOM');
+        this.isSubmitting = false;
+        return;
+    }
 
     // ✅ BETTER DEBUGGING: Check all dataset properties
     console.log('🔍 BEFORE CHECKING - Form dataset:', {
@@ -2209,7 +2368,7 @@ async addTransaction() {
     const validCategories = [
         // Income categories
         'tithe', 'offering', 'donation', 'pledge', 'building', 'missions', 
-        'youth_activity', 'cultural_events', 'fundraising', 'special_donations', 
+        'youth_activity', 'cultural_events', 'fundraising', 'food_sale', 'special_donations', 
         'membership', 'other',
         
         // Expense categories  
@@ -2225,8 +2384,7 @@ async addTransaction() {
         console.warn('⚠️ Invalid category detected:', formData.category);
         this.showError(`Invalid category: ${formData.category}. Please select a valid category.`);
         this.isSubmitting = false;
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalText || 'Save Transaction'; }
         return;
     }
 
@@ -2241,7 +2399,7 @@ async addTransaction() {
         alert('Please select or enter a payee/recipient name');
         this.isSubmitting = false;
         // Re-enable the submit button
-        const submitBtn = document.querySelector('#transaction-form button[type="submit"]');
+        const submitBtn = document.querySelector('#transaction-form button[type="submit"]') || document.getElementById('txn-btn-save');
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.textContent = submitBtn.classList.contains('btn-warning') ? 'Update Transaction' : 'Add Transaction';
@@ -3266,7 +3424,7 @@ showAddPromiseForm() {
     tomorrow.setDate(tomorrow.getDate() + 1); // Default to tomorrow
     const formattedDate = `${tomorrow.getDate().toString().padStart(2, '0')}/${(tomorrow.getMonth() + 1).toString().padStart(2, '0')}/${tomorrow.getFullYear()}`;
     document.getElementById('promise-due-date').value = formattedDate;
-    document.getElementById('promise-modal').style.display = 'block';
+    document.getElementById('promise-modal').style.display = 'flex';
     this.setFormToAddMode();
 }
 
@@ -3391,7 +3549,7 @@ async editPromise(promiseId) {
         // Change modal to edit mode
         this.setFormToEditMode(promise._id);
 
-        document.getElementById('promise-modal').style.display = 'block';
+        document.getElementById('promise-modal').style.display = 'flex';
         
     } catch (error) {
         console.error('Error loading promise for edit:', error);
@@ -3469,7 +3627,7 @@ showFulfillPromiseModal(promiseId) {
         ${promise.description ? `<p><strong>Description:</strong> ${promise.description}</p>` : ''}
     `;
 
-    document.getElementById('fulfill-modal').style.display = 'block';
+    document.getElementById('fulfill-modal').style.display = 'flex';
 }
 
 closeFulfillModal() {
@@ -4050,7 +4208,7 @@ async openSignatureModal(transactionId) {
         this.setDefaultSignatureTitle();
         
         // Show modal
-        document.getElementById('signature-modal').style.display = 'block';
+        document.getElementById('signature-modal').style.display = 'flex';
         
     } catch (error) {
         console.error('Error opening signature modal:', error);
@@ -4590,3 +4748,138 @@ window.switchAccountingTab = function(tabName) {
         }
     }
 };
+
+
+// ── TxnWizard: multi-step transaction modal controller ────────────────────────
+window.TxnWizard = (function () {
+    var _step = 1;
+    var STEPS = 3;
+
+    function _el(id) { return document.getElementById(id); }
+
+    function _setStep(n) {
+        for (var i = 1; i <= STEPS; i++) {
+            var ind   = _el('txn-ind-' + i);
+            var panel = _el('txn-panel-' + i);
+            if (panel) panel.style.display = (i === n) ? '' : 'none';
+            if (ind) {
+                ind.className = 'txn-step' + (i < n ? ' done' : i === n ? ' active' : '');
+            }
+        }
+        var back = _el('txn-btn-back');
+        var next = _el('txn-btn-next');
+        var save = _el('txn-btn-save');
+        if (back) back.style.display = n > 1 ? '' : 'none';
+        if (next) next.style.display = n < STEPS ? '' : 'none';
+        if (save) save.style.display = n === STEPS ? '' : 'none';
+        _step = n;
+    }
+
+    function _val(id) {
+        var e = _el(id);
+        return e ? e.value.trim() : '';
+    }
+
+    function _selectedText(id) {
+        var e = _el(id);
+        if (!e) return '';
+        if (e.tagName === 'SELECT') {
+            return e.options[e.selectedIndex] ? e.options[e.selectedIndex].text : '';
+        }
+        return e.value.trim();
+    }
+
+    function _populateReview() {
+        var type    = _val('transaction-type');
+        var payee   = _val('payee-search');
+        var cat     = _selectedText('transaction-category');
+        var desc    = _selectedText('transaction-description');
+        var customD = _val('custom-description');
+        var amount  = _val('transaction-amount');
+        var method  = _selectedText('payment-method');
+        var ref     = _val('transaction-reference');
+        var notes   = _val('transaction-note');
+
+        function set(id, v) { var e = _el(id); if (e) e.textContent = v || '—'; }
+        set('rev-type',        type.charAt(0).toUpperCase() + type.slice(1));
+        set('rev-payee',       payee);
+        set('rev-category',    cat);
+        set('rev-description', customD || desc);
+        set('rev-amount',      amount ? '$' + parseFloat(amount).toFixed(2) : '—');
+        set('rev-method',      method);
+        set('rev-reference',   ref);
+        set('rev-notes',       notes);
+    }
+
+    return {
+        open: function () {
+            var modal = _el('transaction-modal');
+            if (modal) modal.style.display = 'flex';
+            _setStep(1);
+        },
+        close: function () {
+            var modal = _el('transaction-modal');
+            if (modal) modal.style.display = 'none';
+            if (window.accountingPage && typeof window.accountingPage.closeModal === 'function') {
+                window.accountingPage.closeModal();
+            }
+        },
+        next: function () {
+            if (_step === 1) {
+                var payee = _val('payee-search');
+                if (!payee) { alert('Please enter a payee / recipient.'); return; }
+            }
+            if (_step === 2) {
+                var cat    = _val('transaction-category');
+                var amount = _val('transaction-amount');
+                if (!cat)                        { alert('Please select a category.'); return; }
+                if (!amount || parseFloat(amount) <= 0) { alert('Please enter a valid amount.'); return; }
+                // If description is still empty, auto-set it to the category label
+                var descSel = _el('transaction-description');
+                if (descSel && descSel.value === '') {
+                    var catSel = _el('transaction-category');
+                    var catLabel = catSel && catSel.options[catSel.selectedIndex]
+                                   ? catSel.options[catSel.selectedIndex].text : cat;
+                    // Set custom description to category label
+                    descSel.value = 'custom';
+                    var customContainer = _el('custom-description-input');
+                    if (customContainer) customContainer.style.display = 'block';
+                    var customInput = _el('custom-description');
+                    if (customInput && !customInput.value.trim()) customInput.value = catLabel;
+                }
+                _populateReview();
+            }
+            if (_step < STEPS) _setStep(_step + 1);
+        },
+        prev: function () {
+            if (_step > 1) _setStep(_step - 1);
+        },
+        submit: function () {
+            var form = _el('transaction-form');
+            if (form) form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        }
+    };
+})();
+
+// Patch showAddTransactionForm to open wizard centered
+(function patchWhenReady() {
+    if (window.accountingPage && typeof window.accountingPage.showAddTransactionForm === 'function') {
+        var _origShow  = window.accountingPage.showAddTransactionForm.bind(window.accountingPage);
+        var _origClose = window.accountingPage.closeModal.bind(window.accountingPage);
+
+        window.accountingPage.showAddTransactionForm = function () {
+            _origShow();
+            var modal = document.getElementById('transaction-modal');
+            if (modal) modal.style.display = 'flex';
+            window.TxnWizard.open();
+        };
+
+        window.accountingPage.closeModal = function () {
+            var modal = document.getElementById('transaction-modal');
+            if (modal) modal.style.display = 'none';
+            _origClose();
+        };
+    } else {
+        setTimeout(patchWhenReady, 50);
+    }
+})();

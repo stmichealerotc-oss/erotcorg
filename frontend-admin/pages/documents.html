@@ -4,6 +4,62 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Document Registry</title>
+  <style>
+    .doc-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .doc-modal-overlay.active { display: flex; }
+    .doc-modal-box {
+      background: #fff;
+      width: 100%;
+      max-width: 580px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,.25);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .doc-modal-header {
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .doc-modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+    .doc-modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      background: #fafafa;
+    }
+    .step-indicator {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      font-size: .78rem;
+      color: #888;
+    }
+    .step-dot {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .72rem;
+      font-weight: 700;
+    }
+  </style>
 </head>
 <body>
 
@@ -24,7 +80,7 @@
     <input id="doc-search" type="text" placeholder="Search title, file no, from/to…"
       style="flex:1;min-width:180px;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem;"
       oninput="Documents.debounceLoad()" />
-<select id="doc-filter-category" onchange="Documents.load()"
+    <select id="doc-filter-category" onchange="Documents.load()"
       style="padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:.85rem;">
       <option value="">All Categories</option>
       <option value="outgoing-letter">📤 Outgoing Letter</option>
@@ -94,7 +150,7 @@
             <option value="report">Report</option>
             <option value="legal">Legal</option>
             <option value="resolution">Resolution</option>
-      <option value="other">Other</option>
+            <option value="other">Other</option>
           </select>
         </div>
 
@@ -112,7 +168,6 @@
           <input id="doc-date" type="date" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;" />
         </div>
 
-        <!-- FIX 1: Status field in edit modal -->
         <div>
           <label style="font-size:.82rem;font-weight:600;color:#555;">Status</label>
           <select id="doc-status" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;">
@@ -147,7 +202,6 @@
             style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;box-sizing:border-box;resize:vertical;"></textarea>
         </div>
 
-        <!-- FIX 2: Attached files list (shown in edit mode) -->
         <div id="doc-files-section" style="grid-column:1/-1;display:none;">
           <label style="font-size:.82rem;font-weight:600;color:#555;">Attached Files</label>
           <div id="doc-files-list" style="margin-top:6px;border:1px solid #eee;border-radius:6px;overflow:hidden;"></div>
@@ -188,7 +242,6 @@
         </select>
       </div>
 
-      <!-- FIX 3: Multiple file upload (up to 5) -->
       <div style="margin-bottom:12px;">
         <label style="font-size:.82rem;font-weight:600;color:#555;">
           Files <span style="font-weight:400;color:#888;">(PDF, Word, JPG, PNG — max 20MB each, up to 5 files)</span>
@@ -218,9 +271,6 @@
   </div>
 </div>
 
-</body>
-</html>
-
 <!-- ── SEND TO SIGN MODAL ──────────────────────────────────────────────── -->
 <div id="sign-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1001;overflow-y:auto;">
   <div style="background:#fff;max-width:500px;margin:60px auto;border-radius:10px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.2);">
@@ -243,11 +293,9 @@
         <label style="font-size:.82rem;font-weight:600;color:#555;">Signing Order</label>
         <select id="sign-order" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;margin-top:4px;font-size:.82rem;">
           <option value="sequential">Sequential — sign one after another</option>
-      <p style="font-size:.82rem;color:#666;margin:0 0 14px;">
-        The <strong>final</strong> file will be sent to
-        <a href="https://sign.erotc.org" target="_blank" style="color:#8e44ad;">DocuSeal</a>
-        for electronic signing. Signers receive an email with a signing link.
-      </p>
+          <option value="parallel">Parallel — all sign at the same time</option>
+        </select>
+      </div>
 
       <!-- Template ID (optional) -->
       <div style="margin-bottom:14px;padding:10px 12px;background:#f5eef8;border-radius:6px;border:1px solid #d7bde2;">
@@ -260,7 +308,9 @@
         <p style="font-size:.75rem;color:#888;margin:4px 0 0;">
           Get the ID from <a href="https://sign.erotc.org" target="_blank" style="color:#8e44ad;">sign.erotc.org</a> → Templates → open template → copy ID from URL
         </p>
-      </div> Signers list -->
+      </div>
+
+      <!-- Signers list -->
       <div style="margin-bottom:10px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <label style="font-size:.82rem;font-weight:600;color:#555;">Signers</label>
@@ -284,3 +334,6 @@
     </div>
   </div>
 </div>
+
+</body>
+</html>

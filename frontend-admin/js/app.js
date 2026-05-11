@@ -98,7 +98,8 @@ isValidPage(page) {
         'reports': 'generatereport',
         'taskmanagement': 'taskmanagement',
         'userManagement': 'user-management',
-        'financailreo2018-2025' : 'financailreo2018-2025'
+        'financailreo2018-2025' : 'financailreo2018-2025',
+        'certificates': 'certificates'
     };
 
     // Get the actual file name from mapping

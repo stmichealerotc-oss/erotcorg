@@ -470,7 +470,9 @@ class AuthSystem {
                 'inventory': ['super-admin', 'admin', 'accountant', 'holder-of-goods', 'visitor'],
                 'reports': ['super-admin', 'admin', 'chairperson', 'secretary', 'accountant', 'visitor'],
                 'taskmanagement': ['super-admin', 'admin', 'chairperson', 'secretary', 'community-coordinator', 'member', 'visitor'],
-                'user-management': ['super-admin'] // Only super-admin can access user management
+                'user-management': ['super-admin'],
+                'documents': ['super-admin', 'admin', 'chairperson', 'secretary', 'community-coordinator'],
+                'certificates': ['super-admin', 'admin', 'chairperson', 'secretary', 'community-coordinator']
             };
 
             Object.entries(navItems).forEach(([page, allowedRoles]) => {

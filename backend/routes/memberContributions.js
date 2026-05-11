@@ -7,6 +7,36 @@ const Transaction = require('../models/Transaction');
 const InventoryItem = require('../models/InventoryItem');
 const { authenticateToken, committeeOnly } = require('../middleware/auth');
 
+// Parse DD/MM/YYYY or MM/DD/YYYY or ISO date strings safely
+function parseDateInput(val) {
+  if (!val) return new Date();
+
+  // DD/MM/YYYY — day > 12 is unambiguous proof it's day-first
+  const slashParts = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(val);
+  if (slashParts) {
+    const a = parseInt(slashParts[1]);
+    const b = parseInt(slashParts[2]);
+    const y = parseInt(slashParts[3]);
+    // If first part > 12 it must be DD/MM/YYYY
+    // If second part > 12 it must be MM/DD/YYYY
+    // Otherwise assume DD/MM/YYYY (matches the mobile-date-input format used in the app)
+    let day, month;
+    if (a > 12) {
+      day = a; month = b; // DD/MM/YYYY
+    } else if (b > 12) {
+      day = b; month = a; // MM/DD/YYYY
+    } else {
+      day = a; month = b; // default: DD/MM/YYYY
+    }
+    const d = new Date(y, month - 1, day);
+    return isNaN(d) ? new Date() : d;
+  }
+
+  // Fallback: ISO or other formats
+  const d = new Date(val);
+  return isNaN(d) ? new Date() : d;
+}
+
 // Apply authentication to all routes
 router.use(authenticateToken);
 router.use(committeeOnly);
@@ -160,7 +190,7 @@ router.post('/', async (req, res) => {
       description,
       quantity,
       value,
-      date: date ? new Date(date) : new Date(),
+      date: date ? parseDateInput(date) : new Date(),
       notes
     });
 
