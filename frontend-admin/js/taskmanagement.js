@@ -18,9 +18,14 @@
             this.init();
         }
 
+        // Sentinel element only present while task management page is in DOM
+        get _pageRoot() { return document.getElementById('taskTableBody'); }
+
         async init() {
             console.log("🧪 Simple Task Management loaded at", new Date().toISOString());
             await this.loadTasks();
+            if (!this._pageRoot) return; // navigated away during load
+            
             this.setupEventListeners();
             this.renderTable();
         }

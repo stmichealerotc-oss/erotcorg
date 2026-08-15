@@ -72,12 +72,16 @@ const Documents = (() => {
     if (year)     params.set('year', year);
 
     const tbody = document.getElementById('doc-table-body');
+    if (!tbody) return;
     tbody.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:#999;"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>';
 
     try {
       const res  = await fetch(`${API}/api/documents?${params}`, { headers: authHeaders() });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
+
+      // Re-check DOM is still present after async fetch
+      if (!document.getElementById('doc-table-body')) return;
 
       if (data.data.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:#999;">No documents found</td></tr>';
@@ -527,6 +531,12 @@ const Documents = (() => {
         })
       });
       const data = await res.json();
+      if (res.status === 401) {
+        errEl.textContent = 'Session expired. Please log in again.';
+        errEl.style.display = 'block';
+        setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+        return;
+      }
       if (!data.success) throw new Error(data.error);
 
       const signerSummary = signers.map((s, i) =>
@@ -576,6 +586,11 @@ if (document.readyState === 'loading') {
 } else {
   Documents.init();
 }
+
+// Called by app.js after injecting the page HTML
+window.loadDocuments = function () {
+  Documents.init();
+};
 
 // Close dropdowns when clicking outside
 document.addEventListener('click', e => {

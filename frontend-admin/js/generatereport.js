@@ -1,4 +1,4 @@
-console.log("?? generatereport.js loaded at", new Date().toISOString());
+﻿console.log("?? generatereport.js loaded at", new Date().toISOString());
 
 (function () {
 
@@ -67,9 +67,14 @@ class ReportsPage {
         }
     }
 
+    // Sentinel element only present while reports page is in DOM
+    get _pageRoot() { return document.getElementById('all-reports') || document.getElementById('report-content'); }
+
     async init() {
         console.log('?? ReportsPage.init() called');
         await this.loadAllReports();
+        if (!this._pageRoot) return; // navigated away during load
+        
         this.setupEventListeners();
         console.log('Reports page initialized');
     }
@@ -557,8 +562,17 @@ class ReportsPage {
         console.log('Rendering report:', report);
         console.log('?? Contribution breakdown data:', report.contributionBreakdown);
 
+        // Safe DOM write helper — guards against null elements
+        const setHTML = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+        const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+        const setStyle = (id, prop, val) => { const el = document.getElementById(id); if (el) el.style[prop] = val; };
+
+        // Early check that report container exists — if not, page was torn down
+        const reportContent = document.getElementById('report-content');
+        if (!reportContent) return;
+        
         // Show report container
-        document.getElementById('report-content').style.display = 'block';
+        setStyle('report-content', 'display', 'block');
 
         // Enhanced report title with Australian FY format
         let reportTitle = `${(report.type || 'UNKNOWN').toUpperCase()} Financial Report`;
@@ -597,11 +611,11 @@ class ReportsPage {
             reportTitle += ` - ${report.period}`;
             periodDisplay = `Period: ${report.dateRange || report.period}`;
         } else {
-            reportTitle += ` - Generated ${new Date().toLocaleDateString()}`;
+            reportTitle += ` - Generated ${new Date().toLocaleDateString('en-AU')}`;
             periodDisplay = `Period: ${report.dateRange || 'Custom period'}`;
         }
         
-        document.getElementById('report-title').innerHTML = `
+        setHTML('report-title', `
             <div class="church-header">
                 <h2 style="margin: 0; color: #1976d2; font-size: 18px; font-weight: bold;">ST. MICHAEL ERITREAN ORTHODOX TEWAHEDO CHURCH</h2>
                 <p style="margin: 5px 0; color: #666; font-size: 14px;">Perth, Western Australia</p>
@@ -609,40 +623,37 @@ class ReportsPage {
                 <hr style="margin: 15px 0; border: 1px solid #ddd;">
             </div>
             ${reportTitle}
-        `;
-        document.getElementById('report-period-display').textContent = periodDisplay;
+        `);
+        setText('report-period-display', periodDisplay);
 
         // Render income categories with cash/non-cash breakdown
         this.renderIncomeWithBreakdown('income-categories', report.incomeByCategory || [], report.contributionBreakdown);
-        document.getElementById('total-income').innerHTML = 
-            `<strong>$${(report.totalIncome || 0).toFixed(2)}</strong>`;
+        setHTML('total-income', `<strong>$${(report.totalIncome || 0).toFixed(2)}</strong>`);
 
         // Render expense categories
         this.renderCategoryTable('expense-categories', report.expensesByCategory || []);
-        document.getElementById('total-expenses').innerHTML = 
-            `<strong>$${(report.totalExpenses || 0).toFixed(2)}</strong>`;
+        setHTML('total-expenses', `<strong>$${(report.totalExpenses || 0).toFixed(2)}</strong>`);
 
         // Update summary - CASH ONLY for financial calculations
-        document.getElementById('new-total-income').textContent = `$${(report.totalIncome || 0).toFixed(2)}`;
-        document.getElementById('new-total-expenses').textContent = `$${(report.totalExpenses || 0).toFixed(2)}`;
-        document.getElementById('new-total-balance').textContent = `$${(report.netBalance || 0).toFixed(2)}`;
+        setText('new-total-income', `$${(report.totalIncome || 0).toFixed(2)}`);
+        setText('new-total-expenses', `$${(report.totalExpenses || 0).toFixed(2)}`);
+        setText('new-total-balance', `$${(report.netBalance || 0).toFixed(2)}`);
 
         // Update cash flow - CASH ONLY
         const cashFlow = report.cashFlow || {};
-        document.getElementById('previous-balance').textContent = `$${(cashFlow.previousBalance || 0).toFixed(2)}`;
-        document.getElementById('report-income').textContent = `+$${(report.totalIncome || 0).toFixed(2)}`;
-        document.getElementById('report-expenses').textContent = `-$${(report.totalExpenses || 0).toFixed(2)}`;
-        document.getElementById('current-balance').innerHTML = 
-            `<strong>$${(cashFlow.currentBalance || cashFlow.cashAssets || 0).toFixed(2)}</strong>`;
+        setText('previous-balance', `$${(cashFlow.previousBalance || 0).toFixed(2)}`);
+        setText('report-income', `+$${(report.totalIncome || 0).toFixed(2)}`);
+        setText('report-expenses', `-$${(report.totalExpenses || 0).toFixed(2)}`);
+        setHTML('current-balance', `<strong>$${(cashFlow.currentBalance || cashFlow.cashAssets || 0).toFixed(2)}</strong>`);
 
         // Calculate and display assets - Separate cash and inventory
         const cashAssets = cashFlow.cashAssets || cashFlow.currentBalance || 0;
         const inventoryAssets = cashFlow.inventoryAssets || 0;
         const totalAssets = cashFlow.totalAssets || (cashAssets + inventoryAssets); const finalTotalAssets = totalAssets || cashFlow.currentBalance || 0;
         
-        document.getElementById('previous-asset').textContent = `$${(report.previousAsset || 0).toFixed(2)}`;
-        document.getElementById('current-period-net').textContent = `${(report.netBalance || 0) >= 0 ? '+' : ''}$${(report.netBalance || 0).toFixed(2)}`;
-        document.getElementById('total-asset-end').innerHTML = `<strong>$${finalTotalAssets.toFixed(2)}</strong>`;
+        setText('previous-asset', `$${(report.previousAsset || 0).toFixed(2)}`);
+        setText('current-period-net', `${(report.netBalance || 0) >= 0 ? '+' : ''}$${(report.netBalance || 0).toFixed(2)}`);
+        setHTML('total-asset-end', `<strong>$${finalTotalAssets.toFixed(2)}</strong>`);
         
         // Add breakdown display if elements exist
         const cashAssetsEl = document.getElementById('cash-assets');
@@ -733,7 +744,7 @@ class ReportsPage {
             const dateRange = this.getAustralianFYDateRange(fyYear);
             periodDisplay = `Period: ${dateRange.start} to ${dateRange.end}`;
         } else {
-            reportTitle += ` - Generated ${new Date().toLocaleDateString()}`;
+            reportTitle += ` - Generated ${new Date().toLocaleDateString('en-AU')}`;
             periodDisplay = `Period: ${report.dateRange || 'Custom period'}`;
         }
 

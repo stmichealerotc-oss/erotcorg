@@ -7,14 +7,20 @@ class UserManagement {
         this.init();
     }
 
+    // Sentinel element only present while user management page is in DOM
+    get _pageRoot() { return document.getElementById('users-table-body'); }
+
     async init() {
         console.log('🔧 UserManagement initializing...');
         
         // Wait for DOM to be fully ready with multiple checks
         await this.waitForDOM();
+        if (!this._pageRoot) return; // navigated away during waitForDOM
         
         this.setupEventListeners();
         await this.loadUsers();
+        if (!this._pageRoot) return; // navigated away during loadUsers
+        
         this.updateStats();
         
         console.log('✅ UserManagement initialization complete');
@@ -276,11 +282,11 @@ class UserManagement {
             return acc;
         }, {});
 
-        document.getElementById('total-users').textContent = this.stats.total;
-        document.getElementById('active-users').textContent = statusStats.active || 0;
-        document.getElementById('pending-users').textContent = statusStats.pending || 0;
-        document.getElementById('admin-users').textContent = 
-            (roleStats['super-admin'] || 0) + (roleStats.admin || 0);
+        const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        setEl('total-users', this.stats.total);
+        setEl('active-users', statusStats.active || 0);
+        setEl('pending-users', statusStats.pending || 0);
+        setEl('admin-users', (roleStats['super-admin'] || 0) + (roleStats.admin || 0));
     }
 
     showUserModal(userId = null) {

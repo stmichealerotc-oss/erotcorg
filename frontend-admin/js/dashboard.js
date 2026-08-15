@@ -3,8 +3,13 @@ class Dashboard {
         this.init();
     }
 
+    // Sentinel element only present while dashboard page is in DOM
+    get _pageRoot() { return document.getElementById('today-date'); }
+
     async init() {
         await this.loadDashboardData();
+        if (!this._pageRoot) return; // navigated away during load
+        
         this.setTodayDate();
     }
 
@@ -147,7 +152,7 @@ class Dashboard {
         
         tbody.innerHTML = transactions.map(transaction => `
             <tr>
-                <td>${new Date(transaction.date).toLocaleDateString()}</td>
+                <td>${new Date(transaction.date).toLocaleDateString('en-AU')}</td>
                 <td>${transaction.description}</td>
                 <td>$${transaction.amount.toLocaleString()}</td>
                 <td><span class="badge ${transaction.type === 'income' ? 'badge-success' : 'badge-danger'}">${transaction.type}</span></td>

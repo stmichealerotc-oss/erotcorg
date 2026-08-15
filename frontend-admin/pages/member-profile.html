@@ -801,8 +801,8 @@
                 </div>
                 
                 <div class="menu-item active" data-tab="todo" onclick="memberProfile.switchTab('todo')">
-                    <i class="fas fa-tasks"></i>
-                    <span>To-Do List</span>
+                    <i class="fas fa-money-check-alt"></i>
+                    <span>Payment Status</span>
                 </div>
                 <div class="menu-item" data-tab="personal" onclick="memberProfile.switchTab('personal')">
                     <i class="fas fa-user"></i>
@@ -823,7 +823,7 @@
         <div class="tab-content active" id="tab-todo">
             <div class="profile-section">
                 <h3>
-                    <i class="fas fa-hand-holding-usd"></i> Tithe Payment Status
+                    <i class="fas fa-hand-holding-usd"></i> Payment Status
                 </h3>
                 
                 <div class="tithe-status-card">
@@ -846,13 +846,17 @@
                             <span class="value" id="next-due-date">N/A</span>
                         </div>
                         <div class="detail-row" id="overdue-section" style="display: none;">
-                            <span class="label">Overdue Months:</span>
+                            <span class="label">Tithe Overdue Months:</span>
                             <span class="value text-danger" id="overdue-months"></span>
+                        </div>
+                        <div class="detail-row" id="advance-section" style="display: none;">
+                            <span class="label">Paid in Advance:</span>
+                            <span class="value text-info" id="advance-months" style="color:#0c5460;"></span>
                         </div>
                     </div>
                     
                     <div class="payment-history">
-                        <h4>Payment History (Last 6 Months)</h4>
+                        <h4>Tithe Payment History (Last 12 Months)</h4>
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -991,6 +995,7 @@
                         <option value="cash">Cash</option>
                         <option value="check">Check</option>
                         <option value="card">Card</option>
+                        <option value="tap">Mobile Tap</option>
                         <option value="online">Online</option>
                         <option value="transfer">Transfer</option>
                     </select>
@@ -1125,6 +1130,7 @@
                             <option value="cash">Cash</option>
                             <option value="check">Check</option>
                             <option value="card">Card</option>
+                            <option value="tap">Mobile Tap</option>
                             <option value="online">Online</option>
                             <option value="transfer">Transfer</option>
                         </select>
@@ -1164,7 +1170,7 @@
                 <!-- Common Fields -->
                 <div class="form-group">
                     <label for="contribution-category">Category *</label>
-                    <select id="contribution-category" required>
+                    <select id="contribution-category" required onchange="memberProfile.onCategoryChange()">
                         <option value="tithe">Tithe</option>
                         <option value="offering">Offering</option>
                         <option value="donation">Donation</option>
@@ -1178,6 +1184,29 @@
                         <option value="membership">Membership Fees</option>
                         <option value="other">Other</option>
                     </select>
+                </div>
+
+                <!-- Tithe month range — shown only when category = Tithe -->
+                <div id="tithe-month-range" style="display:none; background:#e8f4fd; padding:12px; border-radius:6px; margin-bottom:15px; border:1px solid #bee5fd;">
+                    <div style="margin-bottom:8px; font-weight:600; color:#0c5460;">
+                        <i class="fas fa-calendar-alt"></i> Months Covered by This Tithe Payment
+                    </div>
+                    <small style="color:#555; display:block; margin-bottom:10px;">
+                        If paying multiple months at once (e.g. Jan–Apr 2026), select the range below.
+                        Leave blank to record for the payment date's month only.
+                    </small>
+                    <div style="display:flex; gap:15px; flex-wrap:wrap; align-items:center;">
+                        <div>
+                            <label style="font-size:13px; font-weight:500;">From Month</label><br>
+                            <input type="month" id="tithe-month-from" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:14px;">
+                        </div>
+                        <div style="padding-top:18px; color:#555;">to</div>
+                        <div>
+                            <label style="font-size:13px; font-weight:500;">To Month</label><br>
+                            <input type="month" id="tithe-month-to" style="padding:6px 10px; border:1px solid #ccc; border-radius:4px; font-size:14px;">
+                        </div>
+                        <div id="tithe-months-preview" style="padding-top:18px; font-size:13px; color:#155724; font-weight:500;"></div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="contribution-description">Description *</label>
@@ -1239,6 +1268,45 @@
         } else {
             loadMemberProfile();
         }
+
+        // Live preview for tithe month range
+        function updateTithePreview() {
+            const fromVal = document.getElementById('tithe-month-from').value;
+            const toVal   = document.getElementById('tithe-month-to').value;
+            const preview = document.getElementById('tithe-months-preview');
+            if (!preview) return;
+
+            if (!fromVal || !toVal) { preview.textContent = ''; return; }
+
+            const [fy, fm] = fromVal.split('-').map(Number);
+            const [ty, tm] = toVal.split('-').map(Number);
+
+            if (fy > ty || (fy === ty && fm > tm)) {
+                preview.textContent = '⚠ "From" must be before "To"';
+                preview.style.color = '#dc3545';
+                return;
+            }
+
+            let count = 0;
+            let y = fy, m = fm;
+            while (y < ty || (y === ty && m <= tm)) {
+                count++;
+                m++; if (m > 12) { m = 1; y++; }
+                if (count > 24) break;
+            }
+
+            const fromLabel = new Date(fy, fm - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            const toLabel   = new Date(ty, tm - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            preview.textContent = count === 1 ? `✓ 1 month: ${fromLabel}` : `✓ ${count} months: ${fromLabel} – ${toLabel}`;
+            preview.style.color = '#155724';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const fromInput = document.getElementById('tithe-month-from');
+            const toInput   = document.getElementById('tithe-month-to');
+            if (fromInput) fromInput.addEventListener('change', updateTithePreview);
+            if (toInput)   toInput.addEventListener('change', updateTithePreview);
+        });
     </script>
 </body>
 </html>

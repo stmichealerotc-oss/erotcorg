@@ -120,6 +120,14 @@ class MainApp {
                     await import('./user-management.js');
                     break;
                     
+                case 'documents':
+                    await import('./documents.js');
+                    break;
+                    
+                case 'certificates':
+                    await import('./certificates.js');
+                    break;
+
                 case 'generatereport':
                     await import('./generatereport.js');
                     // Load Chart.js for report generation

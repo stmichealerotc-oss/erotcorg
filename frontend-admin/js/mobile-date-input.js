@@ -409,9 +409,10 @@ class MobileDateInput {
     }
 }
 
-// Auto-initialize for inputs with mobile-date class
+// Auto-initialize ONLY for inputs with .mobile-date class (NOT native type="date" inputs)
+// This prevents overriding native date pickers and breaking pre-set YYYY-MM-DD values
 document.addEventListener('DOMContentLoaded', function() {
-    const mobileDateInputs = document.querySelectorAll('input[type="date"], .mobile-date');
+    const mobileDateInputs = document.querySelectorAll('.mobile-date');
     mobileDateInputs.forEach(input => {
         // Don't initialize if already initialized
         if (!input.mobileDateInput) {

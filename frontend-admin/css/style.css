@@ -1171,16 +1171,25 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   display: inline-block;
+  white-space: nowrap;
 }
 
-.status-active {
+.status-active,
+.status-paid,
+.status-paid-in-advance {
   background-color: #d1fae5;
   color: #065f46;
 }
 
-.status-inactive {
+.status-inactive,
+.status-not-paid {
   background-color: #fee2e2;
   color: #991b1b;
+}
+
+.status-overdue {
+  background-color: #fef3c7;
+  color: #92400e;
 }
 
 /* ===== BUTTONS ===== */

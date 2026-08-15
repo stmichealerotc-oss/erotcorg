@@ -1,4 +1,4 @@
-// Enhanced members.js with profile integration
+﻿// Enhanced members.js with profile integration
 (function () {
 
 // API Configuration
@@ -73,13 +73,18 @@ class MembersPage {
         
         return dateStr;
     }
+        // A sentinel element that only exists while the members page is in the DOM
+        get _pageRoot() { return document.getElementById('members-table'); }
+
         async init() {
             await this.loadMembersData();
-            await this.loadPendingMembers(); // Load pending members
+            if (!this._pageRoot) return; // navigated away while loading
+            await this.loadPendingMembers();
+            if (!this._pageRoot) return;
             this.setupEventListeners();
             this.setupSearchListeners();
             this.setupVisitorRestrictions();
-            this.updateTabCounts(); // Update tab counts
+            this.updateTabCounts();
         }
 
         setupVisitorRestrictions() {
@@ -332,8 +337,11 @@ class MembersPage {
             
         } catch (error) {
             console.error('Error loading members data:', error);
-            // Fallback to demo data
-            this.renderDemoData();
+            // Show empty state on error
+            this.allMembers = [];
+            this.filteredMembers = [];
+            this.renderStats({ total: 0, active: 0, inactive: 0, totalContributions: 0 });
+            this.renderMembersTable([]);
         }
     }
 
@@ -348,9 +356,9 @@ class MembersPage {
         
         const totalContributions = member.totalContributions || 0;
         const joinDate = member.joinDate
-            ? new Date(member.joinDate).toLocaleDateString()
+            ? new Date(member.joinDate).toLocaleDateString('en-AU')
             : member.createdAt
-                ? new Date(member.createdAt).toLocaleDateString()
+                ? new Date(member.createdAt).toLocaleDateString('en-AU')
                 : 'N/A';
 
         return `
@@ -484,7 +492,12 @@ attachTableEventListeners() {
                 memberForm.reset();
                 console.log('🔄 Form reset completed');
             }
-            if (memberJoinDate) memberJoinDate.value = new Date().toISOString().split('T')[0];
+            if (memberJoinDate) {
+            const todayM = new Date();
+            memberJoinDate.value = String(todayM.getDate()).padStart(2,'0') + '/' +
+                                   String(todayM.getMonth()+1).padStart(2,'0') + '/' +
+                                   todayM.getFullYear();
+        }
             
             // AGGRESSIVE CLEARING: Clear the hidden member-id field to prevent duplicate ID errors
             this.setFormField('member-id', '');
@@ -1266,7 +1279,7 @@ isValidMember(member) {
 mapCSVRowToMember(headers, values) {
     const member = {
         status: 'active', // Default value
-        joinDate: new Date().toISOString().split('T')[0] // Default to today
+        joinDate: (function(){ var d=new Date(); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); })() // Default to today DD/MM/YYYY
     };
     
     headers.forEach((header, index) => {
@@ -1914,232 +1927,6 @@ Jane,Smith,jane.smith@example.com,555-0202,456 Oak Ave,1990-08-22,active,John Sm
     window.URL.revokeObjectURL(url);
 }
 
-// Quick lookup function for Member ID
-async quickLookup(memberId) {
-    try {
-        console.log(`🔍 Quick lookup for Member ID: ${memberId}`);
-        
-        const member = await API.get(`/members/search/${memberId}`);
-        
-        if (member.members && member.members.length > 0) {
-            const foundMember = member.members[0];
-            alert(`Member Found!\n\nID: ${foundMember.memberId}\nName: ${foundMember.firstName} ${foundMember.lastName}\nEmail: ${foundMember.email || 'N/A'}\nStatus: ${foundMember.status}\nTotal Contributions: ${foundMember.totalContributions?.toFixed(2) || '0.00'}`);
-        } else {
-            alert(`Member ID "${memberId}" not found.`);
-        }
-        
-    } catch (error) {
-        console.error('Error in quick lookup:', error);
-        alert(`Error looking up Member ID "${memberId}": ${error.message}`);
-    }
-}
-
-// Enhanced search functionality
-async searchMembers(query) {
-    try {
-        if (!query || query.trim().length < 1) {
-            // If empty query, reload all members
-            await this.loadMembersData();
-            return;
-        }
-        
-        console.log(`🔍 Searching members for: "${query}"`);
-        
-        const searchResult = await API.get(`/members/search/${encodeURIComponent(query.trim())}`);
-        
-        if (searchResult.members) {
-            this.renderMembersTable(searchResult.members);
-            
-            // Update search results info
-            const searchInfo = document.getElementById('search-results-info');
-            if (searchInfo) {
-                searchInfo.textContent = `Found ${searchResult.count} member(s) matching "${query}"`;
-                searchInfo.style.display = 'block';
-            }
-        }
-        
-    } catch (error) {
-        console.error('Error searching members:', error);
-        alert(`Search failed: ${error.message}`);
-    }
-}
-
-// Digital Member ID Card Functions
-async viewDigitalCard(memberId) {
-    // Close action menu immediately to prevent multiple clicks
-    document.querySelectorAll('.action-menu.show').forEach(menu => {
-        menu.classList.remove('show');
-    });
-    
-    try {
-        console.log(`🆔 Opening digital card for member: ${memberId}`);
-        
-        // Open digital card in new window using public route
-        const cardUrl = `${API_BASE_URL}/member-cards/public/${memberId}`;
-        const cardWindow = window.open(cardUrl, '_blank', 'width=500,height=700,scrollbars=yes,resizable=yes');
-        
-        if (!cardWindow) {
-            alert('Please allow popups to view the digital member card');
-        }
-        
-    } catch (error) {
-        console.error('Error opening digital card:', error);
-        alert(`Failed to open digital card: ${error.message}`);
-    }
-}
-
-async emailDigitalCard(memberId, buttonElement = null) {
-    // Close action menu immediately to prevent multiple clicks
-    document.querySelectorAll('.action-menu.show').forEach(menu => {
-        menu.classList.remove('show');
-    });
-    
-    try {
-        console.log(`📧 Emailing digital card for member: ${memberId}`);
-        
-        // Show loading state
-        if (buttonElement) {
-            buttonElement.disabled = true;
-            buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-        }
-        
-        const response = await API.post(`/member-cards/${memberId}/email`);
-        
-        if (response.success) {
-            alert(`Digital member card emailed successfully to ${response.email}`);
-        } else {
-            alert(`Failed to email digital card: ${response.message || 'Unknown error'}`);
-        }
-        
-    } catch (error) {
-        console.error('Error emailing digital card:', error);
-        alert(`Failed to email digital card: ${error.message}`);
-    } finally {
-        // Reset button state
-        if (buttonElement) {
-            buttonElement.disabled = false;
-            buttonElement.innerHTML = '<i class="fas fa-envelope"></i> Email Card';
-        }
-    }
-}
-
-// Bulk email all digital cards
-async bulkEmailDigitalCards() {
-    try {
-        console.log('📧 Starting bulk email of digital cards...');
-        
-        // Show confirmation dialog
-        const confirmed = confirm(`This will email digital member cards to all active members with email addresses. Continue?`);
-        if (!confirmed) return;
-        
-        // Show progress
-        const progressDiv = document.createElement('div');
-        progressDiv.innerHTML = `
-            <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                        background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000;">
-                <div style="text-align: center;">
-                    <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 10px;"></i>
-                    <div>Sending digital cards...</div>
-                    <div id="bulk-progress" style="margin-top: 10px; font-size: 14px; color: #666;"></div>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(progressDiv);
-        
-        const response = await API.post('/member-cards/bulk/email');
-        
-        document.body.removeChild(progressDiv);
-        
-        if (response.success) {
-            alert(`Bulk email completed!\n\nSent: ${response.sent}\nFailed: ${response.failed}\nTotal: ${response.total}`);
-        } else {
-            alert(`Bulk email failed: ${response.message || 'Unknown error'}`);
-        }
-        
-    } catch (error) {
-        console.error('Error in bulk email:', error);
-        alert(`Bulk email failed: ${error.message}`);
-        
-        // Remove progress dialog if it exists
-        const progressDiv = document.querySelector('[style*="position: fixed"]');
-        if (progressDiv) {
-            document.body.removeChild(progressDiv);
-        }
-    }
-}
-
-// Add search event listeners - moved inside class
-setupSearchListeners() {
-    console.log('🔍 Setting up search listeners...');
-    
-    const searchInput = document.getElementById('member-search');
-    const quickLookupBtns = document.querySelectorAll('.quick-lookup-btn');
-    
-    if (searchInput) {
-        // Real-time search as user types
-        searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.trim();
-            if (query.length >= 2) {
-                this.searchMembers(query);
-            } else if (query.length === 0) {
-                // Clear search and show all members
-                this.loadMembersData();
-                const searchInfo = document.getElementById('search-results-info');
-                if (searchInfo) {
-                    searchInfo.style.display = 'none';
-                }
-            }
-        });
-        
-        // Handle Enter key for search
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const query = e.target.value.trim();
-                if (query) {
-                    this.searchMembers(query);
-                }
-            }
-        });
-        
-        console.log('✅ Search input listeners attached');
-    }
-    
-    // Quick lookup buttons
-    quickLookupBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const memberId = e.target.dataset.memberId || e.target.closest('.quick-lookup-btn').dataset.memberId;
-            if (memberId) {
-                this.quickLookup(memberId);
-            }
-        });
-    });
-}
-
-showError(message) {
-    const errorDiv = document.getElementById('import-error');
-    if (errorDiv) {
-        errorDiv.textContent = message;
-        errorDiv.style.display = 'block';
-    }
-    this.showProgress(100, 'Import completed with errors');
-}
-
-downloadTemplate() {
-    const csvContent = 'First Name,Last Name,Email,Phone,Address,City,State,Postal Code,Status,Date of Birth,Membership Date,Notes\n' +
-                      'John,Doe,john.doe@email.com,555-0123,"123 Main St","Anytown","ST","12345","active","1990-01-15","2023-01-01","Sample member"\n' +
-                      'Jane,Smith,jane.smith@email.com,555-0124,"456 Oak Ave","Somewhere","ST","12346","active","1985-05-20","2023-02-15","Another sample"';
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'member_import_template.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-}
-
 // Modal control methods
 openImportModal() {
     const modal = document.getElementById('csv-import-modal');
@@ -2226,14 +2013,18 @@ closeImportModal() {
     }
 
     updateTabCounts() {
-        // Update member counts
-        const allCount = this.allMembers.filter(m => m.status !== 'pending').length; // Exclude pending from "All Members"
+        // Update member counts — guard against elements not being in DOM
+        const allCount = this.allMembers.filter(m => m.status !== 'pending').length;
         const activeCount = this.allMembers.filter(m => m.status === 'active').length;
         const pendingCount = this.pendingMembers ? this.pendingMembers.length : 0;
 
-        document.getElementById('all-count').textContent = allCount;
-        document.getElementById('active-count').textContent = activeCount;
-        document.getElementById('pending-count').textContent = pendingCount;
+        const allEl = document.getElementById('all-count');
+        const activeEl = document.getElementById('active-count');
+        const pendingEl = document.getElementById('pending-count');
+
+        if (allEl) allEl.textContent = allCount;
+        if (activeEl) activeEl.textContent = activeCount;
+        if (pendingEl) pendingEl.textContent = pendingCount;
     }
 
     renderPendingMembersTable() {
@@ -2279,7 +2070,7 @@ closeImportModal() {
                     <td>
                         <strong>${member.firstName} ${member.lastName || ''}</strong>
                         <div style="font-size: 0.8rem; color: #666;">
-                            Registered: ${new Date(member.createdAt).toLocaleDateString()}
+                            Registered: ${new Date(member.createdAt).toLocaleDateString('en-AU')}
                         </div>
                     </td>
                     <td>

@@ -6,9 +6,14 @@ class InventoryPage {
         this.init();
     }
 
+    // Sentinel element only present while inventory page is in DOM
+    get _pageRoot() { return document.getElementById('inventory-table'); }
+
     async init() {
         console.log('📦 Inventory module loaded');
         await this.loadInventoryData();
+        if (!this._pageRoot) return; // navigated away during load
+        
         this.setupEventListeners();
     }
 
