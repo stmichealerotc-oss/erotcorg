@@ -45,6 +45,7 @@ const memberContributionsRoutes = require('./routes/memberContributions');
 const userManagementRoutes = require('./routes/userManagement');
 const signaturesRoutes = require('./routes/signatures');
 const memberCardsRoutes = require('./routes/memberCards');
+const paymentRoutes = require('./routes/payments');
 
 // Initialize express
 const app = express();
@@ -386,6 +387,7 @@ app.use('/api/articles', articlesRoutes);
 app.use('/api/library', libraryRoutes); // Orthodox Library (public access)
 app.use('/api/orthodox-library', orthodoxLibraryRoutes); // Orthodox Library API (public + admin)
 app.use('/api/volunteers', volunteerProfileRoutes); // Volunteer profiles & registration
+app.use('/api/payments', paymentRoutes);
 app.use('/api/webhooks', webhookRoutes); // Webhooks (no auth — called by external services)
 
 // Public member routes (no auth) - must be mounted BEFORE the protected /api/members route

@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const Member = require('../models/Member');
 const { authenticateToken, committeeOnly } = require('../middleware/auth');
@@ -1194,7 +1194,7 @@ protectedRouter.post('/:id/email', async (req, res) => {
                         
                         <!-- Direct Link Button -->
                         <div style="text-align: center; margin: 25px 0;">
-                            <a href="${process.env.BACKEND_URL || 'https://church-management-vjfw.onrender.com'}/api/member-cards/public/${member._id}" 
+                            <a href="${process.env.BACKEND_URL || 'https://erotc.org'}/api/member-cards/public/${member._id}" 
                                style="display: inline-block; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(30, 60, 114, 0.3);">
                                 🔗 Open Card in Browser
                             </a>
@@ -1239,7 +1239,7 @@ protectedRouter.post('/:id/email', async (req, res) => {
                         <div style="margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #28a745; font-family: Arial, sans-serif;">
                             <h4 style="color: #155724; margin-top: 0; font-size: 14px; margin-bottom: 10px;">💡 Pro Tip:</h4>
                             <p style="color: #2d5a2d; margin: 0; font-size: 13px;">
-                                <strong>For best print quality:</strong> Visit <a href="${process.env.BACKEND_URL || 'https://church-management-vjfw.onrender.com'}/api/member-cards/public/${member._id}" style="color: #1e3c72; text-decoration: none; font-weight: bold;">your secure card link</a> in a web browser. 
+                                <strong>For best print quality:</strong> Visit <a href="${process.env.BACKEND_URL || 'https://erotc.org'}/api/member-cards/public/${member._id}" style="color: #1e3c72; text-decoration: none; font-weight: bold;">your secure card link</a> in a web browser. 
                                 You'll get dedicated Print and Save buttons with high-resolution download options!
                             </p>
                         </div>
@@ -1339,7 +1339,7 @@ protectedRouter.post('/bulk/email', async (req, res) => {
                             
                             <!-- Direct Link Button -->
                             <div style="text-align: center; margin: 25px 0;">
-                                <a href="${process.env.BACKEND_URL || 'https://church-management-vjfw.onrender.com'}/api/member-cards/public/${member._id}" 
+                                <a href="${process.env.BACKEND_URL || 'https://erotc.org'}/api/member-cards/public/${member._id}" 
                                    style="display: inline-block; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 12px rgba(30, 60, 114, 0.3);">
                                     🔗 Open Card in Browser
                                 </a>
@@ -1384,7 +1384,7 @@ protectedRouter.post('/bulk/email', async (req, res) => {
                             <div style="margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #28a745; font-family: Arial, sans-serif;">
                                 <h4 style="color: #155724; margin-top: 0; font-size: 14px; margin-bottom: 10px;">💡 Pro Tip:</h4>
                                 <p style="color: #2d5a2d; margin: 0; font-size: 13px;">
-                                    <strong>For best print quality:</strong> Visit <a href="${process.env.BACKEND_URL || 'https://church-management-vjfw.onrender.com'}/api/member-cards/public/${member._id}" style="color: #1e3c72; text-decoration: none; font-weight: bold;">your secure card link</a> in a web browser. 
+                                    <strong>For best print quality:</strong> Visit <a href="${process.env.BACKEND_URL || 'https://erotc.org'}/api/member-cards/public/${member._id}" style="color: #1e3c72; text-decoration: none; font-weight: bold;">your secure card link</a> in a web browser. 
                                     You'll get dedicated Print and Save buttons with high-resolution download options!
                                 </p>
                             </div>

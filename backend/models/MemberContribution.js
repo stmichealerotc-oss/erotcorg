@@ -120,6 +120,14 @@ const memberContributionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Promise',
     sparse: true
+  },
+
+  // MULTI-MONTH PAYMENT TRACKING (mirrors Transaction.monthsCovered)
+  // Array of months this single payment covers, format: "YYYY-MM"
+  // Example: ["2026-01","2026-02","2026-03","2026-04"] = paid Jan–Apr in one payment
+  monthsCovered: {
+    type: [String],
+    default: undefined // Optional — absent means the payment covers the date's month only
   }
   
 }, {

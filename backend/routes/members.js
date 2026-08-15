@@ -11,6 +11,44 @@ try {
 }
 const { authenticateToken, authorizeRoles, committeeOnly, readOnlyAccess, writeAccess } = require('../middleware/auth');
 
+function parseDateInput(val) {
+  if (!val) return null;
+
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    return val;
+  }
+
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (!trimmed) return null;
+
+    const isoMatch = /^\d{4}-\d{2}-\d{2}(?:T.*)?$/.exec(trimmed);
+    if (isoMatch) {
+      const d = new Date(trimmed);
+      if (!isNaN(d.getTime())) return d;
+    }
+
+    const dayFirstMatch = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/.exec(trimmed);
+    if (dayFirstMatch) {
+      const day = Number(dayFirstMatch[1]);
+      const month = Number(dayFirstMatch[2]);
+      const year = Number(dayFirstMatch[3]);
+
+      if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+        const d = new Date(year, month - 1, day);
+        if (!isNaN(d.getTime()) && d.getDate() === day && d.getMonth() === month - 1 && d.getFullYear() === year) {
+          return d;
+        }
+      }
+    }
+
+    const d = new Date(trimmed);
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  return null;
+}
+
 // Public registration endpoint (no authentication required)
 router.post('/register', async (req, res) => {
   try {
@@ -607,13 +645,15 @@ router.get('/:id/activity', readOnlyAccess, async (req, res) => {
       'payee.memberId': req.params.id
     };
     
-    // Add filters
+    // Add filters with explicit DD/MM/YYYY parsing to avoid ambiguous browser/date parsing issues
     if (dateFrom || dateTo) {
       query.date = {};
-      if (dateFrom) query.date.$gte = new Date(dateFrom);
-      if (dateTo) {
-        // End of the day for dateTo (23:59:59.999)
-        const endOfDay = new Date(dateTo);
+      const fromDateParsed = dateFrom ? parseDateInput(dateFrom) : null;
+      const toDateParsed = dateTo ? parseDateInput(dateTo) : null;
+
+      if (fromDateParsed) query.date.$gte = fromDateParsed;
+      if (toDateParsed) {
+        const endOfDay = new Date(toDateParsed);
         endOfDay.setHours(23, 59, 59, 999);
         query.date.$lte = endOfDay;
       }

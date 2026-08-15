@@ -1,17 +1,40 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const Transaction = require('../models/Transaction');
-const Member = require('../models/Member'); // ✅ ADD THIS LINE
+const Member = require('../models/Member'); // âœ… ADD THIS LINE
 let QRCodeGenerator;
 try {
   QRCodeGenerator = require('../utils/qrCodeGenerator');
 } catch (e) {
-  console.warn('⚠️ qrCodeGenerator not available:', e.message);
+  console.warn('âš ï¸ qrCodeGenerator not available:', e.message);
   QRCodeGenerator = null;
 }
 const moment = require('moment');
 const mongoose = require('mongoose');
 const { authenticateToken, authorizeRoles, adminOnly, readOnlyAccess, writeAccess } = require('../middleware/auth');
+
+function parseDateValue(value) {
+  if (!value) return null;
+
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    const slashMatch = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(trimmed);
+    if (slashMatch) {
+      const [, day, month, year] = slashMatch;
+      const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+
+    const parsed = new Date(trimmed);
+    if (!isNaN(parsed.getTime())) return parsed;
+  }
+
+  return null;
+}
 
 // Apply authentication to all accounting routes
 router.use(authenticateToken);
@@ -21,7 +44,7 @@ router.get('/', readOnlyAccess, async (req, res) => {
   try {
     // Development bypass - return mock data
     if (process.env.NODE_ENV === 'development' && process.env.BYPASS_AUTH === 'true') {
-      console.log('🔓 DEVELOPMENT: Returning mock accounting data');
+      console.log('ðŸ”“ DEVELOPMENT: Returning mock accounting data');
       return res.json({
         success: true,
         transactions: [],
@@ -48,13 +71,14 @@ router.get('/', readOnlyAccess, async (req, res) => {
     
     if (fromDate || toDate) {
       query.date = {};
-      if (fromDate) {
-        // Start of the day for fromDate
-        query.date.$gte = new Date(fromDate);
+      const fromDateParsed = parseDateValue(fromDate);
+      const toDateParsed = parseDateValue(toDate);
+
+      if (fromDateParsed) {
+        query.date.$gte = fromDateParsed;
       }
-      if (toDate) {
-        // End of the day for toDate (23:59:59.999)
-        const endOfDay = new Date(toDate);
+      if (toDateParsed) {
+        const endOfDay = new Date(toDateParsed);
         endOfDay.setHours(23, 59, 59, 999);
         query.date.$lte = endOfDay;
       }
@@ -70,7 +94,7 @@ router.get('/', readOnlyAccess, async (req, res) => {
       query.type = type;
     }
 
-    console.log('🔍 Fetching transactions with query:', query);
+    console.log('ðŸ” Fetching transactions with query:', query);
 
     // If summary is requested, return only summary data for bank statement
     if (summary === 'true') {
@@ -101,7 +125,7 @@ router.get('/', readOnlyAccess, async (req, res) => {
       .populate('payee.memberId', 'firstName lastName email phone')
       .sort({ _id: -1 }); // Sort by _id instead of dynamic fields
 
-    console.log(`✅ Found ${transactions.length} real transactions`);
+    console.log(`âœ… Found ${transactions.length} real transactions`);
 
     // Calculate monthly trend for the last 12 months or all available data
     const monthlyTrend = [];
@@ -168,7 +192,7 @@ router.get('/', readOnlyAccess, async (req, res) => {
       .filter(tx => tx.type === 'income')
       .reduce((sum, tx) => sum + tx.amount, 0);
 
-    // ✅ FIXED: Return structured object with all transaction data
+    // âœ… FIXED: Return structured object with all transaction data
     const responseData = {
       transactions,        // Array of transactions
       monthlyTrend,        // Array of monthly data
@@ -176,15 +200,15 @@ router.get('/', readOnlyAccess, async (req, res) => {
       totalContributions   // Total all-time contributions
     };
     
-    console.log('📤 Sending response with keys:', Object.keys(responseData));
-    console.log('📤 Total transactions:', responseData.transactions.length);
-    console.log('📤 Total contributions:', responseData.totalContributions);
-    console.log('📤 Current month data:', responseData.currentMonth);
+    console.log('ðŸ“¤ Sending response with keys:', Object.keys(responseData));
+    console.log('ðŸ“¤ Total transactions:', responseData.transactions.length);
+    console.log('ðŸ“¤ Total contributions:', responseData.totalContributions);
+    console.log('ðŸ“¤ Current month data:', responseData.currentMonth);
     
     res.json(responseData);
     
   } catch (err) {
-    console.error('❌ Error fetching transactions:', err);
+    console.error('âŒ Error fetching transactions:', err);
     res.status(500).json({ 
       error: 'Failed to fetch transactions',
       details: err.message 
@@ -226,20 +250,20 @@ router.post('/transaction', authorizeRoles('super-admin', 'admin', 'accountant')
           payeeData.memberId = payee.memberId;
           // Use member's actual name to ensure consistency
           payeeData.name = `${memberExists.firstName} ${memberExists.lastName}`;
-          console.log('✅ Valid member found:', payeeData.name);
+          console.log('âœ… Valid member found:', payeeData.name);
         } else {
-          console.log('❌ Member not found with ID:', payee.memberId);
+          console.log('âŒ Member not found with ID:', payee.memberId);
           // Fallback to external if member doesn't exist
           payeeData.type = 'external';
           payeeData.memberId = null;
         }
       } catch (memberError) {
-        console.log('❌ Error verifying member:', memberError.message);
+        console.log('âŒ Error verifying member:', memberError.message);
         payeeData.type = 'external';
         payeeData.memberId = null;
       }
     } else if (payee?.type === 'member' && (!payee.memberId || !mongoose.Types.ObjectId.isValid(payee.memberId))) {
-      console.log('❌ Invalid memberId provided for member type:', payee.memberId);
+      console.log('âŒ Invalid memberId provided for member type:', payee.memberId);
       payeeData.type = 'external';
       payeeData.memberId = null;
     }
@@ -253,16 +277,22 @@ router.post('/transaction', authorizeRoles('super-admin', 'admin', 'accountant')
       paymentMethod: paymentMethod || 'cash',
       reference: reference || '',
       notes: notes || '',
-      date: new Date() // Ensure date is set
+      // Use client-supplied date if valid (allows backdating); fall back to now
+      date: (() => {
+        const raw = req.body.date;
+        if (!raw) return new Date();
+        const parsed = new Date(raw);
+        return isNaN(parsed.getTime()) ? new Date() : parsed;
+      })()
     };
 
     // Add monthsCovered if provided (for multi-month payments)
     if (monthsCovered && Array.isArray(monthsCovered) && monthsCovered.length > 0) {
       transactionData.monthsCovered = monthsCovered;
-      console.log('✅ Multi-month payment covering:', monthsCovered);
+      console.log('âœ… Multi-month payment covering:', monthsCovered);
     }
 
-    console.log('✅ Creating transaction with validated data:', transactionData);
+    console.log('âœ… Creating transaction with validated data:', transactionData);
 
     const newTransaction = new Transaction(transactionData);
     await newTransaction.save();
@@ -278,7 +308,7 @@ router.post('/transaction', authorizeRoles('super-admin', 'admin', 'accountant')
     });
     
   } catch (err) {
-    console.error('❌ Error creating transaction:', err);
+    console.error('âŒ Error creating transaction:', err);
     
     if (err.name === 'ValidationError') {
       return res.status(400).json({ 
@@ -317,9 +347,20 @@ router.put('/transaction/:id', authorizeRoles('super-admin', 'admin', 'accountan
     const { id } = req.params;
     const updateData = { ...req.body };
 
-    console.log('📝 Updating transaction:', id, updateData);
+    // Sanitise the date field if provided -- parse and validate it
+    if (updateData.date !== undefined) {
+      const parsedDate = parseDateValue(updateData.date);
+      if (parsedDate) {
+        updateData.date = parsedDate;
+      } else {
+        delete updateData.date; // Don't overwrite with an invalid date
+        console.warn('Invalid date value in update, keeping existing date:', req.body.date);
+      }
+    }
 
-    // ✅ IMPROVED: Better payee handling
+    console.log('ðŸ“ Updating transaction:', id, updateData);
+
+    // âœ… IMPROVED: Better payee handling
     if (updateData.payee) {
       let payeeData = {
         type: updateData.payee.type || 'external',
@@ -333,9 +374,9 @@ router.put('/transaction/:id', authorizeRoles('super-admin', 'admin', 'accountan
       if (updateData.payee.type === 'member') {
         let memberId = updateData.payee.memberId;
         
-        // ✅ FIXED: If no valid memberId, convert to external payee
+        // âœ… FIXED: If no valid memberId, convert to external payee
         if (!memberId || memberId === '' || memberId === '[object Object]' || !mongoose.Types.ObjectId.isValid(memberId)) {
-          console.log('❌ No valid memberId provided for member type, converting to external payee');
+          console.log('âŒ No valid memberId provided for member type, converting to external payee');
           payeeData.type = 'external';
           payeeData.memberId = null;
         } 
@@ -347,9 +388,9 @@ router.put('/transaction/:id', authorizeRoles('super-admin', 'admin', 'accountan
             payeeData.name = `${memberExists.firstName} ${memberExists.lastName}`.trim();
             payeeData.email = memberExists.email || payeeData.email;
             payeeData.phone = memberExists.phone || payeeData.phone;
-            console.log('✅ Valid member found for update:', payeeData.name);
+            console.log('âœ… Valid member found for update:', payeeData.name);
           } else {
-            console.log('❌ Member not found, converting to external payee');
+            console.log('âŒ Member not found, converting to external payee');
             payeeData.type = 'external';
             payeeData.memberId = null;
           }
@@ -370,10 +411,10 @@ router.put('/transaction/:id', authorizeRoles('super-admin', 'admin', 'accountan
       return res.status(404).json({ error: 'Transaction not found' });
     }
 
-    console.log('✅ Transaction updated successfully');
+    console.log('âœ… Transaction updated successfully');
     res.json({ success: true, transaction: updatedTransaction });
   } catch (err) {
-    console.error('❌ Error updating transaction:', err);
+    console.error('âŒ Error updating transaction:', err);
     res.status(500).json({
       error: 'Failed to update transaction',
       details: err.message
@@ -459,7 +500,7 @@ router.get('/test-email-endpoint', readOnlyAccess, (req, res) => {
 
 // Send Receipt Email Endpoint (mobile app compatible - auto-detects recipient)
 router.post('/send-receipt/:transactionId', authorizeRoles('super-admin', 'admin', 'accountant'), async (req, res) => {
-  console.log('📧 Send receipt endpoint called (mobile) with:', req.params.transactionId);
+  console.log('ðŸ“§ Send receipt endpoint called (mobile) with:', req.params.transactionId);
   
   try {
     const { transactionId } = req.params;
@@ -583,15 +624,15 @@ router.post('/send-receipt/:transactionId', authorizeRoles('super-admin', 'admin
       ]
     });
 
-    console.log(`✅ Receipt email sent successfully to ${recipientEmail}`);
+    console.log(`âœ… Receipt email sent successfully to ${recipientEmail}`);
     res.json({ 
       success: true, 
       message: `Receipt PDF sent successfully to ${recipientEmail}` 
     });
 
   } catch (error) {
-    console.error('❌ Error sending receipt email:', error);
-    console.error('❌ Error stack:', error.stack);
+    console.error('âŒ Error sending receipt email:', error);
+    console.error('âŒ Error stack:', error.stack);
     res.status(500).json({ 
       error: 'Failed to send receipt email',
       details: error.message,
@@ -602,8 +643,8 @@ router.post('/send-receipt/:transactionId', authorizeRoles('super-admin', 'admin
 
 // Send Receipt Email Endpoint (web admin - requires explicit recipient)
 router.post('/send-receipt-email/:transactionId', authorizeRoles('super-admin', 'admin', 'accountant'), async (req, res) => {
-  console.log('📧 Email endpoint called with:', req.params.transactionId);
-  console.log('📧 Request body:', req.body);
+  console.log('ðŸ“§ Email endpoint called with:', req.params.transactionId);
+  console.log('ðŸ“§ Request body:', req.body);
   
   try {
     const { transactionId } = req.params;
@@ -655,9 +696,9 @@ router.post('/send-receipt-email/:transactionId', authorizeRoles('super-admin', 
     
     try {
       pdfBuffer = await pdfGenerator.generateReceiptPDF(transaction, signatureInfo);
-      console.log('✅ PDF generated successfully');
+      console.log('âœ… PDF generated successfully');
     } catch (pdfError) {
-      console.warn('⚠️ PDF generation failed, will send email without PDF attachment:', pdfError.message);
+      console.warn('âš ï¸ PDF generation failed, will send email without PDF attachment:', pdfError.message);
       pdfGenerationFailed = true;
     }
 
@@ -798,8 +839,8 @@ router.post('/send-receipt-email/:transactionId', authorizeRoles('super-admin', 
     });
 
   } catch (error) {
-    console.error('❌ Error sending receipt email:', error);
-    console.error('❌ Error stack:', error.stack);
+    console.error('âŒ Error sending receipt email:', error);
+    console.error('âŒ Error stack:', error.stack);
     res.status(500).json({ 
       error: 'Failed to send receipt email',
       details: error.message,
@@ -856,7 +897,7 @@ router.get('/generate-pdf-receipt/:transactionId', readOnlyAccess, async (req, r
     res.send(pdfBuffer);
 
   } catch (error) {
-    console.error('❌ Error generating PDF receipt:', error);
+    console.error('âŒ Error generating PDF receipt:', error);
     res.status(500).json({ 
       error: 'Failed to generate PDF receipt',
       details: error.message 
@@ -865,7 +906,7 @@ router.get('/generate-pdf-receipt/:transactionId', readOnlyAccess, async (req, r
 });
 
 // ======================
-// 🔲 QR CODE ENDPOINTS FOR RECEIPTS
+// ðŸ”² QR CODE ENDPOINTS FOR RECEIPTS
 // ======================
 
 // GET generate QR code for a transaction receipt
@@ -874,7 +915,7 @@ router.get('/transactions/:id/qr-code', readOnlyAccess, async (req, res) => {
     const { id } = req.params;
     const { size } = req.query;
 
-    console.log(`🔲 Generating receipt QR code for transaction: ${id}`);
+    console.log(`ðŸ”² Generating receipt QR code for transaction: ${id}`);
 
     const transaction = await Transaction.findById(id).populate('payee.memberId', 'firstName lastName email');
     if (!transaction) {
@@ -893,7 +934,7 @@ router.get('/transactions/:id/qr-code', readOnlyAccess, async (req, res) => {
 
     const qrCodeDataURL = await QRCodeGenerator.generateReceiptQRCode(transaction, member);
 
-    console.log(`✅ Receipt QR code generated for transaction: ${transaction.description}`);
+    console.log(`âœ… Receipt QR code generated for transaction: ${transaction.description}`);
 
     res.json({
       success: true,
@@ -913,7 +954,7 @@ router.get('/transactions/:id/qr-code', readOnlyAccess, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Error generating receipt QR code:', error);
+    console.error('âŒ Error generating receipt QR code:', error);
     res.status(500).json({ 
       error: 'Failed to generate receipt QR code',
       details: error.message 

@@ -6,6 +6,24 @@ const ChurchDocument = require('../models/ChurchDocument');
 const { getNextFileNumber, buildBlobPath } = require('../utils/fileNumber');
 const { uploadToBlob, generateSAS } = require('../utils/blob');
 
+async function saveDocumentWithRetry(doc, category, maxRetries = 3) {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await doc.save();
+    } catch (err) {
+      const isDuplicateKey = err.code === 11000 || err.codeName === 'DuplicateKey';
+      if (isDuplicateKey && err.keyPattern?.fileNo && attempt < maxRetries) {
+        attempt += 1;
+        console.warn(`⚠️ Duplicate fileNo detected on save, retrying with a new fileNo (attempt ${attempt})`);
+        doc.fileNo = await getNextFileNumber(category);
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 // Multer — memory storage (buffer goes straight to Azure)
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -86,9 +104,13 @@ router.post('/', async (req, res) => {
       createdBy: req.user?._id
     });
 
-    await doc.save();
-    res.status(201).json({ success: true, data: doc });
+    const savedDoc = await saveDocumentWithRetry(doc, category, 5);
+    res.status(201).json({ success: true, data: savedDoc });
   } catch (err) {
+    const isDuplicateKey = err.code === 11000 || err.codeName === 'DuplicateKey';
+    if (isDuplicateKey) {
+      return res.status(409).json({ success: false, error: 'Duplicate file number generated. Please retry the request.' });
+    }
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -180,8 +202,8 @@ router.post('/:id/send-to-sign', async (req, res) => {
     const doc = await ChurchDocument.findById(req.params.id);
     if (!doc) return res.status(404).json({ success: false, error: 'Document not found' });
 
-    if (doc.status !== 'final') {
-      return res.status(400).json({ success: false, error: 'Only final documents can be sent for signing. Update status to final first.' });
+    if (doc.status === 'archived') {
+      return res.status(400).json({ success: false, error: 'Archived documents cannot be sent for signing.' });
     }
 
     const finals = doc.files.filter(f => f.type === 'final');
@@ -235,6 +257,8 @@ router.post('/:id/send-to-sign', async (req, res) => {
     const submission = Array.isArray(dsData) ? dsData[0] : dsData;
     doc.docusealSubmissionId = String(submission.submission_id || submission.id || '');
     doc.docusealStatus = 'pending';
+    // Auto-promote status to final if it was still draft
+    if (doc.status === 'draft') doc.status = 'final';
     await doc.save();
 
     res.json({

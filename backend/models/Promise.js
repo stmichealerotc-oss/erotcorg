@@ -55,7 +55,7 @@ const promiseSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['cash', 'check', 'card', 'online', 'transfer', '']
+    enum: ['cash', 'check', 'card', 'online', 'transfer', 'tap', '']
   },
   notes: {
     type: String,

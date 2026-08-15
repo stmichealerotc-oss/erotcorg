@@ -51,7 +51,7 @@ const transactionSchema = new mongoose.Schema({
   
   paymentMethod: {
     type: String,
-    enum: ['cash', 'check', 'card', 'online', 'transfer', 'in-kind'],
+    enum: ['cash', 'check', 'card', 'online', 'transfer', 'tap', 'in-kind'],
     default: 'cash'
   },
   reference: String,

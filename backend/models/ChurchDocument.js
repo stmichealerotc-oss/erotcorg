@@ -12,7 +12,7 @@ const FileVersionSchema = new mongoose.Schema({
   mimeType: String,
   sizeBytes: Number,
   version: { type: Number, default: 1 },
-  uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' },
+  uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   uploadedAt: { type: Date, default: Date.now }
 }, { _id: true });
 
@@ -20,6 +20,7 @@ const ChurchDocumentSchema = new mongoose.Schema({
   fileNo: {
     type: String,
     unique: true,
+    sparse: true,   // allows multiple docs with null fileNo without colliding
     // e.g. STM-2026-OUT-001
   },
   refNo: {
@@ -49,7 +50,7 @@ const ChurchDocumentSchema = new mongoose.Schema({
   files: [FileVersionSchema],
   tags: [String],
   notes: { type: String, trim: true },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   // Access control — who can see this document
   accessRoles: {
     type: [String],

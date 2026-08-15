@@ -7,34 +7,89 @@ const Transaction = require('../models/Transaction');
 const InventoryItem = require('../models/InventoryItem');
 const { authenticateToken, committeeOnly } = require('../middleware/auth');
 
-// Parse DD/MM/YYYY or MM/DD/YYYY or ISO date strings safely
+// Parse DD/MM/YYYY and ISO/standard date strings only.
+// The app must use day-first dates consistently; MM/DD/YYYY is rejected to avoid ambiguity.
 function parseDateInput(val) {
   if (!val) return new Date();
 
-  // DD/MM/YYYY — day > 12 is unambiguous proof it's day-first
-  const slashParts = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(val);
-  if (slashParts) {
-    const a = parseInt(slashParts[1]);
-    const b = parseInt(slashParts[2]);
-    const y = parseInt(slashParts[3]);
-    // If first part > 12 it must be DD/MM/YYYY
-    // If second part > 12 it must be MM/DD/YYYY
-    // Otherwise assume DD/MM/YYYY (matches the mobile-date-input format used in the app)
-    let day, month;
-    if (a > 12) {
-      day = a; month = b; // DD/MM/YYYY
-    } else if (b > 12) {
-      day = b; month = a; // MM/DD/YYYY
-    } else {
-      day = a; month = b; // default: DD/MM/YYYY
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+
+    // ISO-like dates first: YYYY-MM-DD or ISO string
+    const isoMatch = /^\d{4}-\d{2}-\d{2}(?:T.*)?$/.exec(trimmed);
+    if (isoMatch) {
+      const d = new Date(trimmed);
+      if (!isNaN(d.getTime())) return d;
     }
-    const d = new Date(y, month - 1, day);
-    return isNaN(d) ? new Date() : d;
+
+    // DD/MM/YYYY or DD-MM-YYYY only
+    const dayFirstMatch = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/.exec(trimmed);
+    if (dayFirstMatch) {
+      const day = parseInt(dayFirstMatch[1], 10);
+      const month = parseInt(dayFirstMatch[2], 10);
+      const year = parseInt(dayFirstMatch[3], 10);
+
+      if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+        const d = new Date(year, month - 1, day);
+        if (!isNaN(d.getTime()) && d.getDate() === day && d.getMonth() === month - 1 && d.getFullYear() === year) {
+          return d;
+        }
+      }
+    }
   }
 
-  // Fallback: ISO or other formats
   const d = new Date(val);
-  return isNaN(d) ? new Date() : d;
+  return isNaN(d.getTime()) ? new Date() : d;
+}
+
+function validateDateInput(dateValue) {
+  if (!dateValue) return new Date();
+
+  const parsedDate = parseDateInput(dateValue);
+  if (!parsedDate || isNaN(parsedDate.getTime())) {
+    throw new Error('Invalid date value. Use DD/MM/YYYY or YYYY-MM-DD.');
+  }
+
+  return parsedDate;
+}
+
+function normalizeContributionCategory(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function parseContributionDate(value) {
+  if (!value) return null;
+
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    const slashMatch = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (slashMatch) {
+      const [, dayRaw, monthRaw, yearRaw] = slashMatch;
+      const day = Number(dayRaw);
+      const month = Number(monthRaw);
+      const year = Number(yearRaw);
+
+      if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+        const parsed = new Date(year, month - 1, day);
+        if (!isNaN(parsed.getTime())) return parsed;
+      }
+    }
+
+    const isoDate = new Date(trimmed);
+    if (!isNaN(isoDate.getTime())) return isoDate;
+
+    const fallback = parseDateInput(trimmed);
+    return !isNaN(fallback.getTime()) ? fallback : null;
+  }
+
+  const date = new Date(value);
+  return !isNaN(date.getTime()) ? date : null;
 }
 
 // Apply authentication to all routes
@@ -108,10 +163,10 @@ router.get('/', async (req, res) => {
     
     if (startDate || endDate) {
       query.date = {};
-      if (startDate) query.date.$gte = new Date(startDate);
+      if (startDate) query.date.$gte = parseDateInput(startDate);
       if (endDate) {
         // End of the day for endDate (23:59:59.999)
-        const endOfDay = new Date(endDate);
+        const endOfDay = parseDateInput(endDate) || new Date(endDate);
         endOfDay.setHours(23, 59, 59, 999);
         query.date.$lte = endOfDay;
       }
@@ -151,6 +206,8 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/member-contributions - Create new contribution
+// For tithe: send monthsCovered (array of "YYYY-MM") to mark which months a single
+// payment covers — e.g. ["2026-01","2026-02","2026-03","2026-04"] for Jan-Apr paid at once.
 router.post('/', async (req, res) => {
   try {
     const {
@@ -162,7 +219,8 @@ router.post('/', async (req, res) => {
       value,
       date,
       notes,
-      createTransaction = false
+      createTransaction = false,
+      monthsCovered // optional: ["2026-01","2026-02",...] for multi-month tithe
     } = req.body;
 
     // Validate required fields
@@ -182,17 +240,40 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Create contribution
-    const contribution = new MemberContribution({
+    let parsedDate;
+    try {
+      parsedDate = validateDateInput(date);
+    } catch (dateError) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid date format',
+        details: dateError.message
+      });
+    }
+
+    // Build contribution data
+    const contributionData = {
       memberId,
       type,
       category,
       description,
       quantity,
       value,
-      date: date ? parseDateInput(date) : new Date(),
+      date: parsedDate,
       notes
-    });
+    };
+
+    // Store monthsCovered if provided (valid array of YYYY-MM strings)
+    if (Array.isArray(monthsCovered) && monthsCovered.length > 0) {
+      const validMonths = monthsCovered.filter(m => /^\d{4}-\d{2}$/.test(m));
+      if (validMonths.length > 0) {
+        contributionData.monthsCovered = validMonths;
+        console.log(`✅ Tithe covers months: ${validMonths.join(', ')}`);
+      }
+    }
+
+    // Create contribution
+    const contribution = new MemberContribution(contributionData);
 
     // Generate receipt number if needed
     if (req.body.issueReceipt) {
@@ -482,98 +563,283 @@ router.get('/member/:memberId', async (req, res) => {
   }
 });
 
+// GET /api/member-contributions/member/:memberId/tithe-debug - Raw tithe data for diagnosis
+router.get('/member/:memberId/tithe-debug', async (req, res) => {
+  try {
+    const memberId = req.params.memberId;
+
+    const rawContributions = await MemberContribution.find({ memberId }).limit(50).lean();
+    const rawTransactions = await Transaction.find({
+      'payee.memberId': memberId,
+      type: 'income'
+    }).limit(50).lean();
+
+    // Return exactly what's stored — descriptions, monthsCovered, dates
+    const contributions = rawContributions.map(c => ({
+      source: 'MemberContribution',
+      id: c._id,
+      category: c.category,
+      description: c.description,
+      notes: c.notes,
+      value: c.value,
+      date: c.date,
+      monthsCovered: c.monthsCovered || null
+    }));
+
+    const transactions = rawTransactions.map(t => ({
+      source: 'Transaction',
+      id: t._id,
+      category: t.category,
+      description: t.description,
+      notes: t.notes,
+      amount: t.amount,
+      date: t.date,
+      monthsCovered: t.monthsCovered || null
+    }));
+
+    res.json({ success: true, contributions, transactions });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // GET /api/member-contributions/member/:memberId/tithe-status - Get tithe payment status
 router.get('/member/:memberId/tithe-status', async (req, res) => {
   try {
     const memberId = req.params.memberId;
-    
-    // Get all tithe contributions for this member
-    const titheContributions = await MemberContribution.find({
-      memberId: memberId,
-      category: 'tithe'
-    }).sort({ _id: -1 }).limit(12); // Last 12 months
-    
-    // Calculate payment status
+
+    const rawContributions = await MemberContribution.find({ memberId }).limit(120).lean();
+    const rawTransactions = await Transaction.find({
+      'payee.memberId': memberId,
+      type: 'income'
+    }).limit(120).lean();
+
+    const isTitheEntry = (entry) => {
+      if (!entry) return false;
+
+      const category = normalizeContributionCategory(entry.category);
+      const description = normalizeContributionCategory(entry.description || entry.notes || '');
+      const amount = Number(entry.value ?? entry.amount ?? 0);
+
+      const isTitheCategory = [
+        'tithe',
+        'tithes',
+        'tithe payment',
+        'monthly tithe',
+        'tithe contribution'
+      ].includes(category);
+
+      const hasTitheInDescription = description.includes('tithe');
+      return amount > 0 && (isTitheCategory || hasTitheInDescription);
+    };
+
+    const titheContributions = [...rawContributions, ...rawTransactions]
+      .filter(isTitheEntry)
+      .map((entry) => ({
+        ...entry,
+        date: entry.date,
+        value: Number(entry.value ?? entry.amount ?? 0),
+        // Normalise monthsCovered — may exist on both contributions and transactions
+        monthsCovered: Array.isArray(entry.monthsCovered) && entry.monthsCovered.length > 0
+          ? entry.monthsCovered.filter(m => /^\d{4}-\d{2}$/.test(m))
+          : null
+      }))
+      .sort((a, b) => {
+        const dateA = parseContributionDate(a.date) || new Date(0);
+        const dateB = parseContributionDate(b.date) || new Date(0);
+        return dateB.getTime() - dateA.getTime();
+      });
+
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    
-    // Build payment history for last 6 months
+
+    // Month name → 0-indexed number map for description parsing
+    const MONTH_NAMES = {
+      jan:0, feb:1, mar:2, apr:3, may:4, jun:5,
+      jul:6, aug:7, sep:8, oct:9, nov:10, dec:11
+    };
+
+    // Try to extract a list of "YYYY-MM" strings from a free-text description.
+    // Handles patterns like:
+    //   "Mar 2026 – Apr 2026"   "Nov 2025 - Jan 2026 (3 months)"
+    //   "January 2026"          "Feb 2026"
+    const parseMonthsFromDescription = (desc) => {
+      if (!desc) return null;
+      const text = desc.toLowerCase().trim();
+
+      // Range pattern: "mon[th] YYYY <any non-alpha separator> mon[th] YYYY"
+      // Covers: hyphen, en-dash, em-dash, " to ", slash, or multiple spaces
+      const rangeMatch = text.match(
+        /([a-z]{3})[a-z]*\.?\s+(\d{4})\s*(?:[\u2013\u2014\-\/]|\bto\b)\s*([a-z]{3})[a-z]*\.?\s+(\d{4})/
+      );
+      if (rangeMatch) {
+        const fromM = MONTH_NAMES[rangeMatch[1].substring(0, 3)];
+        const fromY = parseInt(rangeMatch[2], 10);
+        const toM   = MONTH_NAMES[rangeMatch[3].substring(0, 3)];
+        const toY   = parseInt(rangeMatch[4], 10);
+        if (fromM !== undefined && toM !== undefined && fromY >= 2000 && toY >= 2000) {
+          const months = [];
+          let y = fromY, m = fromM;
+          while (y < toY || (y === toY && m <= toM)) {
+            months.push(`${y}-${String(m + 1).padStart(2, '0')}`);
+            m++; if (m > 11) { m = 0; y++; }
+            if (months.length > 24) break;
+          }
+          if (months.length > 0) return months;
+        }
+      }
+
+      // Single month pattern: "mon[th] YYYY"
+      const singleMatch = text.match(/\b([a-z]{3})[a-z]*\.?\s+(\d{4})\b/);
+      if (singleMatch) {
+        const m = MONTH_NAMES[singleMatch[1].substring(0, 3)];
+        const y = parseInt(singleMatch[2], 10);
+        if (m !== undefined && y >= 2000) return [`${y}-${String(m + 1).padStart(2, '0')}`];
+      }
+
+      return null;
+    };
+
+    // Helper: returns all "YYYY-MM" strings this entry covers.
+    // Priority: 1) explicit monthsCovered array  2) description range parse  3) entry date month
+    const getMonthsForEntry = (entry) => {
+      // 1. Explicit monthsCovered array (set by new form)
+      if (entry.monthsCovered && entry.monthsCovered.length > 0) {
+        return entry.monthsCovered;
+      }
+      // 2. Parse from description / notes (handles legacy transactions recorded with range in text)
+      const descText = ((entry.description || '') + ' ' + (entry.notes || '')).trim();
+      const fromDesc = parseMonthsFromDescription(descText);
+      if (fromDesc && fromDesc.length > 0) {
+        console.log(`📅 Parsed months from description "${descText}":`, fromDesc);
+        return fromDesc;
+      }
+
+      // 3. Fall back to the entry's own payment date month
+      const d = parseContributionDate(entry.date);
+      if (!d) return [];
+      const fallback = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      console.log(`📅 Fallback to date month for "${descText}": ${fallback}`);
+      return [fallback];
+    };
+
+    // Build a map: "YYYY-MM" -> { totalPaid, firstDate, paymentDate, isAdvance, totalMonths }
+    // For multi-month payments:
+    //   - The full amount is recorded on the EARLIEST covered month (so it shows once)
+    //   - All other covered months are marked paid with amount=0 ("covered by advance")
+    //   - The actual payment date is stored on all covered months for display
+    const paidMonthsMap = {};
+    for (const entry of titheContributions) {
+      const months = getMonthsForEntry(entry);
+      const entryDate = parseContributionDate(entry.date);
+
+      // The "amount month" is the earliest month in the covered range
+      const sortedMonths = [...months].sort();
+      const amountMonth = sortedMonths[0];
+
+      for (const ym of months) {
+        if (!paidMonthsMap[ym]) {
+          paidMonthsMap[ym] = { totalPaid: 0, firstDate: null, paymentDate: null, totalMonths: months.length };
+        }
+        // Put the full dollar amount only on the earliest covered month to avoid repeating
+        if (ym === amountMonth) {
+          paidMonthsMap[ym].totalPaid += entry.value;
+        }
+        // Always store the actual payment date so all covered-month rows show when it was paid
+        if (entryDate) {
+          paidMonthsMap[ym].paymentDate = entryDate;
+          if (!paidMonthsMap[ym].firstDate || entryDate < paidMonthsMap[ym].firstDate) {
+            paidMonthsMap[ym].firstDate = entryDate;
+          }
+        }
+      }
+    }
+
+    // Build 12-month payment history (current month first, going back)
     const paymentHistory = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 12; i++) {
       const monthDate = new Date(currentYear, currentMonth - i, 1);
+      const year  = monthDate.getFullYear();
       const month = monthDate.getMonth();
-      const year = monthDate.getFullYear();
-      
-      // Find payments for this month
-      const monthPayments = titheContributions.filter(c => {
-        const paymentDate = new Date(c.date);
-        return paymentDate.getMonth() === month && paymentDate.getFullYear() === year;
-      });
-      
-      const totalPaid = monthPayments.reduce((sum, c) => sum + c.value, 0);
-      const paid = monthPayments.length > 0;
-      
+      const ym = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+      const record = paidMonthsMap[ym];
+      const paid = !!record;
+
       paymentHistory.push({
-        month: `${year}-${String(month + 1).padStart(2, '0')}`,
+        month: ym,
         monthLabel: monthDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        paid: paid,
-        amount: totalPaid,
-        date: paid ? monthPayments[0].date : null,
-        count: monthPayments.length
+        paid,
+        amount: paid ? record.totalPaid : 0,           // non-zero only on the payment month
+        date: paid ? (record.paymentDate || record.firstDate) : null, // actual payment date
+        totalMonths: paid ? record.totalMonths : 1,    // how many months this payment covered
+        count: paid ? 1 : 0
       });
     }
-    
-    // Determine current status
-    const currentMonthPayment = paymentHistory[0];
+
+    // Determine future months paid (advance payments) — any covered month after current month
+    const currentMonthYM = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+    const futureMonthsPaid = Object.keys(paidMonthsMap).filter(ym => ym > currentMonthYM);
+
+    const currentMonthPayment = paymentHistory[0]; // index 0 = current month
     let status = 'not-paid';
     let overdueMonths = [];
-    let nextDue = new Date(currentYear, currentMonth + 1, 1);
-    
-    if (currentMonthPayment.paid) {
-      // Check if paid in advance (multiple months covered)
-      const futurePayments = titheContributions.filter(c => {
-        const paymentDate = new Date(c.date);
-        return paymentDate > now;
-      });
-      
-      if (futurePayments.length > 0) {
+    let nextDue;
+
+    // Find all unpaid months strictly before the current month (within 12-month window)
+    const unpaidPastMonths = paymentHistory.filter((h) => {
+      if (h.paid) return false;
+      const [y, m] = h.month.split('-').map(Number);
+      return new Date(y, m - 1, 1) < new Date(currentYear, currentMonth, 1);
+    });
+
+    if (currentMonthPayment && currentMonthPayment.paid) {
+      if (futureMonthsPaid.length > 0) {
         status = 'paid-in-advance';
-        // Calculate next due date based on advance payments
-        const monthsAdvance = futurePayments.length;
-        nextDue = new Date(currentYear, currentMonth + monthsAdvance + 1, 1);
+        const lastAdvanceYM = [...futureMonthsPaid].sort().reverse()[0];
+        const [ly, lm] = lastAdvanceYM.split('-').map(Number);
+        nextDue = new Date(ly, lm, 1);
+      } else if (unpaidPastMonths.length > 0) {
+        status = 'overdue';
+        // Sort oldest-first so display reads chronologically
+        overdueMonths = unpaidPastMonths
+          .sort((a, b) => a.month < b.month ? -1 : 1)
+          .map(h => h.monthLabel);
+        nextDue = new Date();
       } else {
         status = 'paid';
+        nextDue = new Date(currentYear, currentMonth + 1, 1);
       }
     } else {
-      // Check for overdue months
-      overdueMonths = paymentHistory
-        .filter(h => !h.paid && new Date(h.month + '-01') < now)
-        .map(h => h.monthLabel);
-      
-      if (overdueMonths.length > 0) {
-        status = 'overdue';
-        nextDue = new Date(); // Immediately due
-      }
+      // Current month not paid — overdue = all unpaid past + current, oldest first
+      overdueMonths = [
+        ...unpaidPastMonths.sort((a, b) => a.month < b.month ? -1 : 1),
+        currentMonthPayment
+      ].map(h => h.monthLabel);
+      status = 'overdue';
+      nextDue = new Date();
     }
-    
-    // Get last payment info
+
     const lastPayment = titheContributions.length > 0 ? {
       date: titheContributions[0].date,
-      amount: titheContributions[0].value
+      amount: Number(titheContributions[0].value || 0),
+      monthsCovered: titheContributions[0].monthsCovered || null
     } : null;
-    
+
     res.json({
       success: true,
       titheStatus: {
-        status: status,
-        lastPayment: lastPayment,
-        nextDue: nextDue,
-        overdueMonths: overdueMonths,
-        paymentHistory: paymentHistory
+        status,
+        lastPayment,
+        nextDue,
+        overdueMonths,
+        overdueCount: overdueMonths.length,
+        advanceMonths: futureMonthsPaid.sort(),
+        paymentHistory
       }
     });
-    
+
   } catch (error) {
     console.error('Error fetching tithe status:', error);
     res.status(500).json({

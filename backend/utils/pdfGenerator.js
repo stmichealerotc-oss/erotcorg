@@ -1,4 +1,4 @@
-// Use @sparticuz/chromium for cloud environments (Azure/AWS compatible)
+﻿// Use @sparticuz/chromium for cloud environments (Azure/AWS compatible)
 // On Windows (local dev), skip sparticuz and use regular puppeteer
 let chromium;
 let puppeteer;
@@ -676,7 +676,7 @@ class PDFGenerator {
             <body>
                 <div class="header">
                     <!-- <img src="https://churchmanagement.erotc.org/images/church-logo.png" alt="Church Logo" class="logo-img logo-left" />-->
-                                                    <img src="https://church-management-vjfw.onrender.com/images/church-logo.png" alt="Church Logo" class="logo logo-left">
+                                                    <img src="https://erotc.org/images/church-logo.png" alt="Church Logo" class="logo logo-left">
                     <div class="church-info">
                         <div class="church-name">St Michael Eritrean Orthodox Church</div>
                         <div class="church-address">
@@ -685,7 +685,7 @@ class PDFGenerator {
                         </div>
                     </div>
                    <!-- <img src="https://churchmanagement.erotc.org/images/kdus-mikaeal.jpg" alt="Kdus Mikaeal" class="logo-img logo-right" />-->
-                                                   <img src="https://church-management-vjfw.onrender.com/images/kdus-mikaeal.jpg" alt="Kdus Mikaeal" class="logo logo-right">
+                                                   <img src="https://erotc.org/images/kdus-mikaeal.jpg" alt="Kdus Mikaeal" class="logo logo-right">
                 </div>
 
                 <div class="receipt-title">DONATION RECEIPT</div>

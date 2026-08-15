@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Counter  = require('./Counter');
 
 const SignatureSchema = new mongoose.Schema({
-  signedBy:   { type: mongoose.Schema.Types.ObjectId, ref: 'Users' },
+  signedBy:   { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   signerName: String,
   signerTitle: String,
   signedAt:   { type: Date, default: Date.now }
@@ -51,7 +51,7 @@ const CertificateSchema = new mongoose.Schema({
   fee:               { type: Number, default: 0 },
   feeTransactionId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Transaction' },
 
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Users' }
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 
 // Auto-generate certificate number on save

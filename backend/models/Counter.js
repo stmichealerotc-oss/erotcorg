@@ -4,7 +4,7 @@ const CounterSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ['OUT', 'IN', 'MIN', 'CIR', 'REP', 'LEG']
+    enum: ['OUT', 'IN', 'MIN', 'CIR', 'REP', 'LEG', 'GEN', 'RES', 'FIN']
   },
   year: {
     type: Number,

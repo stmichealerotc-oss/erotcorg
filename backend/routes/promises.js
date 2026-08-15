@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const router = express.Router();
 const Promise = require('../models/Promise');
 const Member = require('../models/Member');
@@ -6,6 +6,53 @@ const Transaction = require('../models/Transaction');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const { authenticateToken, authorizeRoles, committeeOnly } = require('../middleware/auth');
+
+function parseDateInput(value) {
+  if (!value) return null;
+
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    const isoMatch = /^\d{4}-\d{2}-\d{2}(?:T.*)?$/.exec(trimmed);
+    if (isoMatch) {
+      const parsed = new Date(trimmed);
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+
+    const dayFirstMatch = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/.exec(trimmed);
+    if (dayFirstMatch) {
+      const day = Number(dayFirstMatch[1]);
+      const month = Number(dayFirstMatch[2]);
+      const year = Number(dayFirstMatch[3]);
+
+      if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+        const parsed = new Date(year, month - 1, day);
+        if (!isNaN(parsed.getTime()) && parsed.getDate() === day && parsed.getMonth() === month - 1 && parsed.getFullYear() === year) {
+          return parsed;
+        }
+      }
+    }
+
+    const parsed = new Date(trimmed);
+    if (!isNaN(parsed.getTime())) return parsed;
+  }
+
+  return null;
+}
+
+function formatDateForInput(dateValue) {
+  const parsed = parseDateInput(dateValue);
+  if (!parsed) return '';
+  const day = String(parsed.getDate()).padStart(2, '0');
+  const month = String(parsed.getMonth() + 1).padStart(2, '0');
+  const year = parsed.getFullYear();
+  return `${day}/${month}/${year}`;
+}
 
 // Apply authentication to all promise routes
 router.use(authenticateToken);
@@ -43,10 +90,19 @@ router.get('/', async (req, res) => {
     // Date range filter
     if (dateFrom || dateTo) {
       query.dueDate = {};
-      if (dateFrom) query.dueDate.$gte = new Date(dateFrom);
+      if (dateFrom) {
+        const parsedFrom = parseDateInput(dateFrom);
+        if (!parsedFrom) {
+          return res.status(400).json({ error: 'Invalid dateFrom. Use DD/MM/YYYY or YYYY-MM-DD.' });
+        }
+        query.dueDate.$gte = parsedFrom;
+      }
       if (dateTo) {
-        // End of the day for dateTo (23:59:59.999)
-        const endOfDay = new Date(dateTo);
+        const parsedTo = parseDateInput(dateTo);
+        if (!parsedTo) {
+          return res.status(400).json({ error: 'Invalid dateTo. Use DD/MM/YYYY or YYYY-MM-DD.' });
+        }
+        const endOfDay = new Date(parsedTo);
         endOfDay.setHours(23, 59, 59, 999);
         query.dueDate.$lte = endOfDay;
       }
@@ -180,15 +236,20 @@ router.post('/', async (req, res) => {
       return res.status(404).json({ error: 'Member not found' });
     }
     
+    const parsedDueDate = parseDateInput(dueDate);
+    if (!parsedDueDate) {
+      return res.status(400).json({
+        error: 'Invalid due date. Use DD/MM/YYYY or YYYY-MM-DD.'
+      });
+    }
+
     const promiseData = {
       memberId,
       memberName: `${member.firstName} ${member.lastName}`,
       amount: parseFloat(amount),
       category,
       description: description || '',
-      dueDate: moment(dueDate, ['DD/MM/YYYY', 'MM/DD/YYYY', moment.ISO_8601], true).isValid()
-               ? moment(dueDate, ['DD/MM/YYYY', 'MM/DD/YYYY', moment.ISO_8601]).toDate()
-               : new Date(dueDate),
+      dueDate: parsedDueDate,
       promiseDate: new Date()
     };
     
@@ -237,6 +298,16 @@ router.put('/:id', async (req, res) => {
         return res.status(404).json({ error: 'Member not found' });
       }
       updateData.memberName = `${member.firstName} ${member.lastName}`;
+    }
+
+    if (updateData.dueDate) {
+      const parsedDueDate = parseDateInput(updateData.dueDate);
+      if (!parsedDueDate) {
+        return res.status(400).json({
+          error: 'Invalid due date. Use DD/MM/YYYY or YYYY-MM-DD.'
+        });
+      }
+      updateData.dueDate = parsedDueDate;
     }
     
     const updatedPromise = await Promise.findByIdAndUpdate(
@@ -296,7 +367,7 @@ router.post('/:id/fulfill', async (req, res) => {
       paymentMethod: paymentMethod || 'cash',
       reference: `Promise-${promise._id}`,
       notes: notes || '',
-      date: new Date(paymentDate) || new Date(),
+      date: parseDateInput(paymentDate) || new Date(),
       payee: {
         type: 'member',
         memberId: promise.memberId._id,
