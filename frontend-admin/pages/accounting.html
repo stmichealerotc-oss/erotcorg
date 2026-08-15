@@ -920,14 +920,42 @@
                 <input type="number" id="transaction-amount" step="0.01" min="0.01" required>
               </div>
               <div class="form-group">
+                <label for="transaction-date">Transaction Date *</label>
+                <input type="text" id="transaction-date" class="mobile-date" placeholder="DD/MM/YYYY" required>
+                <small style="color:#666;">Defaults to today. Change to backdate this transaction.</small>
+              </div>
+              <div class="form-group">
                 <label for="payment-method">Payment Method</label>
-                <select id="payment-method">
+                <select id="payment-method" onchange="accountingPage.onPaymentMethodChange()">
                   <option value="cash">Cash</option>
                   <option value="check">Check</option>
                   <option value="card">Card</option>
+                  <option value="tap">Mobile Tap</option>
                   <option value="online">Online</option>
                   <option value="transfer">Transfer</option>
                 </select>
+
+                <!-- Card only: initiate live Stripe checkout (hidden for other methods) -->
+                <div id="stripe-pay-btn-wrap" style="display:none; margin-top:8px;">
+                  <button type="button" class="btn btn-primary" id="admin-pay-now-btn"
+                          onclick="accountingPage.startAdminStripePayment()"
+                          style="padding:8px 12px; font-size:.82rem;">
+                    <i class="fas fa-credit-card"></i> Initiate Card Payment (Stripe)
+                  </button>
+                  <div style="font-size:11px; color:#888; margin-top:3px;">
+                    Opens Stripe checkout to collect payment now.
+                    To record a card payment already received, just click <strong>Save Transaction</strong>.
+                  </div>
+                </div>
+
+                <!-- Tap only: guidance note (no redirect needed) -->
+                <div id="tap-record-note" style="display:none; margin-top:8px; padding:7px 10px;
+                     background:#e8f4fd; border-left:3px solid #4a6fa5; border-radius:0 4px 4px 0;
+                     font-size:12px; color:#2c5282;">
+                  <i class="fas fa-mobile-alt"></i>
+                  <strong>Mobile Tap:</strong> Payment collected via tap terminal.
+                  Fill in the details above and click <strong>Save Transaction</strong> to record it.
+                </div>
               </div>
               <div class="form-group">
                 <label for="transaction-reference">Reference</label>
@@ -947,6 +975,7 @@
                   <tr><td>Payee</td>       <td id="rev-payee"></td></tr>
                   <tr><td>Category</td>    <td id="rev-category"></td></tr>
                   <tr><td>Description</td> <td id="rev-description"></td></tr>
+                  <tr><td>Date</td>        <td id="rev-date"></td></tr>
                   <tr><td>Amount</td>      <td id="rev-amount" class="txn-review-amount"></td></tr>
                   <tr><td>Method</td>      <td id="rev-method"></td></tr>
                   <tr><td>Reference</td>   <td id="rev-reference"></td></tr>
@@ -1060,6 +1089,7 @@
                     <option value="cash">Cash</option>
                     <option value="check">Check</option>
                     <option value="card">Card</option>
+                    <option value="tap">Mobile Tap</option>
                     <option value="online">Online</option>
                 </select>
             </div>
@@ -1255,91 +1285,356 @@
 </style>
     </div>
 
-    <!-- MEMBER CONTRIBUTION MODAL -->
+    <!-- MEMBER CONTRIBUTION MODAL - MULTI-STEP WIZARD -->
     <div id="contribution-modal" class="modal">
-        <div class="modal-content">
-            <h3>Add Member Contribution</h3>
+        <div class="modal-content" style="max-width: 600px;">
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Member</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Details</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Review</div>
+                </div>
+            </div>
+
+            <h3 id="modal-title">Add Member Contribution</h3>
+            
             <form id="contribution-form">
-                <div class="form-group">
-                    <label for="contribution-member">Member *</label>
-                    <div class="search-container">
-                        <input type="text" id="contribution-member-search" placeholder="Search members..." 
-                               oninput="accountingPage.searchMembersForContribution(this.value)">
-                        <div id="contribution-member-results" class="search-results"></div>
+                <!-- STEP 1: Member Selection -->
+                <div class="form-step" data-step="1">
+                    <div class="form-group">
+                        <label for="contribution-member">Select Member *</label>
+                        <div class="search-container">
+                            <input type="text" id="contribution-member-search" placeholder="Search members by name..." 
+                                   oninput="accountingPage.searchMembersForContribution(this.value)"
+                                   autocomplete="off">
+                            <div id="contribution-member-results" class="search-results"></div>
+                        </div>
+                        <input type="hidden" id="contribution-member-id">
+                        <div id="selected-member-display" style="display:none; margin-top:10px; padding:10px; background:#e8f4fd; border-radius:4px; border:1px solid #bee5fd;">
+                            <strong>Selected:</strong> <span id="selected-member-name"></span>
+                        </div>
                     </div>
-                    <input type="hidden" id="contribution-member-id">
                 </div>
 
-                <div class="form-group">
-                    <label for="contribution-type">Type *</label>
-                    <select id="contribution-type" required onchange="accountingPage.toggleContributionFields()">
-                        <option value="in-kind">In-Kind Donation (Consumable - food, flowers)</option>
-                        <option value="item">Physical Item (Storable - will auto-add to inventory)</option>
-                    </select>
-                    <small style="color: #666;">
-                        <strong>In-Kind:</strong> Immediate use items (food, flowers) - Income & Expense immediately<br>
-                        <strong>Physical Item:</strong> Storable items (Bibles, chairs) - Auto-adds to inventory for tracking
-                    </small>
+                <!-- STEP 2: Contribution Details -->
+                <div class="form-step" data-step="2" style="display:none;">
+                    <div class="form-group">
+                        <label for="contribution-type">Contribution Type *</label>
+                        <select id="contribution-type" required onchange="accountingPage.toggleContributionFields()">
+                            <option value="in-kind">In-Kind Donation (Consumable)</option>
+                            <option value="item">Physical Item (Storable)</option>
+                        </select>
+                        <small style="color: #666; display:block; margin-top:5px;">
+                            <strong>In-Kind:</strong> Immediate use (food, flowers)<br>
+                            <strong>Physical:</strong> Inventory items (Bibles, chairs)
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contribution-category">Category *</label>
+                        <select id="contribution-category" required>
+                            <option value="donation">Donation</option>
+                            <option value="offering">Offering</option>
+                            <option value="tithe">Tithe</option>
+                            <option value="pledge">Pledge</option>
+                            <option value="building">Building Fund</option>
+                            <option value="missions">Missions</option>
+                            <option value="youth_activity">Youth Activity</option>
+                            <option value="cultural_events">Cultural Events</option>
+                            <option value="fundraising">Fundraising</option>
+                            <option value="special_donations">Special Donations</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contribution-description">Description *</label>
+                        <input type="text" id="contribution-description" required 
+                               placeholder="e.g., Bible donation, Food for Sunday service">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="flex:1;">
+                            <label for="contribution-quantity">Quantity</label>
+                            <input type="number" id="contribution-quantity" min="1" value="1">
+                        </div>
+
+                        <div class="form-group" style="flex:2;">
+                            <label for="contribution-value">Estimated Value ($) *</label>
+                            <input type="number" id="contribution-value" step="0.01" min="0" required placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contribution-date">Date</label>
+                        <input type="text" id="contribution-date" class="mobile-date" placeholder="DD/MM/YYYY">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contribution-notes">Notes (Optional)</label>
+                        <textarea id="contribution-notes" rows="3" placeholder="Additional information..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" id="issue-receipt"> 
+                            <span>Issue receipt to member</span>
+                        </label>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="contribution-category">Category *</label>
-                    <select id="contribution-category" required>
-                        <option value="tithe">Tithe</option>
-                        <option value="offering">Offering</option>
-                        <option value="donation">Donation</option>
-                        <option value="pledge">Pledge</option>
-                        <option value="building">Building Fund</option>
-                        <option value="missions">Missions</option>
-                        <option value="youth_activity">Youth Activity Fees</option>
-                        <option value="cultural_events">Cultural / Community Events</option>
-                        <option value="fundraising">Fundraising Event</option>
-                        <option value="special_donations">Special Donations</option>
-                        <option value="membership">Membership Fees</option>
-                        <option value="other">Other (Specify)</option>
-                    </select>
+                <!-- STEP 3: Review & Confirm -->
+                <div class="form-step" data-step="3" style="display:none;">
+                    <div class="review-section">
+                        <h4>Review Contribution Details</h4>
+                        <div class="review-grid">
+                            <div class="review-item">
+                                <span class="review-label">Member:</span>
+                                <span class="review-value" id="review-member">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Type:</span>
+                                <span class="review-value" id="review-type">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Category:</span>
+                                <span class="review-value" id="review-category">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Description:</span>
+                                <span class="review-value" id="review-description">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Quantity:</span>
+                                <span class="review-value" id="review-quantity">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Value:</span>
+                                <span class="review-value" id="review-value">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Date:</span>
+                                <span class="review-value" id="review-date">-</span>
+                            </div>
+                            <div class="review-item" id="review-notes-item" style="display:none;">
+                                <span class="review-label">Notes:</span>
+                                <span class="review-value" id="review-notes">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Receipt:</span>
+                                <span class="review-value" id="review-receipt">-</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="contribution-description">Description *</label>
-                    <input type="text" id="contribution-description" required placeholder="e.g., Bible donation, Food for Sunday service">
-                </div>
-
-                <div class="form-group">
-                    <label for="contribution-quantity">Quantity</label>
-                    <input type="number" id="contribution-quantity" min="1" value="1">
-                </div>
-
-                <div class="form-group">
-                    <label for="contribution-value">Estimated Value ($) *</label>
-                    <input type="number" id="contribution-value" step="0.01" min="0" required placeholder="0.00">
-                    <small style="color: #666;">For reporting purposes, even for non-cash items</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="contribution-date">Date</label>
-                    <input type="text" id="contribution-date" class="mobile-date" placeholder="DD/MM/YYYY">
-                </div>
-
-                <div class="form-group">
-                    <label for="contribution-notes">Notes</label>
-                    <textarea id="contribution-notes" rows="3" placeholder="Additional information..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" id="issue-receipt"> 
-                        Issue receipt to member
-                    </label>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="accountingPage.closeContributionModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Contribution</button>
+                <!-- Navigation Buttons -->
+                <div class="modal-actions" style="display:flex; justify-content:space-between; margin-top:20px;">
+                    <button type="button" class="btn btn-secondary" id="modal-cancel-btn" 
+                            onclick="accountingPage.closeContributionModal()">Cancel</button>
+                    <div style="display:flex; gap:10px;">
+                        <button type="button" class="btn btn-outline" id="modal-back-btn" 
+                                onclick="accountingPage.previousContributionStep()" style="display:none;">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <button type="button" class="btn btn-primary" id="modal-next-btn" 
+                                onclick="accountingPage.nextContributionStep()">
+                            Next <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="modal-submit-btn" style="display:none;">
+                            <i class="fas fa-check"></i> Submit
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
+
+    <style>
+        /* Step Indicator Styles */
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .step-indicator::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 15%;
+            right: 15%;
+            height: 2px;
+            background: #ddd;
+            z-index: 0;
+        }
+        
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active .step-number {
+            background: #4a6fa5;
+            color: white;
+            box-shadow: 0 2px 8px rgba(74, 111, 165, 0.3);
+        }
+        
+        .step.completed .step-number {
+            background: #28a745;
+            color: white;
+        }
+        
+        .step-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .step.active .step-label {
+            color: #4a6fa5;
+            font-weight: 600;
+        }
+        
+        /* Form Step Styles */
+        .form-step {
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        /* Review Section Styles */
+        .review-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .review-section h4 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+        
+        .review-grid {
+            display: grid;
+            gap: 12px;
+        }
+        
+        .review-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .review-label {
+            font-weight: 600;
+            color: #555;
+            min-width: 120px;
+        }
+        
+        .review-value {
+            color: #2c3e50;
+            text-align: right;
+            flex: 1;
+        }
+        
+        /* Button Styles */
+        .btn-outline {
+            background: white;
+            color: #4a6fa5;
+            border: 2px solid #4a6fa5;
+        }
+        
+        .btn-outline:hover {
+            background: #4a6fa5;
+            color: white;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 600px) {
+            .step-label {
+                font-size: 11px;
+            }
+            
+            .step-number {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .review-item {
+                flex-direction: column;
+                gap: 4px;
+            }
+            
+            .review-label {
+                min-width: auto;
+            }
+            
+            .review-value {
+                text-align: left;
+            }
+            
+            .modal-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .modal-actions > div {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .modal-actions button {
+                flex: 1;
+            }
+        }
+    </style>
 
     <script src="js/mobile-date-input.js?v=1"></script>
     <script src="js/stats-utils.js"></script>

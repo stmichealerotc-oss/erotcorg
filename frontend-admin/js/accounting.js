@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
     // Utility class for safe DOM manipulation and XSS prevention
     class DOMUtils {
         // Escape HTML to prevent XSS
@@ -93,23 +93,37 @@
         this.init();
     }
 
+    // A sentinel element only present while the accounting page is in the DOM
+    get _pageRoot() { return document.getElementById('accounting'); }
+
     async init() {
         try {
+            // Core data — must succeed for the page to be useful
             await this.loadMembersList();
             await this.loadAccountingData();
-            await this.loadPromises();
-            await this.loadContributions();
-            
-            // Create debounced search functions after methods are defined
-            this.debouncedSearch = DOMUtils.debounce(this.performMemberSearch.bind(this), 300);
-            this.debouncedPromiseSearch = DOMUtils.debounce(this.searchMembersForPromise.bind(this), 300);
-            this.debouncedContributionSearch = DOMUtils.debounce(this.searchMembersForContribution.bind(this), 300);
-            
-            this.setupEventListeners();
         } catch (error) {
-            console.error('❌ Failed to initialize accounting page:', error);
-            this.showError('Failed to initialize the accounting system. Please refresh the page.');
+            console.error('❌ Failed to load core accounting data:', error);
+            this.showError('Failed to load accounting data. Please refresh the page.');
+            return;
         }
+
+        if (!this._pageRoot) return; // navigated away while loading
+
+        // Secondary data — load independently so a network blip on one
+        // does not block the other or break the page
+        await Promise.allSettled([
+            this.loadPromises(),
+            this.loadContributions()
+        ]);
+
+        if (!this._pageRoot) return; // navigated away during secondary loads
+
+        // Create debounced search functions after methods are defined
+        this.debouncedSearch = DOMUtils.debounce(this.performMemberSearch.bind(this), 300);
+        this.debouncedPromiseSearch = DOMUtils.debounce(this.searchMembersForPromise.bind(this), 300);
+        this.debouncedContributionSearch = DOMUtils.debounce(this.searchMembersForContribution.bind(this), 300);
+
+        this.setupEventListeners();
     }
 
     // Tab switching functionality
@@ -488,7 +502,7 @@ renderTransactions(transactions) {
 
         return `
             <tr>
-                <td>${new Date(transaction.date).toLocaleDateString()}</td>
+                <td>${new Date(transaction.date).toLocaleDateString('en-AU')}</td>
                 <td>${transaction.description}</td>
                 <td>
                     ${payeeType === 'member' ? 
@@ -571,7 +585,7 @@ createTransactionRow(transaction) {
 
     // Date cell
     const dateCell = document.createElement('td');
-    dateCell.textContent = new Date(transaction.date).toLocaleDateString();
+    dateCell.textContent = new Date(transaction.date).toLocaleDateString('en-AU');
     row.appendChild(dateCell);
 
     // Description cell
@@ -1587,13 +1601,15 @@ updateMultiMonthDescription() {
 
 // Member Contributions Functions
 showAddContributionForm() {
-    // Reset form first
+    if (!this._pageRoot) return;
+    
+    // Reset form
     const form = document.getElementById('contribution-form');
     if (form) {
         form.reset();
     }
     
-    // Set default values - format date as DD/MM/YYYY for mobile-date input
+    // Set default values
     const today = new Date();
     const formattedDate = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
     document.getElementById('contribution-date').value = formattedDate;
@@ -1601,25 +1617,159 @@ showAddContributionForm() {
     document.getElementById('contribution-member-search').value = '';
     document.getElementById('contribution-quantity').value = '1';
     
-    // Hide search results
+    // Hide search results and selected member display
     document.getElementById('contribution-member-results').style.display = 'none';
+    const selectedDisplay = document.getElementById('selected-member-display');
+    if (selectedDisplay) selectedDisplay.style.display = 'none';
     
-    // Hide cash transaction option by default
-    const cashOption = document.getElementById('cash-transaction-option');
-    if (cashOption) {
-        cashOption.style.display = 'none';
-    }
+    // Reset to step 1
+    this.currentContributionStep = 1;
+    this.showContributionStep(1);
     
     // Show modal
     document.getElementById('contribution-modal').style.display = 'flex';
-    
-    console.log('✅ Contribution form opened and initialized');
 }
 
 closeContributionModal() {
     document.getElementById('contribution-modal').style.display = 'none';
     document.getElementById('contribution-form').reset();
     document.getElementById('contribution-member-results').style.display = 'none';
+    
+    // Reset step state
+    this.currentContributionStep = 1;
+    this.showContributionStep(1);
+}
+
+// Step navigation for contribution wizard
+nextContributionStep() {
+    if (!this._pageRoot) return;
+    
+    const currentStep = this.currentContributionStep || 1;
+    
+    // Validate current step before proceeding
+    if (currentStep === 1) {
+        // Check if member is selected
+        const memberId = document.getElementById('contribution-member-id').value;
+        if (!memberId) {
+            this.showError('Please select a member before continuing');
+            return;
+        }
+    } else if (currentStep === 2) {
+        // Validate required fields in step 2
+        const description = document.getElementById('contribution-description').value.trim();
+        const value = document.getElementById('contribution-value').value;
+        
+        if (!description) {
+            this.showError('Please enter a description');
+            return;
+        }
+        if (!value || parseFloat(value) <= 0) {
+            this.showError('Please enter a valid contribution value');
+            return;
+        }
+        
+        // Populate review step
+        this.populateReviewStep();
+    }
+    
+    // Move to next step
+    this.currentContributionStep = currentStep + 1;
+    this.showContributionStep(this.currentContributionStep);
+}
+
+previousContributionStep() {
+    if (!this._pageRoot) return;
+    
+    const currentStep = this.currentContributionStep || 1;
+    if (currentStep > 1) {
+        this.currentContributionStep = currentStep - 1;
+        this.showContributionStep(this.currentContributionStep);
+    }
+}
+
+showContributionStep(stepNum) {
+    if (!this._pageRoot) return;
+    
+    // Update step indicators
+    document.querySelectorAll('.step-indicator .step').forEach(step => {
+        const stepNumber = parseInt(step.getAttribute('data-step'));
+        step.classList.remove('active', 'completed');
+        
+        if (stepNumber === stepNum) {
+            step.classList.add('active');
+        } else if (stepNumber < stepNum) {
+            step.classList.add('completed');
+        }
+    });
+    
+    // Show/hide form steps
+    document.querySelectorAll('.form-step').forEach(step => {
+        const stepNumber = parseInt(step.getAttribute('data-step'));
+        step.style.display = stepNumber === stepNum ? 'block' : 'none';
+    });
+    
+    // Update buttons
+    const backBtn = document.getElementById('modal-back-btn');
+    const nextBtn = document.getElementById('modal-next-btn');
+    const submitBtn = document.getElementById('modal-submit-btn');
+    
+    if (backBtn) backBtn.style.display = stepNum > 1 ? 'inline-block' : 'none';
+    if (nextBtn) nextBtn.style.display = stepNum < 3 ? 'inline-block' : 'none';
+    if (submitBtn) submitBtn.style.display = stepNum === 3 ? 'inline-block' : 'none';
+    
+    // Update modal title
+    const titles = {
+        1: 'Select Member',
+        2: 'Contribution Details',
+        3: 'Review & Confirm'
+    };
+    const titleEl = document.getElementById('modal-title');
+    if (titleEl) titleEl.textContent = titles[stepNum] || 'Add Member Contribution';
+}
+
+populateReviewStep() {
+    if (!this._pageRoot) return;
+    
+    // Get form values
+    const memberName = document.getElementById('selected-member-name')?.textContent || 'N/A';
+    const type = document.getElementById('contribution-type').value;
+    const category = document.getElementById('contribution-category');
+    const description = document.getElementById('contribution-description').value;
+    const quantity = document.getElementById('contribution-quantity').value;
+    const value = parseFloat(document.getElementById('contribution-value').value).toFixed(2);
+    const date = document.getElementById('contribution-date').value;
+    const notes = document.getElementById('contribution-notes').value.trim();
+    const issueReceipt = document.getElementById('issue-receipt').checked;
+    
+    // Map type to friendly name
+    const typeLabels = {
+        'in-kind': 'In-Kind Donation (Consumable)',
+        'item': 'Physical Item (Storable)'
+    };
+    
+    // Populate review fields
+    const setReviewValue = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    };
+    
+    setReviewValue('review-member', memberName);
+    setReviewValue('review-type', typeLabels[type] || type);
+    setReviewValue('review-category', category?.options[category.selectedIndex]?.text || 'N/A');
+    setReviewValue('review-description', description);
+    setReviewValue('review-quantity', quantity);
+    setReviewValue('review-value', `$${value}`);
+    setReviewValue('review-date', date);
+    setReviewValue('review-receipt', issueReceipt ? 'Yes' : 'No');
+    
+    // Show/hide notes section
+    const notesItem = document.getElementById('review-notes-item');
+    if (notes) {
+        if (notesItem) notesItem.style.display = 'flex';
+        setReviewValue('review-notes', notes);
+    } else {
+        if (notesItem) notesItem.style.display = 'none';
+    }
 }
 
 toggleContributionFields() {
@@ -1684,27 +1834,27 @@ displayContributionMemberResults(members, query) {
 }
 
 selectContributionMember(memberId, memberName) {
-    console.log('Selecting contribution member:', memberId, memberName);
-    
-    // Use the same validation as transaction member selection
+    // Validate member ID
     if (memberId && memberId.length === 24 && /^[0-9a-fA-F]+$/.test(memberId)) {
         document.getElementById('contribution-member-id').value = memberId;
     } else {
-        console.warn('Invalid memberId format:', memberId);
         document.getElementById('contribution-member-id').value = '';
         return;
     }
     
-    // Set the payee name
+    // Set the search field value
     document.getElementById('contribution-member-search').value = memberName;
+    
+    // Show selected member display
+    const selectedDisplay = document.getElementById('selected-member-display');
+    const selectedNameEl = document.getElementById('selected-member-name');
+    if (selectedDisplay && selectedNameEl) {
+        selectedNameEl.textContent = memberName;
+        selectedDisplay.style.display = 'block';
+    }
     
     // Hide search results
     document.getElementById('contribution-member-results').style.display = 'none';
-    
-    console.log('✅ Member selected for contribution:', {
-        memberId: memberId,
-        memberName: memberName
-    });
 }
 
 async addContribution() {
@@ -1721,10 +1871,21 @@ async addContribution() {
         date: (function() {
             var raw = document.getElementById('contribution-date').value;
             if (!raw) return new Date().toISOString();
-            // Convert DD/MM/YYYY to ISO
-            var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(raw);
-            if (m) return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1])).toISOString();
-            return new Date(raw).toISOString();
+
+            // Use the class method (this is wrapped in an IIFE — access via accountingPage instance)
+            var parsedDate = window.accountingPage ? window.accountingPage.parseDisplayDate(raw) : null;
+            if (parsedDate) {
+                return parsedDate.toISOString();
+            }
+
+            // Fallback: manually parse DD/MM/YYYY to avoid invalid Date from new Date("DD/MM/YYYY")
+            var ddmmyyyy = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/.exec(raw.trim());
+            if (ddmmyyyy) {
+                var d = new Date(Number(ddmmyyyy[3]), Number(ddmmyyyy[2]) - 1, Number(ddmmyyyy[1]));
+                if (!isNaN(d.getTime())) return d.toISOString();
+            }
+
+            return new Date().toISOString(); // Safe fallback: today
         })(),
         notes: document.getElementById('contribution-notes').value,
         issueReceipt: document.getElementById('issue-receipt').checked
@@ -1774,7 +1935,12 @@ async loadContributions() {
         this.displayContributions(contributions);
     } catch (error) {
         console.error('Error loading contributions:', error);
-        const _cl = document.getElementById('contributions-list'); if (_cl) _cl.innerHTML = '<tr><td colspan="8">Error loading contributions</td></tr>';
+        const _cl = document.getElementById('contributions-list');
+        if (_cl) _cl.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:1.5rem;color:#666;">
+            <i class="fas fa-exclamation-circle" style="color:#ffc107;margin-right:6px;"></i>
+            Could not load contributions. 
+            <a href="#" onclick="window.accountingPage && window.accountingPage.loadContributions(); return false;" style="color:#1e3c72;">Retry</a>
+        </td></tr>`;
     }
 }
 
@@ -1812,16 +1978,14 @@ async calculateTitheStatistics(contributions) {
         const avgTithe = membersPaidThisMonth > 0 ? monthTithesTotal / membersPaidThisMonth : 0;
         
         // Update UI
-        document.getElementById('month-tithes-total').textContent = `$${monthTithesTotal.toFixed(2)}`;
-        document.getElementById('month-tithes-count').textContent = `${monthTithes.length} contributions`;
-        
-        document.getElementById('year-contributions-total').textContent = `$${yearTotal.toFixed(2)}`;
-        document.getElementById('year-contributions-count').textContent = `${yearContributions.length} contributions`;
-        
-        document.getElementById('members-paid-count').textContent = membersPaidThisMonth;
-        document.getElementById('members-total-count').textContent = `of ${totalActiveMembers} active members`;
-        
-        document.getElementById('avg-tithe-amount').textContent = `$${avgTithe.toFixed(2)}`;
+        const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        setEl('month-tithes-total', `$${monthTithesTotal.toFixed(2)}`);
+        setEl('month-tithes-count', `${monthTithes.length} contributions`);
+        setEl('year-contributions-total', `$${yearTotal.toFixed(2)}`);
+        setEl('year-contributions-count', `${yearContributions.length} contributions`);
+        setEl('members-paid-count', membersPaidThisMonth);
+        setEl('members-total-count', `of ${totalActiveMembers} active members`);
+        setEl('avg-tithe-amount', `$${avgTithe.toFixed(2)}`);
         
     } catch (error) {
         console.error('Error calculating tithe statistics:', error);
@@ -1830,6 +1994,7 @@ async calculateTitheStatistics(contributions) {
 
 displayContributions(contributions) {
     const tbody = document.getElementById('contributions-list');
+    if (!tbody) return;
     
     if (contributions.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #666;">No contributions found</td></tr>';
@@ -2020,9 +2185,19 @@ populateEditForm(transaction) {
     typeField.value = transaction.type;
     descField.value = transaction.description;
     amountField.value = transaction.amount;
-    if (paymentField) paymentField.value = transaction.paymentMethod || 'cash';
+    if (paymentField) {
+        paymentField.value = transaction.paymentMethod || 'cash';
+        // Sync tap/card UI notes to the loaded method
+        this.onPaymentMethodChange();
+    }
     if (refField) refField.value = transaction.reference || '';
     if (noteField) noteField.value = transaction.notes || '';
+
+    // Populate transaction date field in DD/MM/YYYY
+    const txnDateField = document.getElementById('transaction-date');
+    if (txnDateField) {
+        txnDateField.value = this.formatDateForInput(transaction.date);
+    }
     
     // ✅ CRITICAL FIX: Set the category FIRST before calling togglePayeeFields
     categoryField.value = transaction.category;
@@ -2333,7 +2508,16 @@ async addTransaction() {
         paymentMethod: document.getElementById('payment-method').value,
         reference: document.getElementById('transaction-reference').value,
         notes: document.getElementById('transaction-note').value,
-        
+
+        // Transaction date — parse DD/MM/YYYY input; fall back to now
+        date: (function() {
+            const raw = document.getElementById('transaction-date')?.value;
+            if (!raw) return new Date().toISOString();
+            const ap = window.accountingPage;
+            const parsed = ap ? ap.parseDisplayDate(raw) : null;
+            return parsed ? parsed.toISOString() : new Date().toISOString();
+        })(),
+
         // PAYEE DATA
         payee: {
             type: payeeType,
@@ -2342,10 +2526,10 @@ async addTransaction() {
         }
     };
 
-    // MULTI-MONTH PAYMENT: Collect selected months
-    const selectedMonthCheckboxes = document.querySelectorAll('.month-checkbox:checked');
-    if (selectedMonthCheckboxes.length > 0) {
-        formData.monthsCovered = Array.from(selectedMonthCheckboxes).map(cb => cb.value);
+    // MULTI-MONTH PAYMENT: Collect selected months from the month picker
+    const selectedMonths = this._getSelectedMonths ? this._getSelectedMonths() : [];
+    if (selectedMonths.length > 0) {
+        formData.monthsCovered = selectedMonths;
         console.log('✅ Multi-month payment covering:', formData.monthsCovered);
     }
 
@@ -2464,6 +2648,76 @@ async addTransaction() {
         console.log('🔓 Reset isSubmitting to false');
     }
 }
+async startAdminStripePayment() {
+    const amountField = document.getElementById('transaction-amount');
+    const payeeField  = document.getElementById('payee-search');
+    const methodField = document.getElementById('payment-method');
+    const description = this.getTransactionDescription();
+
+    const amount = Number(amountField?.value || 0);
+    if (!amount || amount <= 0) {
+        alert('Please enter a valid amount before starting payment.');
+        amountField?.focus();
+        return;
+    }
+
+    const payeeName      = payeeField?.value?.trim() || 'Church donor';
+    const selectedMethod = methodField?.value || 'card';
+
+    // tap = physical terminal tap already collected — just save the transaction normally
+    if (selectedMethod === 'tap') {
+        alert('Mobile Tap payments are recorded directly.\nJust fill in the details and click Save Transaction.');
+        return;
+    }
+
+    // Only card triggers Stripe checkout
+    if (!['card', 'online'].includes(selectedMethod)) {
+        alert('The Stripe payment button is for Card payments only.\nFor other methods use Save Transaction directly.');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/payments/create-checkout-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                amount,
+                donorName: payeeName,
+                email: '',
+                description: description || 'Church donation'
+            })
+        });
+
+        const result = await response.json();
+        if (!result.success || !result.url) {
+            throw new Error(result.error || 'Unable to create Stripe checkout session.');
+        }
+
+        document.getElementById('payment-method').value = selectedMethod;
+        document.getElementById('transaction-reference').value = `Stripe:${result.sessionId || 'checkout'}`;
+        window.location.href = result.url;
+    } catch (error) {
+        console.error('Admin Stripe payment failed:', error);
+        alert(error.message || 'Payment failed. Please try again.');
+    }
+}
+
+// Show/hide Stripe button based on selected payment method
+onPaymentMethodChange() {
+    const method = document.getElementById('payment-method')?.value;
+    const stripeBtnWrap = document.getElementById('stripe-pay-btn-wrap');
+    const tapNote       = document.getElementById('tap-record-note');
+
+    // Show Stripe button only for card
+    if (stripeBtnWrap) {
+        stripeBtnWrap.style.display = method === 'card' ? 'block' : 'none';
+    }
+    // Show tap guidance note only for tap
+    if (tapNote) {
+        tapNote.style.display = method === 'tap' ? 'block' : 'none';
+    }
+}
+
 // Updated showAddTransactionForm method
 showAddTransactionForm() {
     const form = document.getElementById('transaction-form');
@@ -2479,6 +2733,8 @@ showAddTransactionForm() {
     document.getElementById('transaction-modal').style.display = 'block';
     document.getElementById('member-search-results').style.display = 'none';
     document.getElementById('payment-method').value = 'cash';
+    // Sync the tap/card UI notes with the default method
+    this.onPaymentMethodChange();
     
     // Reset "Other" category input
     const otherInput = document.getElementById('other-category-input');
@@ -2506,6 +2762,14 @@ showAddTransactionForm() {
     document.getElementById('selected-member-id').value = '';
     document.querySelector('input[name="payee-type"][value="member"]').checked = true;
     this.togglePayeeFields();
+
+    // Pre-fill transaction date with today in DD/MM/YYYY
+    const todayTxn = new Date();
+    const todayFormatted = String(todayTxn.getDate()).padStart(2, '0') + '/' +
+                           String(todayTxn.getMonth() + 1).padStart(2, '0') + '/' +
+                           todayTxn.getFullYear();
+    const txnDateField = document.getElementById('transaction-date');
+    if (txnDateField) txnDateField.value = todayFormatted;
     
     // Populate description options based on default category (should be blank)
     this.updateDescriptionOptions();
@@ -2975,9 +3239,14 @@ async deleteTransaction(transactionId) {
 }
         // FILTER FUNCTIONALITY
         applyFilters() {
+            // Read raw DD/MM/YYYY values from filter inputs
+            const rawFrom = document.getElementById('filter-date-from').value;
+            const rawTo   = document.getElementById('filter-date-to').value;
+
             this.currentFilters = {
-                dateFrom: document.getElementById('filter-date-from').value,
-                dateTo: document.getElementById('filter-date-to').value,
+                // Backend parseDateValue() understands DD/MM/YYYY — pass as-is
+                dateFrom: rawFrom,
+                dateTo:   rawTo,
                 category: document.getElementById('filter-category').value,
                 type: document.getElementById('filter-type').value
             };
@@ -3330,10 +3599,78 @@ async loadPromises() {
         console.error('Error loading promises:', error);
         this.promises = [];
         this.renderPromises();
+        // Show a retry notice in the promises section if the element exists
+        const promisesList = document.getElementById('promises-list') || document.querySelector('#promises-tab tbody');
+        if (promisesList && this.promises.length === 0) {
+            promisesList.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:1.5rem;color:#666;">
+                <i class="fas fa-exclamation-circle" style="color:#ffc107;margin-right:6px;"></i>
+                Could not load promises.
+                <a href="#" onclick="window.accountingPage && window.accountingPage.loadPromises(); return false;" style="color:#1e3c72;">Retry</a>
+            </td></tr>`;
+        }
     }
 }
 
-renderPromises() {
+    formatDateForDisplay(dateValue, fallback = '-') {
+        if (!dateValue) return fallback;
+
+        const date = this.parseDisplayDate(dateValue);
+        if (!date) return fallback;
+
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
+    parseDisplayDate(dateValue) {
+        if (!dateValue) return null;
+
+        if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+            return dateValue;
+        }
+
+        if (typeof dateValue === 'string') {
+            const trimmed = dateValue.trim();
+            if (!trimmed) return null;
+
+            const isoMatch = /^\d{4}-\d{2}-\d{2}(?:T.*)?$/.exec(trimmed);
+            if (isoMatch) {
+                const isoDate = new Date(trimmed);
+                if (!isNaN(isoDate.getTime())) return isoDate;
+            }
+
+            const dayFirstMatch = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/.exec(trimmed);
+            if (dayFirstMatch) {
+                const day = Number(dayFirstMatch[1]);
+                const month = Number(dayFirstMatch[2]);
+                const year = Number(dayFirstMatch[3]);
+                if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                    const parsed = new Date(year, month - 1, day);
+                    if (!isNaN(parsed.getTime()) && parsed.getDate() === day && parsed.getMonth() === month - 1 && parsed.getFullYear() === year) {
+                        return parsed;
+                    }
+                }
+            }
+
+            const fallbackDate = new Date(trimmed);
+            if (!isNaN(fallbackDate.getTime())) return fallbackDate;
+        }
+
+        return null;
+    }
+
+    formatDateForInput(dateValue) {
+        const date = this.parseDisplayDate(dateValue);
+        if (!date) return '';
+
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
+    renderPromises() {
     const tbody = document.getElementById('promises-tbody');
     if (!tbody) return;
 
@@ -3345,7 +3682,8 @@ renderPromises() {
     const filteredPromises = this.filterPromisesList(this.promises);
     
     tbody.innerHTML = filteredPromises.map(promise => {
-        const isOverdue = new Date(promise.dueDate) < new Date() && promise.status === 'pending';
+        const dueDate = this.parseDisplayDate(promise.dueDate);
+        const isOverdue = dueDate && dueDate < new Date() && promise.status === 'pending';
         const status = isOverdue ? 'overdue' : promise.status;
         
         return `
@@ -3356,9 +3694,9 @@ renderPromises() {
                 </td>
                 <td>$${promise.amount.toLocaleString()}</td>
                 <td>${this.formatCategory(promise.category)}</td>
-                <td>${new Date(promise.promiseDate).toLocaleDateString()}</td>
+                <td>${this.formatDateForDisplay(promise.promiseDate)}</td>
                 <td class="${isOverdue ? 'text-danger' : ''}">
-                    ${new Date(promise.dueDate).toLocaleDateString()}
+                    ${this.formatDateForDisplay(promise.dueDate)}
                     ${isOverdue ? '<br><small class="text-danger">Overdue</small>' : ''}
                 </td>
                 <td>
@@ -3392,7 +3730,8 @@ filterPromisesList(promises) {
     const categoryFilter = document.getElementById('promise-category-filter')?.value || 'all';
 
     return promises.filter(promise => {
-        const isOverdue = new Date(promise.dueDate) < new Date() && promise.status === 'pending';
+        const dueDate = this.parseDisplayDate(promise.dueDate);
+        const isOverdue = dueDate && dueDate < new Date() && promise.status === 'pending';
         const currentStatus = isOverdue ? 'overdue' : promise.status;
         
         const statusMatch = statusFilter === 'all' || 
@@ -3409,11 +3748,11 @@ filterPromises() {
 
 updatePromiseStats() {
     const stats = this.promiseStats;
-    
-    document.getElementById('total-promises').textContent = stats.total || 0;
-    document.getElementById('pending-amount').textContent = `$${(stats.pendingAmount || 0).toLocaleString()}`;
-    document.getElementById('fulfilled-amount').textContent = `$${(stats.fulfilledAmount || 0).toLocaleString()}`;
-    document.getElementById('overdue-count').textContent = stats.overdueCount || 0;
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setEl('total-promises', stats.total || 0);
+    setEl('pending-amount', `$${(stats.pendingAmount || 0).toLocaleString()}`);
+    setEl('fulfilled-amount', `$${(stats.fulfilledAmount || 0).toLocaleString()}`);
+    setEl('overdue-count', stats.overdueCount || 0);
 }
 
 // Promise Modal Methods
@@ -3489,7 +3828,13 @@ async addPromise(e) {
         amount: parseFloat(document.getElementById('promise-amount').value),
         category: document.getElementById('promise-category').value,
         description: document.getElementById('promise-description').value,
-        dueDate: document.getElementById('promise-due-date').value
+        dueDate: (function() {
+            const raw = document.getElementById('promise-due-date').value;
+            if (!raw) return null;
+            // Parse DD/MM/YYYY → ISO string so MongoDB stores it correctly
+            const parsed = window.accountingPage ? window.accountingPage.parseDisplayDate(raw) : null;
+            return parsed ? parsed.toISOString() : raw;
+        })()
     };
 
     // Validation
@@ -3544,7 +3889,7 @@ async editPromise(promiseId) {
         document.getElementById('promise-amount').value = promise.amount;
         document.getElementById('promise-category').value = promise.category;
         document.getElementById('promise-description').value = promise.description || '';
-        document.getElementById('promise-due-date').value = new Date(promise.dueDate).toISOString().split('T')[0];
+        document.getElementById('promise-due-date').value = this.formatDateForInput(promise.dueDate);
 
         // Change modal to edit mode
         this.setFormToEditMode(promise._id);
@@ -3623,7 +3968,7 @@ showFulfillPromiseModal(promiseId) {
         <p><strong>Member:</strong> ${promise.memberName}</p>
         <p><strong>Amount:</strong> $${promise.amount.toLocaleString()}</p>
         <p><strong>Category:</strong> ${this.formatCategory(promise.category)}</p>
-        <p><strong>Due Date:</strong> ${new Date(promise.dueDate).toLocaleDateString()}</p>
+        <p><strong>Due Date:</strong> ${this.formatDateForDisplay(promise.dueDate)}</p>
         ${promise.description ? `<p><strong>Description:</strong> ${promise.description}</p>` : ''}
     `;
 
@@ -3640,9 +3985,13 @@ async fulfillPromise(e) {
     
     const promiseId = document.getElementById('fulfill-promise-id').value;
     const actualAmount = parseFloat(document.getElementById('fulfill-amount').value);
-    const paymentDate = document.getElementById('fulfill-date').value;
+    const rawPaymentDate = document.getElementById('fulfill-date').value;
     const paymentMethod = document.getElementById('fulfill-payment-method').value;
     const notes = document.getElementById('fulfill-notes').value;
+
+    // Parse DD/MM/YYYY → ISO string so backend stores correct date
+    const parsedPaymentDate = this.parseDisplayDate(rawPaymentDate);
+    const paymentDate = parsedPaymentDate ? parsedPaymentDate.toISOString() : rawPaymentDate;
 
     try {
         const result = await API.post(`/promises/${promiseId}/fulfill`, {
@@ -3686,11 +4035,11 @@ viewPromiseDetails(promiseId) {
             </div>
             <div class="detail-row">
                 <label>Promise Date:</label>
-                <span>${new Date(promise.promiseDate).toLocaleDateString()}</span>
+                <span>${this.formatDateForDisplay(promise.promiseDate)}</span>
             </div>
             <div class="detail-row">
                 <label>Due Date:</label>
-                <span>${new Date(promise.dueDate).toLocaleDateString()}</span>
+                <span>${this.formatDateForDisplay(promise.dueDate)}</span>
             </div>
             <div class="detail-row">
                 <label>Status:</label>
@@ -3705,7 +4054,7 @@ viewPromiseDetails(promiseId) {
             ${promise.fulfilledDate ? `
             <div class="detail-row">
                 <label>Fulfilled Date:</label>
-                <span>${new Date(promise.fulfilledDate).toLocaleDateString()}</span>
+                <span>${this.formatDateForDisplay(promise.fulfilledDate)}</span>
             </div>
             ` : ''}
             ${promise.actualAmount ? `
@@ -3800,8 +4149,8 @@ convertPromisesToCSV(promises) {
         promise.memberName,
         promise.amount,
         this.formatCategory(promise.category),
-        new Date(promise.promiseDate).toLocaleDateString(),
-        new Date(promise.dueDate).toLocaleDateString(),
+        this.formatDateForDisplay(promise.promiseDate),
+        this.formatDateForDisplay(promise.dueDate),
         promise.status,
         promise.description || ''
     ]);
@@ -3838,8 +4187,8 @@ async generateReceipt(transactionId) {
 }
 
 async createReceiptHTML(transaction) {
-    const receiptDate = new Date().toLocaleDateString();
-    const transactionDate = new Date(transaction.date).toLocaleDateString();
+    const receiptDate = new Date().toLocaleDateString('en-AU');
+    const transactionDate = new Date(transaction.date).toLocaleDateString('en-AU');
     
     // Get signature information - SIMPLIFIED VERSION (Name and Role Only)
     let signatureSection = `
@@ -3863,7 +4212,7 @@ async createReceiptHTML(transaction) {
                                     <strong style="font-size: 15px;">${sig.approvedBy.name}</strong>
                                 </div>
                                 <div style="font-size: 13px; font-weight: bold; text-align: center;">${sig.signatureTitle}</div>
-                                <div style="font-size: 10px; color: #666; text-align: center;">Digitally approved: ${new Date(sig.approvedBy.timestamp).toLocaleDateString()}</div>
+                                <div style="font-size: 10px; color: #666; text-align: center;">Digitally approved: ${new Date(sig.approvedBy.timestamp).toLocaleDateString('en-AU')}</div>
                             </div>
                         </div>
                     </div>
@@ -3878,7 +4227,7 @@ async createReceiptHTML(transaction) {
                                     <strong style="font-size: 15px;">Authorized Signatory</strong>
                                 </div>
                                 <div style="font-size: 13px; font-weight: bold; text-align: center;">${sig.signatureTitle}</div>
-                                <div style="font-size: 10px; color: #666; text-align: center;">Signed: ${new Date(sig.signatureDate || sig.createdAt).toLocaleDateString()}</div>
+                                <div style="font-size: 10px; color: #666; text-align: center;">Signed: ${new Date(sig.signatureDate || sig.createdAt).toLocaleDateString('en-AU')}</div>
                             </div>
                         </div>
                     </div>
@@ -4062,7 +4411,7 @@ async createReceiptHTML(transaction) {
         <body>
             <div class="header">
                <!-- <img src="https://churchmanagement.erotc.org/images/church-logo.png" alt="Church Logo" class="logo logo-left"> -->
-                                <img src="https://church-management-vjfw.onrender.com/images/church-logo.png" alt="Church Logo" class="logo logo-left">
+                                <img src="https://erotc.org/images/church-logo.png" alt="Church Logo" class="logo logo-left">
                 <div class="church-info">
                     <div class="church-name">St Michael Eritrean Orthodox Church</div>
                     <div class="church-address">
@@ -4071,7 +4420,7 @@ async createReceiptHTML(transaction) {
                     </div>
                 </div>
 <!-- <img src="https://churchmanagement.erotc.org/images/kdus-mikaeal.jpg" alt="Kdus Mikaeal" class="logo logo-right"> -->
-                                <img src="https://church-management-vjfw.onrender.com/images/kdus-mikaeal.jpg" alt="Kdus Mikaeal" class="logo logo-right">
+                                <img src="https://erotc.org/images/kdus-mikaeal.jpg" alt="Kdus Mikaeal" class="logo logo-right">
             </div>
 
             <div class="receipt-title">
@@ -4161,6 +4510,7 @@ formatPaymentMethod(method) {
         'cash': 'Cash',
         'check': 'Check',
         'card': 'Credit/Debit Card',
+        'tap': 'Mobile Tap',
         'online': 'Online Transfer',
         'transfer': 'Bank Transfer'
     };
@@ -4194,7 +4544,7 @@ async openSignatureModal(transactionId) {
                 <i class="fas fa-receipt"></i> Transaction Details
             </h4>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div><strong>Date:</strong> ${new Date(transaction.date).toLocaleDateString()}</div>
+                <div><strong>Date:</strong> ${new Date(transaction.date).toLocaleDateString('en-AU')}</div>
                 <div><strong>Amount:</strong> $${transaction.amount.toFixed(2)}</div>
                 <div><strong>Description:</strong> ${transaction.description}</div>
                 <div><strong>Category:</strong> ${transaction.category}</div>
@@ -4453,18 +4803,31 @@ closeSignatureModal() {
     
     async loadBankStatement() {
             try {
-                const startDate = document.getElementById('statement-start-date').value;
-                const endDate = document.getElementById('statement-end-date').value;
+                const startDateRaw = document.getElementById('statement-start-date').value;
+                const endDateRaw   = document.getElementById('statement-end-date').value;
                 
-                if (!startDate || !endDate) {
+                if (!startDateRaw || !endDateRaw) {
                     this.showError('Please select both start and end dates');
                     return;
                 }
+
+                // Parse DD/MM/YYYY inputs properly for comparison and API calls
+                const startDateObj = this.parseDisplayDate(startDateRaw);
+                const endDateObj   = this.parseDisplayDate(endDateRaw);
+
+                if (!startDateObj || !endDateObj) {
+                    this.showError('Invalid date format. Please use DD/MM/YYYY');
+                    return;
+                }
                 
-                if (new Date(startDate) > new Date(endDate)) {
+                if (startDateObj > endDateObj) {
                     this.showError('Start date cannot be after end date');
                     return;
                 }
+
+                // Convert to ISO date strings (YYYY-MM-DD) for the API
+                const startDate = startDateObj.toISOString().split('T')[0];
+                const endDate   = endDateObj.toISOString().split('T')[0];
                 
                 console.log('Loading bank statement from', startDate, 'to', endDate);
                 
@@ -4516,7 +4879,7 @@ closeSignatureModal() {
             // Add opening balance row
             let statementRows = `
                 <tr style="background-color: #f8f9fa; font-weight: bold;">
-                    <td>${new Date(startDate).toLocaleDateString()}</td>
+                    <td>${new Date(startDate).toLocaleDateString('en-AU')}</td>
                     <td>Opening Balance</td>
                     <td>-</td>
                     <td>-</td>
@@ -4527,7 +4890,7 @@ closeSignatureModal() {
             
             // Add transaction rows
             transactions.forEach(transaction => {
-                const date = new Date(transaction.date).toLocaleDateString();
+                const date = new Date(transaction.date).toLocaleDateString('en-AU');
                 const description = DOMUtils.escapeHtml(transaction.description || 'No description');
                 const reference = DOMUtils.escapeHtml(transaction.reference || '-');
                 const payeeName = transaction.payee?.name ? ` (${DOMUtils.escapeHtml(transaction.payee.name)})` : '';
@@ -4558,7 +4921,7 @@ closeSignatureModal() {
             // Add closing balance row
             statementRows += `
                 <tr style="background-color: #f8f9fa; font-weight: bold; border-top: 2px solid #dee2e6;">
-                    <td>${new Date(endDate).toLocaleDateString()}</td>
+                    <td>${new Date(endDate).toLocaleDateString('en-AU')}</td>
                     <td>Closing Balance</td>
                     <td>-</td>
                     <td>-</td>
@@ -4600,13 +4963,19 @@ closeSignatureModal() {
                     return;
                 }
                 
-                const startDate = document.getElementById('statement-start-date').value;
-                const endDate = document.getElementById('statement-end-date').value;
+                const startDateRawExport = document.getElementById('statement-start-date').value;
+                const endDateRawExport   = document.getElementById('statement-end-date').value;
                 
-                if (!startDate || !endDate) {
+                if (!startDateRawExport || !endDateRawExport) {
                     this.showError('Please generate a statement first');
                     return;
                 }
+
+                // Parse DD/MM/YYYY for API calls — backend expects YYYY-MM-DD for ISO-only params
+                const startDateExportObj = this.parseDisplayDate(startDateRawExport);
+                const endDateExportObj   = this.parseDisplayDate(endDateRawExport);
+                const startDate = startDateExportObj ? startDateExportObj.toISOString().split('T')[0] : startDateRawExport;
+                const endDate   = endDateExportObj   ? endDateExportObj.toISOString().split('T')[0]   : endDateRawExport;
                 
                 // Get the statement data
                 const response = await API.get(`/accounting?startDate=${startDate}&endDate=${endDate}&sortBy=date&sortOrder=asc`);
@@ -4714,13 +5083,18 @@ window.switchAccountingTab = function(tabName) {
                 window.accountingPage.loadPromises();
                 break;
             case 'statement':
-                // Set default dates for statement (last 30 days)
+                // Set default dates for statement (last 30 days) — format as DD/MM/YYYY
                 const endDate = new Date();
                 const startDate = new Date();
                 startDate.setDate(startDate.getDate() - 30);
-                
-                document.getElementById('statement-start-date').value = startDate.toISOString().split('T')[0];
-                document.getElementById('statement-end-date').value = endDate.toISOString().split('T')[0];
+
+                function toDisplayDate(d) {
+                    return String(d.getDate()).padStart(2, '0') + '/' +
+                           String(d.getMonth() + 1).padStart(2, '0') + '/' +
+                           d.getFullYear();
+                }
+                document.getElementById('statement-start-date').value = toDisplayDate(startDate);
+                document.getElementById('statement-end-date').value   = toDisplayDate(endDate);
                 break;
         }
     }
@@ -4799,12 +5173,14 @@ window.TxnWizard = (function () {
         var method  = _selectedText('payment-method');
         var ref     = _val('transaction-reference');
         var notes   = _val('transaction-note');
+        var dateRaw = _val('transaction-date');
 
         function set(id, v) { var e = _el(id); if (e) e.textContent = v || '—'; }
         set('rev-type',        type.charAt(0).toUpperCase() + type.slice(1));
         set('rev-payee',       payee);
         set('rev-category',    cat);
         set('rev-description', customD || desc);
+        set('rev-date',        dateRaw || '—');
         set('rev-amount',      amount ? '$' + parseFloat(amount).toFixed(2) : '—');
         set('rev-method',      method);
         set('rev-reference',   ref);

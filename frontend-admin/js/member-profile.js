@@ -1,4 +1,4 @@
-(function() {
+﻿(function() {
     class MemberProfile {
         constructor() {
             this.currentMemberId = null;
@@ -6,14 +6,24 @@
             this.activityFilters = {};
             this.allActivity = [];
             this.allMembers = [];
+            
+            // Auto-initialize
+            this.init();
         }
+
+        // Sentinel element only present while member-profile page is in DOM
+        get _pageRoot() { return document.getElementById('profile-name'); }
 
         async init() {
             this.currentMemberId = this.getMemberId();
             
             if (this.currentMemberId) {
                 await this.loadAllMembers();
+                if (!this._pageRoot) return; // navigated away
+                
                 await this.loadMemberProfile();
+                if (!this._pageRoot) return; // navigated away
+                
                 this.setupEventListeners();
                 this.setupActivityFilters();
                 this.setupTabs(); // Add tab switching
@@ -330,8 +340,6 @@
         // Load tithe status
         async loadTitheStatus(memberId) {
             try {
-                console.log('📊 Loading tithe status for member:', memberId);
-                
                 const response = await API.get(`/member-contributions/member/${memberId}/tithe-status`);
                 
                 if (response.success && response.titheStatus) {
@@ -355,13 +363,30 @@
                     // Update next due
                     this.setTextContent('next-due-date', new Date(status.nextDue).toLocaleDateString());
                     
-                    // Show overdue months if any
+                    // Show overdue months if any — backend sends oldest-first
                     const overdueSection = document.getElementById('overdue-section');
                     if (status.overdueMonths && status.overdueMonths.length > 0) {
                         if (overdueSection) overdueSection.style.display = 'flex';
-                        this.setTextContent('overdue-months', status.overdueMonths.join(', '));
+                        const overdueCount = status.overdueMonths.length;
+                        this.setTextContent('overdue-months',
+                            `${status.overdueMonths.join(', ')} (${overdueCount} month${overdueCount !== 1 ? 's' : ''})`);
                     } else {
                         if (overdueSection) overdueSection.style.display = 'none';
+                    }
+                    
+                    // Show advance months if any
+                    const advanceSection = document.getElementById('advance-section');
+                    if (status.advanceMonths && status.advanceMonths.length > 0) {
+                        if (advanceSection) advanceSection.style.display = 'flex';
+                        // Convert YYYY-MM to readable labels e.g. "Jan 2026, Feb 2026"
+                        const advanceLabels = status.advanceMonths.map(ym => {
+                            const [y, m] = ym.split('-');
+                            return new Date(parseInt(y), parseInt(m) - 1, 1)
+                                .toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                        });
+                        this.setTextContent('advance-months', advanceLabels.join(', '));
+                    } else {
+                        if (advanceSection) advanceSection.style.display = 'none';
                     }
                     
                     // Render payment history
@@ -401,18 +426,45 @@
                 return;
             }
             
-            tbody.innerHTML = history.map(h => `
-                <tr class="${h.paid ? 'paid' : 'not-paid'}">
-                    <td>${h.monthLabel}</td>
-                    <td>
-                        ${h.paid ? 
-                            '<span class="badge badge-success"><i class="fas fa-check"></i> Paid</span>' : 
-                            '<span class="badge badge-danger"><i class="fas fa-times"></i> Not Paid</span>'}
-                    </td>
-                    <td>${h.paid ? `$${h.amount.toFixed(2)}` : '-'}</td>
-                    <td>${h.paid ? new Date(h.date).toLocaleDateString() : '-'}</td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = history.map(h => {
+                if (!h.paid) {
+                    return `
+                        <tr class="not-paid">
+                            <td>${h.monthLabel}</td>
+                            <td><span class="badge badge-danger"><i class="fas fa-times"></i> Not Paid</span></td>
+                            <td>-</td>
+                            <td>-</td>
+                        </tr>
+                    `;
+                }
+
+                const datePaid = new Date(h.date).toLocaleDateString();
+
+                // Amount > 0 means this is the month the payment was actually made
+                if (h.amount > 0) {
+                    const multiNote = h.totalMonths > 1
+                        ? ` <small style="color:#555;">(covers ${h.totalMonths} months)</small>`
+                        : '';
+                    return `
+                        <tr class="paid">
+                            <td>${h.monthLabel}</td>
+                            <td><span class="badge badge-success"><i class="fas fa-check"></i> Paid</span></td>
+                            <td><strong>$${h.amount.toFixed(2)}</strong>${multiNote}</td>
+                            <td>${datePaid}</td>
+                        </tr>
+                    `;
+                } else {
+                    // Advance-covered month — no separate amount, point back to the payment
+                    return `
+                        <tr class="paid" style="background:#eaf6fb;">
+                            <td>${h.monthLabel}</td>
+                            <td><span class="badge badge-success" style="background:#17a2b8;"><i class="fas fa-calendar-check"></i> Advance Paid</span></td>
+                            <td style="color:#0c5460; font-style:italic;">— covered by advance</td>
+                            <td>${datePaid}</td>
+                        </tr>
+                    `;
+                }
+            }).join('');
         }
 
         showTitheError(message) {
@@ -446,6 +498,8 @@
                 const categorySelect = document.getElementById('contribution-category');
                 if (categorySelect) {
                     categorySelect.value = 'tithe';
+                    // Trigger the tithe month range UI
+                    this.onCategoryChange();
                 }
             }, 100);
         }
@@ -519,42 +573,73 @@
 
         async loadMemberProfile() {
             try {
-                const memberData = await API.get(`/members/${this.currentMemberId}`);
-                const activityData = await API.get(`/members/${this.currentMemberId}/activity`);
+                this.showLoadingState();
                 
-                // Load member contributions (non-cash)
-                let memberContributions = [];
-                try {
-                    const contributionsResponse = await API.get(`/member-contributions/member/${this.currentMemberId}`);
-                    memberContributions = contributionsResponse.contributions || [];
-                } catch (error) {
-                    console.warn('Could not load member contributions:', error);
+                // Parallelize all API calls for faster loading
+                const results = await Promise.allSettled([
+                    API.get(`/members/${this.currentMemberId}`),
+                    API.get(`/members/${this.currentMemberId}/activity`),
+                    API.get(`/member-contributions/member/${this.currentMemberId}`),
+                    API.get(`/inventory/donor/${this.currentMemberId}`)
+                ]);
+                
+                // Extract values or use defaults
+                const member = results[0].status === 'fulfilled' ? results[0].value : null;
+                const activity = results[1].status === 'fulfilled' ? results[1].value : { transactions: [] };
+                const memberContributions = results[2].status === 'fulfilled' ? 
+                    (results[2].value.contributions || []) : [];
+                const inventoryItems = results[3].status === 'fulfilled' ? 
+                    (results[3].value.items || []) : [];
+                
+                // Log any failures
+                results.forEach((result, index) => {
+                    if (result.status === 'rejected') {
+                        const names = ['member', 'activity', 'contributions', 'inventory'];
+                        console.warn(`Failed to load ${names[index]}:`, result.reason);
+                    }
+                });
+                
+                if (!member) {
+                    throw new Error('Failed to load member data');
                 }
                 
-                this.currentMember = memberData;
-                this.allActivity = activityData.transactions || [];
+                this.currentMember = member;
+                this.allActivity = activity.transactions || [];
                 this.memberContributions = memberContributions;
                 
-                // Load inventory items donated by this member
-                let inventoryItems = [];
-                try {
-                    const inventoryResponse = await API.get(`/inventory/donor/${this.currentMemberId}`);
-                    inventoryItems = inventoryResponse.items || [];
-                } catch (error) {
-                    console.warn('Could not load inventory items:', error);
-                }
-                
-                this.renderMemberInfo(memberData);
-                this.renderStats(activityData, memberContributions);
+                this.renderMemberInfo(member);
+                this.renderStats(activity, memberContributions);
                 this.renderActivity(this.allActivity, memberContributions);
                 this.renderContributionChart(this.allActivity, memberContributions);
                 this.renderInventorySection(inventoryItems);
                 
-                // Load tithe status
-                await this.loadTitheStatus(this.currentMemberId);
+                // Load tithe status in background (non-blocking)
+                this.loadTitheStatus(this.currentMemberId).catch(() => {
+                    // Silent fail - tithe status is not critical
+                });
+                
+                this.hideLoadingState();
                 
             } catch (error) {
                 console.error('Error loading member profile:', error);
+                this.showError('Failed to load member profile. Please try again.');
+                this.hideLoadingState();
+            }
+        }
+        
+        showLoadingState() {
+            const profileContent = document.querySelector('.profile-content');
+            if (profileContent) {
+                profileContent.style.opacity = '0.5';
+                profileContent.style.pointerEvents = 'none';
+            }
+        }
+        
+        hideLoadingState() {
+            const profileContent = document.querySelector('.profile-content');
+            if (profileContent) {
+                profileContent.style.opacity = '1';
+                profileContent.style.pointerEvents = 'auto';
             }
         }
 
@@ -878,13 +963,24 @@
             let filteredActivity = this.allActivity;
 
             if (this.activityFilters.dateFrom) {
-                const fromDate = new Date(this.activityFilters.dateFrom);
-                filteredActivity = filteredActivity.filter(t => new Date(t.date) >= fromDate);
+                const fromDate = this.parseDisplayDate(this.activityFilters.dateFrom);
+                if (fromDate) {
+                    filteredActivity = filteredActivity.filter(t => {
+                        const transactionDate = this.parseDisplayDate(t.date) || new Date(t.date);
+                        return !isNaN(transactionDate.getTime()) && transactionDate >= fromDate;
+                    });
+                }
             }
 
             if (this.activityFilters.dateTo) {
-                const toDate = new Date(this.activityFilters.dateTo);
-                filteredActivity = filteredActivity.filter(t => new Date(t.date) <= toDate);
+                const toDate = this.parseDisplayDate(this.activityFilters.dateTo);
+                if (toDate) {
+                    const endOfDay = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59, 999);
+                    filteredActivity = filteredActivity.filter(t => {
+                        const transactionDate = this.parseDisplayDate(t.date) || new Date(t.date);
+                        return !isNaN(transactionDate.getTime()) && transactionDate <= endOfDay;
+                    });
+                }
             }
 
             if (this.activityFilters.type) {
@@ -913,6 +1009,16 @@
             this.renderActivity(this.allActivity);
         }
 
+        formatDateForInput(dateValue) {
+            const date = this.parseDisplayDate(dateValue) || new Date(dateValue || Date.now());
+            if (!date || isNaN(date.getTime())) return '';
+
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
         showAddContributionForm() {
             const form = document.getElementById('contribution-form');
             const modal = document.getElementById('contribution-modal');
@@ -920,11 +1026,17 @@
             if (form) form.reset();
             if (modal) modal.style.display = 'block';
             
-            this.setValue('contribution-date', new Date().toISOString().split('T')[0]);
+            this.setValue('contribution-date', this.formatDateForInput(new Date()));
             this.setValue('contribution-payment-method', 'cash');
             this.setValue('contribution-type', 'income');
             this.setValue('contribution-mode', 'cash');
             this.setValue('non-cash-quantity', '1');
+
+            // Reset tithe month range pickers
+            this.setValue('tithe-month-from', '');
+            this.setValue('tithe-month-to', '');
+            const preview = document.getElementById('tithe-months-preview');
+            if (preview) preview.textContent = '';
             
             if (this.currentMember) {
                 this.setValue('contribution-member-id', this.currentMemberId);
@@ -956,6 +1068,42 @@
                 if (amountField) amountField.required = false;
                 if (nonCashValueField) nonCashValueField.required = true;
             }
+            // Reset tithe month range when mode changes
+            this.onCategoryChange();
+        }
+
+        // Show/hide tithe month range fields based on selected category
+        onCategoryChange() {
+            const category = this.getValue('contribution-category');
+            const titheMonthRange = document.getElementById('tithe-month-range');
+            if (titheMonthRange) {
+                titheMonthRange.style.display = category === 'tithe' ? 'block' : 'none';
+            }
+        }
+
+        // Build monthsCovered array from tithe-from / tithe-to selects
+        buildMonthsCovered() {
+            const fromVal = this.getValue('tithe-month-from');
+            const toVal   = this.getValue('tithe-month-to');
+            if (!fromVal || !toVal) return null;
+
+            const [fy, fm] = fromVal.split('-').map(Number);
+            const [ty, tm] = toVal.split('-').map(Number);
+
+            if (fy > ty || (fy === ty && fm > tm)) {
+                alert('Tithe "From" month cannot be after "To" month');
+                return false; // signal validation error
+            }
+
+            const months = [];
+            let y = fy, m = fm;
+            while (y < ty || (y === ty && m <= tm)) {
+                months.push(`${y}-${String(m).padStart(2, '0')}`);
+                m++;
+                if (m > 12) { m = 1; y++; }
+                if (months.length > 24) break; // max 2 years advance
+            }
+            return months;
         }
 
         showSuccess(message) {
@@ -1007,13 +1155,20 @@
                         paymentMethod: this.getValue('contribution-payment-method'),
                         reference: this.getValue('contribution-reference'),
                         notes: this.getValue('contribution-notes'),
-                        date: this.getValue('contribution-date') || new Date().toISOString().split('T')[0],
+                        date: this.getValue('contribution-date') || this.formatDateForInput(new Date()),
                         payee: {
                             type: 'member',
                             memberId: selectedMemberId,
                             name: selectedMemberName
                         }
                     };
+
+                    // Add monthsCovered for tithe payments
+                    if (formData.category === 'tithe') {
+                        const months = this.buildMonthsCovered();
+                        if (months === false) return; // validation error shown
+                        if (months && months.length > 0) formData.monthsCovered = months;
+                    }
 
                     await API.post('/accounting/transaction', formData);
                 } else {
@@ -1032,10 +1187,17 @@
                         description: this.getValue('contribution-description'),
                         quantity: parseInt(this.getValue('non-cash-quantity')) || 1,
                         value: value,
-                        date: this.getValue('contribution-date') || new Date().toISOString().split('T')[0],
+                        date: this.getValue('contribution-date') || this.formatDateForInput(new Date()),
                         notes: this.getValue('contribution-notes'),
                         issueReceipt: document.getElementById('issue-receipt').checked
                     };
+
+                    // Add monthsCovered for tithe contributions
+                    if (contributionData.category === 'tithe') {
+                        const months = this.buildMonthsCovered();
+                        if (months === false) return; // validation error shown
+                        if (months && months.length > 0) contributionData.monthsCovered = months;
+                    }
 
                     await API.post('/member-contributions', contributionData);
                 }
@@ -1095,6 +1257,7 @@
                 'cash': 'Cash',
                 'check': 'Check',
                 'card': 'Card',
+                'tap': 'Mobile Tap',
                 'online': 'Online',
                 'transfer': 'Transfer'
             };
@@ -1138,12 +1301,17 @@
                 return;
             }
 
-            // Filter transactions for the period
-            const fromDate = new Date(dateFrom);
-            const toDate = new Date(dateTo);
+            // Filter transactions for the period using explicit DD/MM/YYYY parsing
+            const fromDate = this.parseDisplayDate(dateFrom);
+            const toDate = this.parseDisplayDate(dateTo);
+
+            if (!fromDate || !toDate) {
+                alert('Please enter valid dates in DD/MM/YYYY format');
+                return;
+            }
             
             const periodTransactions = this.allActivity.filter(transaction => {
-                const transactionDate = new Date(transaction.date);
+                const transactionDate = this.parseDisplayDate(transaction.date) || new Date(transaction.date);
                 return transaction.type === 'income' && 
                        transactionDate >= fromDate && 
                        transactionDate <= toDate;
@@ -1157,259 +1325,419 @@
             this.createPeriodReceiptHTML(periodTransactions, dateFrom, dateTo);
         }
 
-        createPeriodReceiptHTML(transactions, dateFrom, dateTo) {
-            const receiptDate = new Date().toLocaleDateString();
-            const fromDateFormatted = new Date(dateFrom).toLocaleDateString();
-            const toDateFormatted = new Date(dateTo).toLocaleDateString();
-            
-            // Calculate totals
-            const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
-            
-            // Get member information
-            let memberName = 'Unknown';
-            let memberAddress = '';
-            let memberEmail = '';
-            
-            if (this.currentMember) {
-                memberName = `${this.currentMember.firstName} ${this.currentMember.lastName}`;
-                memberAddress = this.currentMember.address || '';
-                memberEmail = this.currentMember.email || '';
+        parseDisplayDate(dateValue) {
+            if (!dateValue) return null;
+
+            if (dateValue instanceof Date && !isNaN(dateValue.getTime())) {
+                return dateValue;
             }
 
-            const receiptHTML = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Period Donation Receipt - ${memberName}</title>
-                    <style>
-                        body { 
-                            font-family: Arial, sans-serif; 
-                            max-width: 700px; 
-                            margin: 0 auto; 
-                            padding: 20px;
-                            line-height: 1.6;
-                        }
-                        .header { 
-                            display: flex;
-                            align-items: center;
-                            justify-content: space-between;
-                            border-bottom: 2px solid #333; 
-                            padding-bottom: 20px; 
-                            margin-bottom: 30px;
-                            position: relative;
-                            min-height: 80px;
-                        }
-                        .logo {
-                            width: 60px;
-                            height: 60px;
-                            object-fit: contain;
-                            flex-shrink: 0;
-                        }
-                        .logo-left {
-                            position: absolute;
-                            left: 0;
-                            top: 10px;
-                        }
-                        .logo-right {
-                            position: absolute;
-                            right: 0;
-                            top: 10px;
-                        }
-                        .church-info {
-                            text-align: center;
-                            flex: 1;
-                            margin: 0 80px;
-                            padding: 0 20px;
-                        }
-                        .church-name { 
-                            font-size: 24px; 
-                            font-weight: bold; 
-                            color: #2c3e50;
-                            margin-bottom: 5px;
-                        }
-                        .church-address { 
-                            color: #666; 
-                            font-size: 14px;
-                        }
-                        .receipt-title { 
-                            font-size: 20px; 
-                            font-weight: bold; 
-                            text-align: center; 
-                            margin: 30px 0;
-                            color: #2c3e50;
-                        }
-                        .receipt-info { 
-                            background: #f8f9fa; 
-                            padding: 20px; 
-                            border-radius: 8px; 
-                            margin: 20px 0;
-                        }
-                        .receipt-header-row {
-                            display: flex;
-                            justify-content: space-between;
-                            flex-wrap: wrap;
-                            gap: 15px;
-                            padding: 10px;
-                            background: #e9ecef;
-                            border-radius: 4px;
-                            margin-bottom: 15px;
-                            font-size: 14px;
-                        }
-                        .info-row { 
-                            display: flex; 
-                            justify-content: space-between; 
-                            margin: 10px 0;
-                            padding: 5px 0;
-                        }
-                        .summary-table {
-                            width: 100%;
-                            border-collapse: collapse;
-                            margin: 20px 0;
-                        }
-                        .summary-table th,
-                        .summary-table td {
-                            border: 1px solid #ddd;
-                            padding: 8px;
-                            text-align: left;
-                        }
-                        .summary-table th {
-                            background: #f8f9fa;
-                            font-weight: bold;
-                        }
-                        .total-row {
-                            background: #e8f5e8;
-                            font-weight: bold;
-                        }
-                        .contribution-notice { 
-                            background: #fff3cd; 
-                            border: 1px solid #ffeaa7; 
-                            padding: 15px; 
-                            border-radius: 8px; 
-                            margin: 20px 0;
-                            font-size: 14px;
-                        }
-                        .footer { 
-                            text-align: center; 
-                            margin-top: 40px; 
-                            padding-top: 20px; 
-                            border-top: 1px solid #ddd;
-                            font-size: 12px;
-                            color: #666;
-                        }
-                        .signature-line {
-                            margin-top: 40px;
-                            border-bottom: 1px solid #333;
-                            width: 300px;
-                            margin-left: auto;
-                            margin-right: auto;
-                            text-align: center;
-                            padding-bottom: 5px;
-                        }
-                        @media print {
-                            body { margin: 0; padding: 15px; }
-                            .no-print { display: none; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <img src="https://church-management-vjfw.onrender.com/images/church-logo.png" alt="Church Logo" class="logo logo-left">
-                        <div class="church-info">
-                            <div class="church-name">St Michael Eritrean Orthodox Church</div>
-                            <div class="church-address">
-                                60 Osborne Street, Joondanna, WA 6060<br>
-                                ABN: 80798549161<br>
-                                Email: stmichaelerotc@gmail.com<br>
-                                Website: erotc.org
-                            </div>
-                        </div>
-                        <img src="https://church-management-vjfw.onrender.com/images/kdus-mikaeal.jpg" alt="Kdus Mikaeal" class="logo logo-right">
-                    </div>
+            if (typeof dateValue === 'string') {
+                const trimmed = dateValue.trim();
+                if (!trimmed) return null;
 
-                    <div class="receipt-title">
-                        DONATION RECEIPT<br>
-                        <span style="font-size: 16px; font-weight: normal;">${fromDateFormatted} - ${toDateFormatted}</span>
-                    </div>
+                const isoMatch = /^\d{4}-\d{2}-\d{2}(?:T.*)?$/.exec(trimmed);
+                if (isoMatch) {
+                    const parsed = new Date(trimmed);
+                    if (!isNaN(parsed.getTime())) return parsed;
+                }
 
-                    <div class="receipt-info">
-                        <div class="receipt-header-row">
-                            <span><strong>Receipt Date:</strong> ${receiptDate}</span>
-                            <span><strong>Period:</strong> ${fromDateFormatted} - ${toDateFormatted}</span>
-                            <span><strong>Receipt #:</strong> PERIOD-${Date.now().toString().slice(-8)}</span>
-                        </div>
-                        <div class="info-row">
-                            <span><strong>Donor Name:</strong></span>
-                            <span>${memberName}</span>
-                        </div>
-                        ${memberAddress ? `
-                        <div class="info-row">
-                            <span><strong>Address:</strong></span>
-                            <span>${memberAddress}</span>
-                        </div>
-                        ` : ''}
-                        ${memberEmail ? `
-                        <div class="info-row">
-                            <span><strong>Email:</strong></span>
-                            <span>${memberEmail}</span>
-                        </div>
-                        ` : ''}
-                    </div>
+                const slashMatch = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/.exec(trimmed);
+                if (slashMatch) {
+                    const [, day, month, year] = slashMatch;
+                    const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+                    if (!isNaN(parsed.getTime()) && parsed.getDate() === Number(day) && parsed.getMonth() === Number(month) - 1 && parsed.getFullYear() === Number(year)) {
+                        return parsed;
+                    }
+                }
 
-                    <h3>Contribution Summary</h3>
-                    <table class="summary-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Description</th>
-                                <th>Category</th>
-                                <th>Payment Method</th>
-                                <th>Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${transactions.map(transaction => `
-                                <tr>
-                                    <td>${new Date(transaction.date).toLocaleDateString()}</td>
-                                    <td>${transaction.description}</td>
-                                    <td>${this.formatCategory(transaction.category)}</td>
-                                    <td>${this.formatPaymentMethod(transaction.paymentMethod)}</td>
-                                    <td>${transaction.amount.toLocaleString()}</td>
-                                </tr>
-                            `).join('')}
-                            <tr class="total-row">
-                                <td colspan="4"><strong>Total Contributions</strong></td>
-                                <td><strong>${totalAmount.toLocaleString()}</strong></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                const fallbackDate = new Date(trimmed);
+                if (!isNaN(fallbackDate.getTime())) return fallbackDate;
+            }
 
-                    <div class="contribution-notice">
-                        <strong>Important Notice:</strong><br>
-                        No goods or services were provided in exchange for these contributions.
-                    </div>
+            return null;
+        }
 
-                    <div class="signature-line">
-                        <div style="margin-top: 10px; font-size: 12px;">Authorized Signature</div>
-                    </div>
+        createPeriodReceiptHTML(transactions, dateFrom, dateTo) {
+            const receiptDate = new Date().toLocaleDateString('en-AU');
+            const fromDateObj = this.parseDisplayDate(dateFrom) || new Date(dateFrom);
+            const toDateObj   = this.parseDisplayDate(dateTo)   || new Date(dateTo);
+            const fromDateFormatted = fromDateObj.toLocaleDateString('en-AU');
+            const toDateFormatted   = toDateObj.toLocaleDateString('en-AU');
 
-                    <div class="footer">
-                        <p>Thank you for your generous contributions during this period!</p>
-                        <p>Generated on ${receiptDate} | Church Management System</p>
-                        <div class="no-print" style="margin-top: 20px;">
-                            <button onclick="window.print()" style="padding: 10px 20px; background: #4a6fa5; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                Print Receipt
-                            </button>
-                            <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;">
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </body>
-                </html>
-            `;
+            // ── Traceable receipt number ──────────────────────────────────
+            // Format: PR-{MemberShortId}-{GeneratedDate}-{FromMMDD}-{ToMMDD}
+            // e.g.  PR-A3F2-20260814-0101-0831
+            // Fully searchable: member, generated on, period covered
+            const memberId    = this.currentMemberId || 'UNKN';
+            const memberShort = memberId.toString().slice(-4).toUpperCase();
+            const genDate     = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const fromCode    = String(fromDateObj.getMonth() + 1).padStart(2, '0')
+                              + String(fromDateObj.getDate()).padStart(2, '0');
+            const toCode      = String(toDateObj.getMonth() + 1).padStart(2, '0')
+                              + String(toDateObj.getDate()).padStart(2, '0');
+            const receiptNumber = `PR-${memberShort}-${genDate}-${fromCode}${fromDateObj.getFullYear().toString().slice(2)}-${toCode}${toDateObj.getFullYear().toString().slice(2)}`;
 
-            // Open receipt in new window
-            const receiptWindow = window.open('', '_blank', 'width=800,height=1000');
+            // Calculate totals by category
+            const totalAmount = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+            const byCategory  = {};
+            transactions.forEach(t => {
+                const cat = this.formatCategory(t.category);
+                byCategory[cat] = (byCategory[cat] || 0) + (t.amount || 0);
+            });
+
+            // Member info
+            let memberName    = 'Unknown';
+            let memberAddress = '';
+            let memberEmail   = '';
+            if (this.currentMember) {
+                memberName    = `${this.currentMember.firstName} ${this.currentMember.lastName}`;
+                memberAddress = this.currentMember.address || '';
+                memberEmail   = this.currentMember.email   || '';
+            }
+
+            const receiptHTML = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Receipt ${receiptNumber}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #222;
+            padding: 18px 22px;
+            max-width: 680px;
+            margin: 0 auto;
+            line-height: 1.4;
+        }
+
+        /* ── Compact header ── */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #4a6fa5;
+            margin-bottom: 10px;
+        }
+        .header img { width: 38px; height: 38px; object-fit: contain; flex-shrink: 0; }
+        .header-text { flex: 1; text-align: center; }
+        .header-text .church-name { font-size: 15px; font-weight: bold; color: #2c3e50; }
+        .header-text .church-sub  { font-size: 10px; color: #666; margin-top: 2px; }
+
+        /* ── Title bar ── */
+        .title-bar {
+            background: #4a6fa5;
+            color: #fff;
+            text-align: center;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .title-bar .main  { font-size: 14px; font-weight: bold; letter-spacing: 1px; }
+        .title-bar .sub   { font-size: 11px; opacity: 0.9; margin-top: 2px; }
+
+        /* ── Meta row ── */
+        .meta-row {
+            display: flex;
+            gap: 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            font-size: 11px;
+        }
+        .meta-cell {
+            flex: 1;
+            padding: 5px 8px;
+            border-right: 1px solid #ddd;
+            background: #f4f6f8;
+        }
+        .meta-cell:last-child { border-right: none; }
+        .meta-cell .lbl { color: #666; font-size: 10px; }
+        .meta-cell .val { font-weight: bold; color: #222; margin-top: 1px; word-break: break-all; }
+
+        /* ── Donor block ── */
+        .donor-block {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 6px 10px;
+            margin-bottom: 8px;
+            background: #fafafa;
+            font-size: 11px;
+        }
+        .donor-block .row { display: flex; gap: 6px; margin-bottom: 2px; }
+        .donor-block .lbl { color: #666; min-width: 55px; }
+
+        /* ── Transactions table ── */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 11px; }
+        thead tr { background: #4a6fa5; color: #fff; }
+        thead th { padding: 5px 6px; text-align: left; font-weight: 600; }
+        tbody tr:nth-child(even) { background: #f4f6f8; }
+        tbody td { padding: 4px 6px; border-bottom: 1px solid #eee; }
+        .total-row td { background: #e8f0f8; font-weight: bold; border-top: 2px solid #4a6fa5; }
+
+        /* ── Category summary ── */
+        .cat-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .cat-badge {
+            background: #e8f0f8;
+            border: 1px solid #b8cce4;
+            border-radius: 12px;
+            padding: 2px 9px;
+            font-size: 10px;
+            color: #2c5282;
+        }
+
+        /* ── Notice ── */
+        .notice {
+            background: #fff8e1;
+            border-left: 3px solid #f59e0b;
+            padding: 5px 8px;
+            font-size: 10px;
+            color: #7a6000;
+            margin-bottom: 8px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* ── Signature ── */
+        .sig-block {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 8px;
+        }
+        .sig-inner {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 6px 14px;
+            text-align: center;
+            min-width: 180px;
+            font-size: 10px;
+        }
+        .sig-line {
+            border-bottom: 1px solid #333;
+            height: 22px;
+            margin-bottom: 3px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 2px;
+        }
+        .sig-name-on-line {
+            font-weight: bold;
+            font-size: 11px;
+            color: #222;
+        }
+
+        /* ── Footer ── */
+        .footer {
+            border-top: 1px solid #ddd;
+            padding-top: 6px;
+            text-align: center;
+            font-size: 10px;
+            color: #888;
+        }
+        .footer strong { color: #444; }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Compact header -->
+    <div class="header">
+        <img src="https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net/images/church-logo.png" alt="Logo">
+        <div class="header-text">
+            <div class="church-name">St Michael Eritrean Orthodox Church</div>
+            <div class="church-sub">60 Osborne Street, Joondanna WA 6060 &nbsp;|&nbsp; ABN: 80798549161 &nbsp;|&nbsp; stmichaelerotc@gmail.com &nbsp;|&nbsp; erotc.org</div>
+        </div>
+        <img src="https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net/images/kdus-mikaeal.jpg" alt="St Michael">
+    </div>
+
+    <!-- Title -->
+    <div class="title-bar">
+        <div class="main">DONATION RECEIPT</div>
+        <div class="sub">Period: ${fromDateFormatted} &ndash; ${toDateFormatted}</div>
+    </div>
+
+    <!-- Meta row: Receipt #, Date, Period -->
+    <div class="meta-row">
+        <div class="meta-cell">
+            <div class="lbl">Receipt No.</div>
+            <div class="val">${receiptNumber}</div>
+        </div>
+        <div class="meta-cell">
+            <div class="lbl">Generated</div>
+            <div class="val">${receiptDate}</div>
+        </div>
+        <div class="meta-cell">
+            <div class="lbl">Period From</div>
+            <div class="val">${fromDateFormatted}</div>
+        </div>
+        <div class="meta-cell">
+            <div class="lbl">Period To</div>
+            <div class="val">${toDateFormatted}</div>
+        </div>
+        <div class="meta-cell">
+            <div class="lbl">Transactions</div>
+            <div class="val">${transactions.length}</div>
+        </div>
+    </div>
+
+    <!-- Donor -->
+    <div class="donor-block">
+        <div class="row"><span class="lbl">Donor:</span><strong>${memberName}</strong></div>
+        ${memberAddress ? `<div class="row"><span class="lbl">Address:</span><span>${memberAddress}</span></div>` : ''}
+        ${memberEmail   ? `<div class="row"><span class="lbl">Email:</span><span>${memberEmail}</span></div>` : ''}
+    </div>
+
+    <!-- Transactions table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Method</th>
+                <th style="text-align:right;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${transactions.map(t => `
+            <tr>
+                <td>${new Date(t.date).toLocaleDateString('en-AU')}</td>
+                <td>${t.description || '—'}</td>
+                <td>${this.formatCategory(t.category)}</td>
+                <td>${this.formatPaymentMethod(t.paymentMethod)}</td>
+                <td style="text-align:right;">$${(t.amount || 0).toFixed(2)}</td>
+            </tr>`).join('')}
+            <tr class="total-row">
+                <td colspan="4">Total Contributions</td>
+                <td style="text-align:right;">$${totalAmount.toFixed(2)}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Category breakdown badges -->
+    <div class="cat-summary">
+        ${Object.entries(byCategory).map(([cat, amt]) =>
+            `<span class="cat-badge">${cat}: $${amt.toFixed(2)}</span>`
+        ).join('')}
+    </div>
+
+    <!-- Notice -->
+    <div class="notice">
+        <strong>Important:</strong> No goods or services were provided in exchange for these contributions.
+        This receipt is issued for tax purposes.
+    </div>
+
+    <!-- Signature -->
+    <div class="sig-block">
+        <div class="sig-inner">
+            <div class="sig-line" id="sig-image-container">
+                <span class="sig-name-on-line" id="sig-name">Authorized Signature</span>
+            </div>
+            <div style="color:#666; margin-top:2px; font-size:10px;" id="sig-role">Chairperson / Treasurer</div>
+            <div style="color:#999; margin-top:2px; font-size:9px;" id="sig-date"></div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-populate signature from logged-in user
+        (function() {
+            // Try multiple ways to access authSystem
+            let authSystem = null;
+            
+            if (window.opener && window.opener.authSystem) {
+                authSystem = window.opener.authSystem;
+            } else if (window.parent && window.parent !== window && window.parent.authSystem) {
+                authSystem = window.parent.authSystem;
+            } else if (window.top && window.top !== window && window.top.authSystem) {
+                authSystem = window.top.authSystem;
+            }
+            
+            if (authSystem && authSystem.isLoggedIn && authSystem.isLoggedIn()) {
+                // Access currentUser property directly (not a method)
+                const user = authSystem.currentUser;
+                
+                if (user) {
+                    const sigName = document.getElementById('sig-name');
+                    const sigRole = document.getElementById('sig-role');
+                    const sigDate = document.getElementById('sig-date');
+                    
+                    if (sigName) {
+                        sigName.textContent = user.name || 'Authorized Signature';
+                    }
+                    
+                    if (sigRole) {
+                        sigRole.textContent = formatRole(user.role);
+                    }
+                    
+                    if (sigDate) {
+                        sigDate.textContent = 'Digitally signed: ' + '${receiptDate}';
+                    }
+                    
+                    // If user has a stored signature image URL, display it
+                    if (user.signatureImageUrl) {
+                        const sigImageContainer = document.getElementById('sig-image-container');
+                        if (sigImageContainer) {
+                            sigImageContainer.innerHTML = '<img src="' + user.signatureImageUrl + '" style="max-width:160px;max-height:20px;object-fit:contain;" alt="Signature">';
+                            sigImageContainer.style.borderBottom = 'none';
+                        }
+                    }
+                }
+            } else {
+                // Set default values if auth fails
+                const sigName = document.getElementById('sig-name');
+                const sigRole = document.getElementById('sig-role');
+                if (sigName) sigName.textContent = 'Authorized Signature';
+                if (sigRole) sigRole.textContent = 'Church Official';
+            }
+            
+            function formatRole(role) {
+                const roleMap = {
+                    'super-admin': 'Administrator',
+                    'admin': 'Administrator',
+                    'secretary': 'Secretary',
+                    'treasurer': 'Treasurer',
+                    'accountant': 'Accountant',
+                    'chairperson': 'Chairperson',
+                    'pastor': 'Pastor',
+                    'deacon': 'Deacon'
+                };
+                return roleMap[role] || role?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Church Official';
+            }
+        })();
+    </script>
+
+    <!-- Footer -->
+    <div class="footer">
+        <strong>St Michael Eritrean Orthodox Church</strong> &nbsp;|&nbsp;
+        60 Osborne Street, Joondanna WA 6060 &nbsp;|&nbsp; ABN: 80798549161<br>
+        Receipt No: <strong>${receiptNumber}</strong> &nbsp;&mdash;&nbsp; Generated: ${receiptDate}
+        <div class="no-print" style="margin-top:10px;">
+            <button onclick="window.print()" style="padding:7px 18px;background:#4a6fa5;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;">
+                Print / Save PDF
+            </button>
+            <button onclick="window.close()" style="padding:7px 18px;background:#6c757d;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;margin-left:8px;">
+                Close
+            </button>
+        </div>
+    </div>
+
+</body>
+</html>`;
+
+            const receiptWindow = window.open('', '_blank', 'width=780,height=950');
             receiptWindow.document.write(receiptHTML);
             receiptWindow.document.close();
         }
@@ -1841,8 +2169,6 @@
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-
-                console.log('✅ QR code downloaded successfully');
             } catch (error) {
                 console.error('❌ Error downloading QR code:', error);
                 alert('Failed to download QR code');
@@ -1952,7 +2278,6 @@
             
             if (headerSearch || profileContainer) {
                 window.memberProfile = new MemberProfile();
-                window.memberProfile.init();
             } else {
                 setTimeout(initProfile, 50);
             }
