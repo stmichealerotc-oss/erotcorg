@@ -2,7 +2,7 @@
 (function() {
   'use strict';
 
-  const API_BASE = window.API_BASE_URL || 'https://my-church.onrender.com';
+  const API_BASE = window.API_BASE_URL || 'https://erotc.org';
 
   async function loadArticle() {
     // Get slug from URL path

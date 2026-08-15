@@ -28,7 +28,7 @@ router.get('/books', async (req, res) => {
     const books = await LiturgicalBook.find(filter)
       .skip(skip)
       .limit(parseInt(limit))
-      .sort({ featured: -1, createdAt: -1 });
+      .sort({ _id: -1 });
     
     const total = await LiturgicalBook.countDocuments(filter);
     

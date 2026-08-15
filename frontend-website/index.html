@@ -1,4 +1,4 @@
-<html lang="en"><head>
+﻿<html lang="en"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Saint Michael Eritrean Orthodox Tewahdo Church WA - A nonprofit religious organization serving the Eritrean Orthodox community in Western Australia. Sunday services, kids programs, and community support.">
@@ -21,7 +21,7 @@
   <meta name="geo.placename" content="Perth, Western Australia">
   <meta name="geo.position" content="-31.9505;115.8605">
   <meta name="ICBM" content="-31.9505, 115.8605">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' https://www.googletagmanager.com https://cdnjs.cloudflare.com; connect-src 'self' https://my-church.onrender.com https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net https://www.google-analytics.com https://pagead2.googlesyndication.com; img-src 'self' data: blob: https:; style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; frame-src 'self' https://www.googletagmanager.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' https://www.googletagmanager.com https://cdnjs.cloudflare.com; connect-src 'self' https://erotc.org https://cms-system-czggf5bjhxgkacat.australiaeast-01.azurewebsites.net https://www.google-analytics.com https://pagead2.googlesyndication.com; img-src 'self' data: blob: https:; style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com data:; frame-src 'self' https://www.googletagmanager.com">
   <title>Saint Michael Eritrean Orthodox Tewahdo Church in Western Australia Inc</title>
   
   <!-- Preconnect to external domains for faster loading -->
@@ -480,9 +480,10 @@
           <p><strong><i class="fas fa-envelope"></i> Email:</strong><br>
           <a href="mailto:info@erotc.org">info@erotc.org</a></p>
           
+          <!--  
           <p><strong><i class="fas fa-phone"></i> Phone:</strong><br>
           <a href="tel:+61470275305">0470 275 305</a></p>
-          <!--  
+          
           <p><strong><i class="fas fa-clock"></i> Office Hours:</strong><br>
           Monday - Friday: 9:00 AM - 5:00 PM<br>
           Saturday: 10:00 AM - 2:00 PM<br>
@@ -568,6 +569,13 @@
     
     <div class="card">
       <h3><i class="fas fa-donate"></i> Other Ways to Give</h3>
+      <div style="margin: 12px 0 18px;">
+        <label for="donation-amount" style="display:block;margin-bottom:8px;font-weight:600;">Donation Amount (AUD)</label>
+        <input id="donation-amount" type="number" min="1" step="1" value="20" style="width:100%;max-width:220px;padding:10px 12px;border:1px solid #dfe7ef;border-radius:8px;">
+        <button id="stripe-donate-btn" type="button" class="btn-primary" style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;">
+          <i class="fas fa-credit-card"></i> Pay with Tap / Card
+        </button>
+      </div>
       <ul>
         <li><strong>Sunday Offerings:</strong> Cash donations during church services</li>
         <li><strong>Special Collections:</strong> For specific church projects and needs</li>
@@ -1002,5 +1010,6 @@
   <script defer src="js/seo-helper.js"></script>
   <script defer src="js/contact-form.js"></script>
   <script defer src="js/privacy-consent.js"></script>
+  <script defer src="js/stripe-donate.js"></script>
 
 </body></html>

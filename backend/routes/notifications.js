@@ -341,7 +341,7 @@ router.get('/history', authorizeRoles('super-admin', 'admin'), async (req, res) 
     if (type) query.type = type;
 
     const notifications = await Notification.find(query)
-      .sort({ createdAt: -1 })
+      .sort({ _id: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit))
       .populate('sentBy', 'username email')

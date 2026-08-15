@@ -173,7 +173,7 @@ router.get('/assignments', async (req, res) => {
     if (volunteerEmail) filter.volunteerEmail = volunteerEmail;
     if (bookId) filter.bookId = bookId;
     if (category) filter.category = category;
-    const assignments = await VolunteerAssignment.find(filter).sort({ createdAt: -1 }).select('-__v');
+    const assignments = await VolunteerAssignment.find(filter).sort({ _id: -1 }).select('-__v');
     res.json({ success: true, count: assignments.length, data: assignments });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

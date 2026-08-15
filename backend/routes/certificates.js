@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
 
     const total = await Certificate.countDocuments(filter);
     const certs = await Certificate.find(filter)
-      .sort({ createdAt: -1 })
+      .sort({ _id: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit))
       .populate('primaryMember',   'firstName lastName memberNumber')
