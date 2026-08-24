@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+﻿require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
 // CRITICAL: Validate JWT_SECRET in production
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {

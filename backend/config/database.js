@@ -28,13 +28,14 @@ class DatabaseService {
       console.log('🔗 Connecting to MongoDB...');
       
       await mongoose.connect(this.connectionString, {
-        // This is the most important line to stop the "test" DB
         dbName: 'church_db',
-        // Simplified settings for Azure Cosmos DB
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        retryWrites: false, // Recommended for Azure Cosmos MongoDB
-        serverSelectionTimeoutMS: process.env.NODE_ENV === 'production' ? 30000 : 5000 // 30s for production, 5s for dev
+        retryWrites: false,           // Required for Azure Cosmos DB
+        tls: true,                    // Cosmos DB requires TLS
+        tlsAllowInvalidCertificates: false,
+        serverSelectionTimeoutMS: 30000,
+        connectTimeoutMS: 30000,
+        socketTimeoutMS: 45000,
+        heartbeatFrequencyMS: 10000,
       });
 
       this.isConnected = true;
