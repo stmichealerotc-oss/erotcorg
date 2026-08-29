@@ -940,42 +940,34 @@ class ReportsPage {
     }
 
     // Helper function to wait for Chart.js — loads it if not already present
-    waitForChartJS(maxAttempts = 30, delay = 100) {
+    waitForChartJS() {
         return new Promise((resolve) => {
-            // If already loaded, resolve immediately
+            // Already loaded - done
             if (typeof Chart !== 'undefined') {
                 resolve();
                 return;
             }
 
-            // Not loaded — inject the script ourselves
-            const existing = document.querySelector('script[src*="chart.js"]');
-            if (!existing) {
-                const script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
-                script.onload  = () => resolve();
-                script.onerror = () => {
-                    console.error('Failed to load Chart.js from CDN');
-                    resolve(); // resolve so the caller can show a fallback message
-                };
-                document.head.appendChild(script);
-                return;
-            }
+            // Inject a fresh, pinned Chart.js script unconditionally
+            // (don't trust any existing tag - it may have failed)
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
 
-            // Script tag exists but not yet executed — poll until ready
-            let attempts = 0;
-            const checkChart = () => {
+            script.onload = () => {
                 if (typeof Chart !== 'undefined') {
                     resolve();
-                } else if (attempts < maxAttempts) {
-                    attempts++;
-                    setTimeout(checkChart, delay);
                 } else {
-                    console.warn('Chart.js not available after waiting');
-                    resolve();
+                    console.error('Chart.js script loaded but Chart is still undefined');
+                    resolve(); // resolve so caller shows fallback
                 }
             };
-            checkChart();
+
+            script.onerror = (e) => {
+                console.error('Chart.js CDN load failed:', e);
+                resolve(); // resolve so caller shows fallback
+            };
+
+            document.head.appendChild(script);
         });
     }
 
