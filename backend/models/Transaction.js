@@ -125,8 +125,10 @@ transactionSchema.pre('save', async function(next) {
   // Only generate transactionNumber if it doesn't exist (for new transactions)
   if (this.isNew && !this.transactionNumber) {
     try {
+      // Use session:null so the Counter lookup never inherits a parent session.
+      // Cosmos DB (Substatus 1104) rejects cross-collection operations inside
+      // the same session, and Counter lives in a different collection.
       const seq = await Counter.getNextSequence('transactionNumber');
-      // Format: T0001, T0002, etc. (4 digits with leading zeros)
       this.transactionNumber = `T${seq.toString().padStart(4, '0')}`;
       console.log(`✅ Generated transaction number: ${this.transactionNumber}`);
     } catch (error) {

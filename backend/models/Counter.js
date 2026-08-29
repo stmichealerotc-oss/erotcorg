@@ -27,10 +27,14 @@ const SequenceSchema = new mongoose.Schema({
 });
 
 SequenceSchema.statics.getNextSequence = async function(name) {
+  // Pass session: null explicitly to prevent Cosmos DB cross-collection
+  // transaction errors (Substatus 1104). Cosmos only supports single-collection
+  // transactions; the upsert here runs in the sequences collection while the
+  // caller may be saving to a different collection.
   const result = await this.findByIdAndUpdate(
     name,
     { $inc: { seq: 1 } },
-    { new: true, upsert: true }
+    { new: true, upsert: true, session: null }
   );
   return result.seq;
 };
