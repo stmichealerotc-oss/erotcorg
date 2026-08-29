@@ -375,40 +375,25 @@ router.post('/:id/fulfill', async (req, res) => {
       }
     };
     
-    // Start a session for transaction
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    
-    try {
-      // Create transaction
-      const newTransaction = new Transaction(transactionData);
-      await newTransaction.save({ session });
-      
-      // Update promise status
-      promise.status = 'fulfilled';
-      promise.fulfilledDate = new Date();
-      promise.actualAmount = actualAmount || promise.amount;
-      promise.paymentMethod = paymentMethod || '';
-      promise.notes = notes || promise.notes;
-      await promise.save({ session });
-      
-      // Commit transaction
-      await session.commitTransaction();
-      
-      await newTransaction.populate('payee.memberId', 'firstName lastName email');
-      
-      res.json({
-        success: true,
-        promise: promise,
-        transaction: newTransaction
-      });
-      
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
-    }
+    // Save transaction and update promise sequentially
+    // (Azure Cosmos DB does not support cross-collection sessions/transactions)
+    const newTransaction = new Transaction(transactionData);
+    await newTransaction.save();
+
+    promise.status = 'fulfilled';
+    promise.fulfilledDate = new Date();
+    promise.actualAmount = actualAmount || promise.amount;
+    promise.paymentMethod = paymentMethod || '';
+    promise.notes = notes || promise.notes;
+    await promise.save();
+
+    await newTransaction.populate('payee.memberId', 'firstName lastName email');
+
+    res.json({
+      success: true,
+      promise: promise,
+      transaction: newTransaction
+    });
     
   } catch (err) {
     console.error('Error fulfilling promise:', err);
