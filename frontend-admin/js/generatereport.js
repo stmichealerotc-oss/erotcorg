@@ -939,11 +939,31 @@ class ReportsPage {
         });
     }
 
-    // Helper function to wait for Chart.js to be available
-    waitForChartJS(maxAttempts = 10, delay = 100) {
+    // Helper function to wait for Chart.js — loads it if not already present
+    waitForChartJS(maxAttempts = 30, delay = 100) {
         return new Promise((resolve) => {
+            // If already loaded, resolve immediately
+            if (typeof Chart !== 'undefined') {
+                resolve();
+                return;
+            }
+
+            // Not loaded — inject the script ourselves
+            const existing = document.querySelector('script[src*="chart.js"]');
+            if (!existing) {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+                script.onload  = () => resolve();
+                script.onerror = () => {
+                    console.error('Failed to load Chart.js from CDN');
+                    resolve(); // resolve so the caller can show a fallback message
+                };
+                document.head.appendChild(script);
+                return;
+            }
+
+            // Script tag exists but not yet executed — poll until ready
             let attempts = 0;
-            
             const checkChart = () => {
                 if (typeof Chart !== 'undefined') {
                     resolve();
@@ -952,10 +972,9 @@ class ReportsPage {
                     setTimeout(checkChart, delay);
                 } else {
                     console.warn('Chart.js not available after waiting');
-                    resolve(); // Resolve anyway to prevent hanging
+                    resolve();
                 }
             };
-            
             checkChart();
         });
     }
@@ -1268,8 +1287,8 @@ renderOverlayIncomeWithBreakdown(tableId, categories, contributionBreakdown) {
 
     // Function to render chart in overlay
     renderOverlayChart(monthlyData) {
-        const ctx = document.getElementById('overlay-monthly-chart');
-        if (!ctx) {
+        const canvas = document.getElementById('overlay-monthly-chart');
+        if (!canvas) {
             console.error('Overlay monthly chart canvas not found');
             return;
         }
@@ -1277,53 +1296,66 @@ renderOverlayIncomeWithBreakdown(tableId, categories, contributionBreakdown) {
         // Check if Chart.js is available
         if (typeof Chart === 'undefined') {
             console.warn('Chart.js not loaded, displaying message instead');
-            const context = ctx.getContext('2d');
-            context.clearRect(0, 0, ctx.width, ctx.height);
+            const w = canvas.clientWidth || 800;
+            const h = canvas.clientHeight || 300;
+            canvas.width  = w;
+            canvas.height = h;
+            const context = canvas.getContext('2d');
+            context.clearRect(0, 0, w, h);
             context.font = '16px Arial';
             context.fillStyle = '#666';
             context.textAlign = 'center';
-            context.fillText('Chart.js library not loaded', ctx.width / 2, ctx.height / 2 - 10);
-            context.fillText('Charts are not available', ctx.width / 2, ctx.height / 2 + 10);
+            context.fillText('Chart.js library not loaded', w / 2, h / 2 - 10);
+            context.fillText('Charts are not available',   w / 2, h / 2 + 10);
             return;
         }
 
-        // Destroy existing chart if it exists
+        // Destroy existing chart instance to avoid "Canvas is already in use"
         if (this.overlayChart) {
-            this.overlayChart.destroy();
+            try { this.overlayChart.destroy(); } catch(e) {}
+            this.overlayChart = null;
         }
 
+        // Also clear any stale Chart.js registry entry for this canvas
+        const existing = Chart.getChart(canvas);
+        if (existing) { try { existing.destroy(); } catch(e) {} }
+
         if (!monthlyData || monthlyData.length === 0) {
-            ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
-            const context = ctx.getContext('2d');
+            const w = canvas.clientWidth || 800;
+            const h = canvas.clientHeight || 300;
+            canvas.width  = w;
+            canvas.height = h;
+            const context = canvas.getContext('2d');
+            context.clearRect(0, 0, w, h);
             context.font = '16px Arial';
-            context.fillStyle = '#666';
+            context.fillStyle = '#999';
             context.textAlign = 'center';
-            context.fillText('No monthly data available', ctx.width / 2, ctx.height / 2);
+            context.fillText('No monthly data available for this period', w / 2, h / 2);
             return;
         }
 
         try {
-            const labels = monthlyData.map(item => item.month || 'Unknown');
-            const incomeData = monthlyData.map(item => item.income || 0);
+            const labels      = monthlyData.map(item => item.month    || 'Unknown');
+            const incomeData  = monthlyData.map(item => item.income   || 0);
             const expenseData = monthlyData.map(item => item.expenses || 0);
 
-            this.overlayChart = new Chart(ctx, {
+            this.overlayChart = new Chart(canvas, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels,
                     datasets: [
                         {
                             label: 'Income',
                             data: incomeData,
                             backgroundColor: 'rgba(67, 97, 238, 0.8)',
-                            borderColor: 'rgba(67, 97, 238, 1)',
+                            borderColor:     'rgba(67, 97, 238, 1)',
                             borderWidth: 1
                         },
                         {
                             label: 'Expenses',
                             data: expenseData,
                             backgroundColor: 'rgba(220, 53, 69, 0.8)',
-                            borderColor: 'rgba(220, 53, 69, 1)',
+                            borderColor:     'rgba(220, 53, 69, 1)',
                             borderWidth: 1
                         }
                     ]
@@ -1334,17 +1366,11 @@ renderOverlayIncomeWithBreakdown(tableId, categories, contributionBreakdown) {
                     scales: {
                         y: {
                             beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return '$' + value.toFixed(2);
-                                }
-                            }
+                            ticks: { callback: v => '$' + Number(v).toFixed(2) }
                         }
                     },
                     plugins: {
-                        legend: {
-                            position: 'top',
-                        },
+                        legend: { position: 'top' },
                         title: {
                             display: true,
                             text: 'Monthly Income vs Expenses'
@@ -1354,12 +1380,14 @@ renderOverlayIncomeWithBreakdown(tableId, categories, contributionBreakdown) {
             });
         } catch (error) {
             console.error('Error creating chart:', error);
-            const context = ctx.getContext('2d');
-            context.clearRect(0, 0, ctx.width, ctx.height);
+            const w = canvas.clientWidth || 800;
+            const h = canvas.clientHeight || 300;
+            const context = canvas.getContext('2d');
+            context.clearRect(0, 0, w, h);
             context.font = '16px Arial';
             context.fillStyle = '#dc3545';
             context.textAlign = 'center';
-            context.fillText('Error loading chart', ctx.width / 2, ctx.height / 2);
+            context.fillText('Error loading chart: ' + error.message, w / 2, h / 2);
         }
     }
 
