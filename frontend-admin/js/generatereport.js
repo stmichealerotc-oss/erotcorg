@@ -628,11 +628,9 @@ class ReportsPage {
 
         // Render income categories with cash/non-cash breakdown
         this.renderIncomeWithBreakdown('income-categories', report.incomeByCategory || [], report.contributionBreakdown);
-        setHTML('total-income', `<strong>$${(report.totalIncome || 0).toFixed(2)}</strong>`);
 
         // Render expense categories
-        this.renderCategoryTable('expense-categories', report.expensesByCategory || []);
-        setHTML('total-expenses', `<strong>$${(report.totalExpenses || 0).toFixed(2)}</strong>`);
+        this.renderCategoryTable('expense-categories', report.expensesByCategory || [], report.contributionBreakdown);
 
         // Update summary - CASH ONLY for financial calculations
         setText('new-total-income', `$${(report.totalIncome || 0).toFixed(2)}`);
@@ -780,12 +778,6 @@ class ReportsPage {
                                     <tr><th>Category</th><th>Amount</th></tr>
                                 </thead>
                                 <tbody id="overlay-income-categories"></tbody>
-                                <tfoot>
-                                    <tr class="total-row">
-                                        <td><strong>Total Income</strong></td>
-                                        <td id="overlay-total-income"><strong>$${(report.totalIncome || 0).toFixed(2)}</strong></td>
-                                    </tr>
-                                </tfoot>
                             </table>
                         </div>
 
@@ -796,12 +788,6 @@ class ReportsPage {
                                     <tr><th>Category</th><th>Amount</th></tr>
                                 </thead>
                                 <tbody id="overlay-expense-categories"></tbody>
-                                <tfoot>
-                                    <tr class="total-row">
-                                        <td><strong>Total Expenses</strong></td>
-                                        <td id="overlay-total-expenses"><strong>$${(report.totalExpenses || 0).toFixed(2)}</strong></td>
-                                    </tr>
-                                </tfoot>
                             </table>
                         </div>
 
@@ -1037,16 +1023,11 @@ renderOverlayIncomeWithBreakdown(tableId, categories, contributionBreakdown) {
                 </tr>
             `;
 
-            // TOTAL INCOME
+            // TOTAL INCOME — single summary row, no duplicate info line
             categoryRows += `
-                <tr style="background: #fff3cd; font-weight: bold; font-size: 15px;">
-                    <td style="padding-left: 10px;"><i class="fas fa-calculator"></i> TOTAL INCOME</td>
-                    <td>${(totalCash + totalInKind).toFixed(2)}</td>
-                </tr>
-                <tr style="background: #f8f9fa;">
-                    <td colspan="2" style="padding: 10px 20px; font-size: 11px; color: #666; font-style: italic;">
-                        ℹ️ Total = ${totalCash.toFixed(2)} (cash) + ${totalInKind.toFixed(2)} (in-kind)
-                    </td>
+                <tr style="background: #fff3cd; font-weight: bold; font-size: 15px; border-top: 2px solid #ffc107;">
+                    <td style="padding: 10px;"><i class="fas fa-calculator"></i> TOTAL INCOME</td>
+                    <td style="padding: 10px;">$${(totalCash + totalInKind).toFixed(2)}</td>
                 </tr>
             `;
         } else {
@@ -1131,16 +1112,11 @@ renderOverlayIncomeWithBreakdown(tableId, categories, contributionBreakdown) {
                 </tr>
             `;
 
-            // TOTAL EXPENSES
+            // TOTAL EXPENSES — single summary row, no duplicate info line
             categoryRows += `
-                <tr style="background: #fff3cd; font-weight: bold; font-size: 15px;">
-                    <td style="padding-left: 10px;"><i class="fas fa-calculator"></i> TOTAL EXPENSES</td>
-                    <td>$${(totalCash + totalInKind).toFixed(2)}</td>
-                </tr>
-                <tr style="background: #f8f9fa;">
-                    <td colspan="2" style="padding: 10px 20px; font-size: 11px; color: #666; font-style: italic;">
-                        ℹ️ Total = $${totalCash.toFixed(2)} (cash) + $${totalInKind.toFixed(2)} (in-kind)
-                    </td>
+                <tr style="background: #fff3cd; font-weight: bold; font-size: 15px; border-top: 2px solid #ffc107;">
+                    <td style="padding: 10px;"><i class="fas fa-calculator"></i> TOTAL EXPENSES</td>
+                    <td style="padding: 10px;">$${(totalCash + totalInKind).toFixed(2)}</td>
                 </tr>
             `;
         } else {
