@@ -1008,170 +1008,285 @@ class PDFGenerator {
         return new Promise((resolve, reject) => {
             if (!PDFDocument) return reject(new Error('pdfkit not installed'));
 
-            const doc = new PDFDocument({ size: 'A4', margin: 25 });
+            const doc = new PDFDocument({ size: 'A4', margin: 25, bufferPages: true });
             const chunks = [];
             doc.on('data', chunk => chunks.push(chunk));
             doc.on('end', () => resolve(Buffer.concat(chunks)));
             doc.on('error', reject);
 
-            const { startDate, endDate, openingBalance, closingBalance, totalDebits, totalCredits, transactions, churchName, churchAddress, churchABN } = data;
+            const { startDate, endDate, openingBalance, closingBalance,
+                    totalDebits, totalCredits, transactions,
+                    churchName, churchAddress, churchABN } = data;
 
-            const blue = '#4a6fa5';
-            const grey = '#666666';
-            // A4 = 595pt, margins 25 each side → usable = 545
+            const blue      = '#4a6fa5';
+            const darkBlue  = '#2c4a7c';
+            const green     = '#2e7d32';
+            const red       = '#c62828';
+            const grey      = '#666666';
+            const lightGrey = '#f8f9fa';
+            const dark      = '#1a1a1a';
             const L = 25, W = 545, R = L + W;
 
+            const fmt$ = v => `$${Number(v || 0).toFixed(2)}`;
+            const fmtD = d => new Date(d).toLocaleDateString('en-AU',
+                { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+            const startStr = fmtD(startDate);
+            const endStr   = fmtD(endDate);
+            let pageNum = 1;
+
             // ── Header ────────────────────────────────────────────────────
-            doc.fontSize(18).fillColor(blue).font('Helvetica-Bold')
-               .text(churchName || 'St. Michael Eritrean Orthodox Tewahedo Church', L, doc.y, { align: 'center', width: W });
-            doc.fontSize(10).fillColor(grey).font('Helvetica')
-               .text(churchAddress || '60 Osborne Street, Joondanna, WA 6060', L, doc.y, { align: 'center', width: W })
-               .text(churchABN || 'ABN: 80 798 549 161', L, doc.y, { align: 'center', width: W })
-               .text('Email: stmichaelerotc@gmail.com  |  Website: erotc.org', L, doc.y, { align: 'center', width: W });
-            doc.moveDown(0.3);
-            doc.moveTo(L, doc.y).lineTo(R, doc.y).strokeColor(blue).lineWidth(2).stroke();
-            doc.moveDown(0.5);
+            // Blue banner
+            doc.rect(L, 25, W, 50).fillColor(darkBlue).fill();
+            doc.fontSize(16).fillColor('#ffffff').font('Helvetica-Bold')
+               .text(churchName || 'St. Michael Eritrean Orthodox Tewahdo Church',
+                     L + 10, 35, { width: W - 20, align: 'center' });
+            doc.fontSize(9).fillColor('#d0d8e8').font('Helvetica')
+               .text(
+                 `${churchAddress || '60 Osborne Street, Joondanna, WA 6060'}   |   ${churchABN || 'ABN: 80 798 549 161'}   |   stmichaelerotc@gmail.com`,
+                 L + 10, 54, { width: W - 20, align: 'center' });
 
-            // ── Title ─────────────────────────────────────────────────────
-            doc.fontSize(14).fillColor('#333333').font('Helvetica-Bold')
-               .text('FINANCIAL STATEMENT', L, doc.y, { align: 'center', width: W });
-            doc.moveDown(0.8);
+            let y = 85;
 
-            // ── Summary box ───────────────────────────────────────────────
-            const startStr = new Date(startDate).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const endStr   = new Date(endDate).toLocaleDateString('en-AU',   { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-            let y = doc.y;
-            doc.rect(L, y, W, 68).fillColor('#f8f9fa').fill();
-            doc.rect(L, y, W, 68).strokeColor('#dddddd').lineWidth(0.5).stroke();
-
-            doc.fontSize(11).fillColor('#333333').font('Helvetica-Bold')
-               .text('Statement Period:', L + 10, y + 8, { width: W - 20 });
-            doc.fontSize(12).fillColor('#333333').font('Helvetica-Bold')
-               .text(`${startStr} to ${endStr}`, L + 10, y + 22, { width: W - 20 });
-
-            // 4-column summary row
-            const s1 = L + 10, s2 = L + 150, s3 = L + 300, s4 = L + 420;
-            const sY = y + 44;
-            doc.fontSize(9).fillColor(grey).font('Helvetica');
-            doc.text('Opening Balance:', s1, sY, { width: 120 });
-            doc.text('Total Credits:',   s2, sY, { width: 120 });
-            doc.text('Total Debits:',    s3, sY, { width: 100 });
-            doc.text('Closing Balance:', s4, sY, { width: 110 });
-            doc.fontSize(10).fillColor('#333333').font('Helvetica-Bold');
-            doc.text(`$${Number(openingBalance || 0).toFixed(2)}`, s1, sY + 12, { width: 120 });
-            doc.text(`$${Number(totalCredits).toFixed(2)}`,        s2, sY + 12, { width: 120 });
-            doc.text(`$${Number(totalDebits).toFixed(2)}`,         s3, sY + 12, { width: 100 });
-            doc.text(`$${Number(closingBalance).toFixed(2)}`,      s4, sY + 12, { width: 110 });
-
-            y += 78;
-
-            // ── Table columns (must sum to W = 515) ───────────────────────
-            // date=65, desc=215, ref=70, debit=55, credit=55, balance=85 → total=545
-            const cDate    = L;
-            const cDesc    = L + 65;
-            const cRef     = L + 280;
-            const cDebit   = L + 350;
-            const cCredit  = L + 405;
-            const cBalance = L + 460;
-            const wDate=65, wDesc=215, wRef=70, wDebit=55, wCredit=55, wBalance=85;
-
-            // Table header row
-            doc.rect(L, y, W, 20).fillColor(blue).fill();
-            doc.fontSize(8).fillColor('#ffffff').font('Helvetica-Bold');
-            doc.text('Date',        cDate    + 3, y + 6, { width: wDate });
-            doc.text('Description', cDesc    + 3, y + 6, { width: wDesc });
-            doc.text('Reference',   cRef     + 3, y + 6, { width: wRef });
-            doc.text('Debit',       cDebit   + 3, y + 6, { width: wDebit,   align: 'right' });
-            doc.text('Credit',      cCredit  + 3, y + 6, { width: wCredit,  align: 'right' });
-            doc.text('Balance',     cBalance + 3, y + 6, { width: wBalance, align: 'right' });
+            // Title + period
+            doc.fontSize(14).fillColor(dark).font('Helvetica-Bold')
+               .text('FINANCIAL STATEMENT', L, y, { width: W, align: 'center' });
             y += 20;
-
-            // Opening balance row
-            doc.rect(L, y, W, 18).fillColor('#eef2f7').fill();
-            doc.rect(L, y, W, 18).strokeColor('#dddddd').lineWidth(0.3).stroke();
-            doc.fontSize(7.5).fillColor('#333333').font('Helvetica-Bold');
-            doc.text(startStr,         cDate    + 3, y + 5, { width: wDate });
-            doc.text('Opening Balance',cDesc    + 3, y + 5, { width: wDesc });
-            doc.text('-',              cRef     + 3, y + 5, { width: wRef });
-            doc.text('-',              cDebit   + 3, y + 5, { width: wDebit,   align: 'right' });
-            doc.text('-',              cCredit  + 3, y + 5, { width: wCredit,  align: 'right' });
-            doc.text(Number(openingBalance || 0).toFixed(2), cBalance + 3, y + 5, { width: wBalance, align: 'right' });
+            doc.fontSize(10).fillColor(grey).font('Helvetica')
+               .text(`Statement Period:  ${startStr}  →  ${endStr}`, L, y, { width: W, align: 'center' });
             y += 18;
 
-            // Transaction rows
-            let runningBalance = openingBalance || 0;
-            transactions.forEach((tx, i) => {
-                const rowHeight = 18;
-                if (y + rowHeight > 780) {
-                    doc.addPage();
-                    y = 40;
-                    // Repeat header on new page
-                    doc.rect(L, y, W, 20).fillColor(blue).fill();
-                    doc.fontSize(8).fillColor('#ffffff').font('Helvetica-Bold');
-                    doc.text('Date',        cDate    + 3, y + 6, { width: wDate });
-                    doc.text('Description', cDesc    + 3, y + 6, { width: wDesc });
-                    doc.text('Reference',   cRef     + 3, y + 6, { width: wRef });
-                    doc.text('Debit',       cDebit   + 3, y + 6, { width: wDebit,   align: 'right' });
-                    doc.text('Credit',      cCredit  + 3, y + 6, { width: wCredit,  align: 'right' });
-                    doc.text('Balance',     cBalance + 3, y + 6, { width: wBalance, align: 'right' });
-                    y += 20;
+            // Divider
+            doc.moveTo(L, y).lineTo(R, y).strokeColor(blue).lineWidth(1.5).stroke();
+            y += 12;
+
+            // ── Summary cards (4 boxes) ───────────────────────────────────
+            const cardW = (W - 9) / 4;  // 3 gaps of 3pt
+            const cards = [
+                { label: 'Opening Balance', value: fmt$(openingBalance), color: blue },
+                { label: 'Total Credits',   value: fmt$(totalCredits),   color: green },
+                { label: 'Total Debits',    value: fmt$(totalDebits),    color: red },
+                { label: 'Closing Balance', value: fmt$(closingBalance), color: darkBlue }
+            ];
+
+            cards.forEach((card, i) => {
+                const cx = L + i * (cardW + 3);
+                doc.rect(cx, y, cardW, 46).fillColor(lightGrey).fill();
+                doc.rect(cx, y, cardW, 3).fillColor(card.color).fill();  // colour top bar
+                doc.fontSize(8).fillColor(grey).font('Helvetica')
+                   .text(card.label, cx + 6, y + 8, { width: cardW - 12 });
+                doc.fontSize(13).fillColor(card.color).font('Helvetica-Bold')
+                   .text(card.value, cx + 6, y + 20, { width: cardW - 12 });
+            });
+
+            y += 56;
+
+            // ── Category breakdown (income vs expense) ────────────────────
+            // Group by category
+            const incomeByCategory  = {};
+            const expenseByCategory = {};
+            (transactions || []).forEach(tx => {
+                const cat = tx.category || 'Uncategorised';
+                if (tx.type === 'expense') {
+                    expenseByCategory[cat] = (expenseByCategory[cat] || 0) + Number(tx.amount);
+                } else {
+                    incomeByCategory[cat]  = (incomeByCategory[cat]  || 0) + Number(tx.amount);
+                }
+            });
+
+            const incomeCategories  = Object.entries(incomeByCategory);
+            const expenseCategories = Object.entries(expenseByCategory);
+            const maxRows = Math.max(incomeCategories.length, expenseCategories.length);
+
+            if (maxRows > 0) {
+                const halfW = (W - 8) / 2;
+
+                // Section title
+                doc.fontSize(10).fillColor(dark).font('Helvetica-Bold')
+                   .text('Income & Expense Breakdown', L, y);
+                y += 16;
+
+                // Two-column headers
+                doc.rect(L,             y, halfW, 18).fillColor(green).fill();
+                doc.rect(L + halfW + 8, y, halfW, 18).fillColor(red).fill();
+                doc.fontSize(8).fillColor('#ffffff').font('Helvetica-Bold')
+                   .text('INCOME BY CATEGORY',  L + 6,             y + 5, { width: halfW - 12 })
+                   .text('EXPENSES BY CATEGORY', L + halfW + 14,   y + 5, { width: halfW - 12 });
+                y += 18;
+
+                for (let r = 0; r < maxRows; r++) {
+                    const rowH = 16;
+                    const bg = r % 2 === 0 ? '#ffffff' : lightGrey;
+                    doc.rect(L,             y, halfW, rowH).fillColor(bg).fill();
+                    doc.rect(L + halfW + 8, y, halfW, rowH).fillColor(bg).fill();
+
+                    doc.fontSize(7.5).fillColor(dark).font('Helvetica');
+                    if (incomeCategories[r]) {
+                        const [cat, amt] = incomeCategories[r];
+                        doc.text(cat,       L + 6,         y + 4, { width: halfW - 70 });
+                        doc.font('Helvetica-Bold').fillColor(green)
+                           .text(fmt$(amt), L + halfW - 60, y + 4, { width: 54, align: 'right' });
+                    }
+                    doc.font('Helvetica').fillColor(dark);
+                    if (expenseCategories[r]) {
+                        const [cat, amt] = expenseCategories[r];
+                        doc.text(cat,                  L + halfW + 14,   y + 4, { width: halfW - 70 });
+                        doc.font('Helvetica-Bold').fillColor(red)
+                           .text(fmt$(amt), L + W - 60, y + 4, { width: 54, align: 'right' });
+                    }
+                    y += rowH;
                 }
 
-                const bg = i % 2 === 0 ? '#ffffff' : '#f8f9fa';
-                doc.rect(L, y, W, rowHeight).fillColor(bg).fill();
-                doc.rect(L, y, W, rowHeight).strokeColor('#dddddd').lineWidth(0.3).stroke();
+                // Totals row
+                doc.rect(L,             y, halfW, 18).fillColor('#e8f5e9').fill();
+                doc.rect(L + halfW + 8, y, halfW, 18).fillColor('#ffebee').fill();
+                doc.fontSize(8).fillColor(green).font('Helvetica-Bold')
+                   .text('Total Income',   L + 6,             y + 5, { width: halfW - 70 })
+                   .text(fmt$(totalCredits), L + halfW - 60,  y + 5, { width: 54, align: 'right' });
+                doc.fillColor(red)
+                   .text('Total Expenses',  L + halfW + 14,   y + 5, { width: halfW - 70 })
+                   .text(fmt$(totalDebits), L + W - 60,       y + 5, { width: 54, align: 'right' });
 
-                const txDate = new Date(tx.date).toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                y += 24;
+            }
+
+            // Net result banner
+            const net = Number(closingBalance) - Number(openingBalance);
+            const netColor = net >= 0 ? green : red;
+            doc.rect(L, y, W, 24).fillColor(net >= 0 ? '#e8f5e9' : '#ffebee').fill();
+            doc.rect(L, y, W, 24).strokeColor(netColor).lineWidth(0.5).stroke();
+            doc.fontSize(9).fillColor(netColor).font('Helvetica-Bold')
+               .text(
+                 `Net Movement for Period:   ${fmt$(Math.abs(net))}  ${net >= 0 ? '▲ Surplus' : '▼ Deficit'}`,
+                 L + 10, y + 8, { width: W - 20, align: 'center' });
+            y += 32;
+
+            // ── Transaction table ─────────────────────────────────────────
+            doc.fontSize(10).fillColor(dark).font('Helvetica-Bold')
+               .text('Transaction Detail', L, y);
+            y += 14;
+
+            // Column widths totalling W=545
+            // date=62  desc=190  ref=68  cat=80  debit=60  credit=60  bal=75
+            const cDate=L, cDesc=L+62, cRef=L+252, cCat=L+320, cDebit=L+400,
+                  cCredit=L+460, cBal=L+470;
+            const wDate=62, wDesc=188, wRef=66, wCat=78, wDebit=58, wCredit=58, wBal=75;
+
+            const drawTableHeader = (yy) => {
+                doc.rect(L, yy, W, 20).fillColor(blue).fill();
+                doc.fontSize(7.5).fillColor('#ffffff').font('Helvetica-Bold');
+                doc.text('Date',        cDate   + 3, yy + 6, { width: wDate });
+                doc.text('Description', cDesc   + 3, yy + 6, { width: wDesc });
+                doc.text('Reference',   cRef    + 3, yy + 6, { width: wRef });
+                doc.text('Category',    cCat    + 3, yy + 6, { width: wCat });
+                doc.text('Debit',       cDebit  + 3, yy + 6, { width: wDebit,  align: 'right' });
+                doc.text('Credit',      cCredit + 3, yy + 6, { width: wCredit, align: 'right' });
+                doc.text('Balance',     cBal    + 3, yy + 6, { width: wBal,    align: 'right' });
+                return yy + 20;
+            };
+
+            y = drawTableHeader(y);
+
+            // Opening balance row
+            doc.rect(L, y, W, 16).fillColor('#eef2f7').fill();
+            doc.rect(L, y, W, 16).strokeColor('#c5cae9').lineWidth(0.4).stroke();
+            doc.fontSize(7.5).fillColor(darkBlue).font('Helvetica-Bold');
+            doc.text(startStr,         cDate + 3, y + 4, { width: wDate });
+            doc.text('Opening Balance', cDesc + 3, y + 4, { width: wDesc });
+            ['—','—','—','—'].forEach((v, i) => {
+                const xs = [cRef+3, cCat+3, cDebit+3, cCredit+3];
+                const ws = [wRef, wCat, wDebit, wCredit];
+                const al = i >= 2 ? 'right' : 'left';
+                doc.text(v, xs[i], y + 4, { width: ws[i], align: al });
+            });
+            doc.text(fmt$(openingBalance), cBal + 3, y + 4, { width: wBal, align: 'right' });
+            y += 16;
+
+            // Transactions
+            let runBal = Number(openingBalance || 0);
+            (transactions || []).forEach((tx, i) => {
+                const ROW = 16;
+                if (y + ROW > 800) {
+                    // Page number on current page
+                    doc.fontSize(7).fillColor(grey).font('Helvetica')
+                       .text(`Page ${pageNum}`, L, 820, { width: W, align: 'right' });
+                    doc.addPage({ margin: 25 });
+                    pageNum++;
+                    y = 30;
+                    doc.fontSize(8).fillColor(grey).font('Helvetica')
+                       .text(`${churchName || 'St. Michael Church'}  —  Financial Statement (continued)`,
+                             L, y, { width: W });
+                    y += 14;
+                    y = drawTableHeader(y);
+                }
+
+                const bg = i % 2 === 0 ? '#ffffff' : lightGrey;
+                doc.rect(L, y, W, ROW).fillColor(bg).fill();
+                doc.rect(L, y, W, ROW).strokeColor('#e0e0e0').lineWidth(0.3).stroke();
+
                 const payeeName = tx.payee?.name
                     || (tx.payee?.memberId && typeof tx.payee.memberId === 'object'
                         ? `${tx.payee.memberId.firstName || ''} ${tx.payee.memberId.lastName || ''}`.trim()
                         : null);
                 const rawDesc = tx.description || 'No description';
-                const desc = payeeName ? `${rawDesc} (${payeeName})`.substring(0, 55) : rawDesc.substring(0, 55);
-                const ref    = (tx.reference || '-').substring(0, 18);
+                const desc    = (payeeName ? `${rawDesc} — ${payeeName}` : rawDesc).substring(0, 48);
+                const ref     = (tx.reference || '—').substring(0, 16);
+                const cat     = (tx.category  || '—').substring(0, 18);
 
-                let debit = '-', credit = '-';
-                if (tx.type === 'expense') {
-                    debit = tx.amount.toFixed(2);
-                    runningBalance -= tx.amount;
-                } else {
-                    credit = tx.amount.toFixed(2);
-                    runningBalance += tx.amount;
-                }
+                let debit = '—', credit = '—';
+                if (tx.type === 'expense') { debit  = Number(tx.amount).toFixed(2); runBal -= Number(tx.amount); }
+                else                       { credit = Number(tx.amount).toFixed(2); runBal += Number(tx.amount); }
 
-                doc.fontSize(7.5).fillColor('#333333').font('Helvetica');
-                doc.text(txDate,                  cDate    + 3, y + 5, { width: wDate });
-                doc.text(desc,                    cDesc    + 3, y + 5, { width: wDesc });
-                doc.text(ref,                     cRef     + 3, y + 5, { width: wRef });
-                doc.text(debit,                   cDebit   + 3, y + 5, { width: wDebit,   align: 'right' });
-                doc.text(credit,                  cCredit  + 3, y + 5, { width: wCredit,  align: 'right' });
-                doc.text(runningBalance.toFixed(2), cBalance + 3, y + 5, { width: wBalance, align: 'right' });
-                y += rowHeight;
+                doc.fontSize(7.5).fillColor(dark).font('Helvetica');
+                doc.text(fmtD(tx.date), cDate + 3, y + 4, { width: wDate });
+                doc.text(desc,           cDesc + 3, y + 4, { width: wDesc });
+                doc.text(ref,            cRef  + 3, y + 4, { width: wRef  });
+                doc.text(cat,            cCat  + 3, y + 4, { width: wCat  });
+                doc.font('Helvetica-Bold');
+                if (debit  !== '—') doc.fillColor(red)  .text(debit,  cDebit  + 3, y + 4, { width: wDebit,  align: 'right' });
+                else                doc.fillColor(grey)  .text('—',    cDebit  + 3, y + 4, { width: wDebit,  align: 'right' });
+                if (credit !== '—') doc.fillColor(green).text(credit, cCredit + 3, y + 4, { width: wCredit, align: 'right' });
+                else                doc.fillColor(grey)  .text('—',    cCredit + 3, y + 4, { width: wCredit, align: 'right' });
+                doc.fillColor(dark).text(runBal.toFixed(2), cBal + 3, y + 4, { width: wBal, align: 'right' });
+
+                y += ROW;
             });
 
             // Closing balance row
             doc.rect(L, y, W, 18).fillColor('#eef2f7').fill();
-            doc.rect(L, y, W, 18).strokeColor('#dddddd').lineWidth(0.3).stroke();
-            doc.fontSize(7.5).fillColor('#333333').font('Helvetica-Bold');
-            doc.text(endStr,           cDate    + 3, y + 5, { width: wDate });
-            doc.text('Closing Balance',cDesc    + 3, y + 5, { width: wDesc });
-            doc.text('-',              cRef     + 3, y + 5, { width: wRef });
-            doc.text('-',              cDebit   + 3, y + 5, { width: wDebit,   align: 'right' });
-            doc.text('-',              cCredit  + 3, y + 5, { width: wCredit,  align: 'right' });
-            doc.text(Number(closingBalance).toFixed(2), cBalance + 3, y + 5, { width: wBalance, align: 'right' });
+            doc.rect(L, y, W, 18).strokeColor('#c5cae9').lineWidth(0.5).stroke();
+            doc.fontSize(7.5).fillColor(darkBlue).font('Helvetica-Bold');
+            doc.text(endStr,            cDate + 3, y + 5, { width: wDate });
+            doc.text('Closing Balance', cDesc + 3, y + 5, { width: wDesc });
+            doc.text('—', cRef + 3, y + 5, { width: wRef });
+            doc.text('—', cCat + 3, y + 5, { width: wCat });
+            doc.text('—', cDebit  + 3, y + 5, { width: wDebit,  align: 'right' });
+            doc.text('—', cCredit + 3, y + 5, { width: wCredit, align: 'right' });
+            doc.fillColor(darkBlue).text(fmt$(closingBalance), cBal + 3, y + 5, { width: wBal, align: 'right' });
             y += 26;
 
             // ── Footer ────────────────────────────────────────────────────
             doc.moveTo(L, y).lineTo(R, y).strokeColor('#dddddd').lineWidth(1).stroke();
             y += 10;
             const now = new Date();
-            const genTimestamp = now.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                + ' at ' + now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const genTime = now.toLocaleDateString('en-AU',
+                { day: '2-digit', month: 'long', year: 'numeric' })
+                + ' at '
+                + now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+
             doc.fontSize(8).fillColor(grey).font('Helvetica')
-               .text(`This statement was generated on ${genTimestamp}`, L, y, { align: 'center', width: W });
+               .text(`Generated on ${genTime}   |   This is a computer-generated document`, L, y,
+                     { width: W, align: 'center' });
+            doc.fontSize(8).fillColor(dark).font('Helvetica-Bold')
+               .text(churchName || 'St. Michael Eritrean Orthodox Tewahdo Church',
+                     L, y + 12, { width: W, align: 'center' });
             doc.fontSize(8).fillColor(grey).font('Helvetica')
-               .text(`${churchName || 'St. Michael Eritrean Orthodox Tewahedo Church'} - Financial Statement`, L, y + 12, { align: 'center', width: W });
+               .text('60 Osborne Street, Joondanna, WA 6060  |  ABN: 80 798 549 161',
+                     L, y + 22, { width: W, align: 'center' });
+
+            // Final page number
+            doc.fontSize(7).fillColor(grey)
+               .text(`Page ${pageNum}`, L, y + 34, { width: W, align: 'right' });
 
             doc.end();
         });
