@@ -115,8 +115,8 @@ const transactionSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for efficient searching
-transactionSchema.index({ transactionNumber: 1 });
+// Indexes for efficient searching
+// Note: transactionNumber index is created by { unique: true } on the field itself
 transactionSchema.index({ date: -1 });
 transactionSchema.index({ 'payee.memberId': 1 });
 

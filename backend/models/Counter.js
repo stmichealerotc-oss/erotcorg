@@ -27,16 +27,22 @@ const SequenceSchema = new mongoose.Schema({
 });
 
 SequenceSchema.statics.getNextSequence = async function(name) {
-  // Pass session: null explicitly to prevent Cosmos DB cross-collection
-  // transaction errors (Substatus 1104). Cosmos only supports single-collection
-  // transactions; the upsert here runs in the sequences collection while the
-  // caller may be saving to a different collection.
-  const result = await this.findByIdAndUpdate(
-    name,
+  // Explicitly use the raw MongoDB collection to bypass any Mongoose session
+  // context inherited through the pre-save hook chain.
+  // Cosmos DB (Substatus 1104) rejects cross-collection operations in a session.
+  // Using the raw collection with a direct command avoids the issue entirely.
+  const collection = this.collection;
+  const result = await collection.findOneAndUpdate(
+    { _id: name },
     { $inc: { seq: 1 } },
-    { new: true, upsert: true, session: null }
+    { 
+      returnDocument: 'after',
+      upsert: true,
+      session: undefined  // explicitly no session
+    }
   );
-  return result.seq;
+  // findOneAndUpdate returns the document directly in MongoDB driver 6+
+  return result ? result.seq : 1;
 };
 
 const Counter = mongoose.model('Counter', CounterSchema);
