@@ -2,7 +2,7 @@
 const router = express.Router();
 const Promise = require('../models/Promise');
 const Member = require('../models/Member');
-const Transaction = require('../models/Transaction');
+const Counter = require('../models/Counter');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const { authenticateToken, authorizeRoles, committeeOnly } = require('../middleware/auth');
@@ -375,24 +375,53 @@ router.post('/:id/fulfill', async (req, res) => {
       }
     };
     
-    // Save transaction and update promise sequentially
-    // (Azure Cosmos DB does not support cross-collection sessions/transactions)
-    const newTransaction = new Transaction(transactionData);
-    await newTransaction.save();
+    // Save transaction and update promise using raw collection operations.
+    // Azure Cosmos DB (Substatus 1104) rejects ANY cross-collection operation
+    // that Mongoose internally associates with the same implicit session/context.
+    // Using raw MongoDB driver collections bypasses all Mongoose session wrapping.
 
-    promise.status = 'fulfilled';
-    promise.fulfilledDate = new Date();
-    promise.actualAmount = actualAmount || promise.amount;
-    promise.paymentMethod = paymentMethod || '';
-    promise.notes = notes || promise.notes;
-    await promise.save();
+    // Step 1: pre-generate transaction number via raw collection (already session-safe)
+    const seq = await Counter.getNextSequence('transactionNumber');
+    transactionData.transactionNumber = `T${seq.toString().padStart(4, '0')}`;
+    console.log(`✅ Pre-generated transaction number: ${transactionData.transactionNumber}`);
 
-    await newTransaction.populate('payee.memberId', 'firstName lastName email');
+    // Step 2: insert transaction directly via raw collection (no Mongoose session)
+    const txCollection = mongoose.connection.collection('transactions');
+    const txDoc = {
+      ...transactionData,
+      _id: new mongoose.Types.ObjectId(),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    await txCollection.insertOne(txDoc);
+    console.log(`✅ Transaction inserted: ${txDoc.transactionNumber}`);
+
+    // Step 3: update promise directly via raw collection (no Mongoose session)
+    const promiseCollection = mongoose.connection.collection('promises');
+    await promiseCollection.updateOne(
+      { _id: promise._id },
+      {
+        $set: {
+          status: 'fulfilled',
+          fulfilledDate: new Date(),
+          actualAmount: actualAmount || promise.amount,
+          paymentMethod: paymentMethod || '',
+          notes: notes || promise.notes,
+          updatedAt: new Date()
+        }
+      }
+    );
+    console.log(`✅ Promise updated to fulfilled`);
+
+    // Build response objects
+    const fulfilledPromise = await Promise.findById(promise._id).populate('memberId');
+    const insertedTx = await mongoose.connection.collection('transactions')
+      .findOne({ _id: txDoc._id });
 
     res.json({
       success: true,
-      promise: promise,
-      transaction: newTransaction
+      promise: fulfilledPromise,
+      transaction: insertedTx
     });
     
   } catch (err) {
