@@ -14,7 +14,7 @@ export interface Book {
   type: string;
   languages?: string[];
   blockCount: number;
-  status: string;
+  status: 'draft' | 'published' | 'archived';
 }
 
 export interface Block {
@@ -75,10 +75,13 @@ export interface BookStructure {
 
 // ── Books ──────────────────────────────────────────────────────────────────
 
-export async function fetchBooks(category?: string): Promise<Book[]> {
-  const q = category ? `?category=${category}` : '';
+export async function fetchBooks(category?: string, options?: { all?: boolean; status?: string }): Promise<Book[]> {
+  const q = new URLSearchParams();
+  if (category)           q.set('category', category);
+  if (options?.all)       q.set('all', 'true');
+  if (options?.status)    q.set('status', options.status);
   try {
-    const res = await fetch(`${API_BASE}/api/orthodox-library/books${q}`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE}/api/orthodox-library/books?${q}`, { cache: 'no-store' });
     const data = await res.json();
     return data.success ? data.data : [];
   } catch { return []; }

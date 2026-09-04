@@ -9,11 +9,19 @@ const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 
 router.get('/books', async (req, res) => {
   try {
-    const { type, status, category } = req.query;
+    const { type, status, category, all } = req.query;
     const filter = { tradition: 'eritrean-orthodox' };
-    if (type) filter.type = type;
-    if (status) filter.status = status;
+    if (type)     filter.type     = type;
     if (category) filter.category = category;
+
+    // 'all' param (admin only) — skip status filter
+    // Otherwise default to published so public users never see drafts
+    if (all !== 'true') {
+      filter.status = status || 'published';
+    } else if (status) {
+      filter.status = status;
+    }
+
     const books = await LiturgicalBook.find(filter).select('-__v');
     res.json({ success: true, count: books.length, data: books });
   } catch (error) {
@@ -36,10 +44,15 @@ router.get('/books/:bookId/blocks', async (req, res) => {
     const { sectionId, subtitle, type, role } = req.query;
     const filter = { bookId: req.params.bookId };
     if (sectionId) filter.sectionId = sectionId;
-    if (subtitle) filter.subtitle = subtitle;
-    if (type) filter.type = type;
-    if (role) filter.role = role;
-    const blocks = await LiturgicalBlock.find(filter).sort({ sectionId: 1, order: 1 }).select('-__v');
+    if (subtitle)  filter.subtitle  = subtitle;
+    if (type)      filter.type      = type;
+    if (role)      filter.role      = role;
+
+    const blocks = await LiturgicalBlock.find(filter)
+      .sort({ sectionId: 1, order: 1 })
+      .select('-__v')
+      .lean();   // plain JS objects — Maps become plain objects automatically
+
     res.json({ success: true, count: blocks.length, data: blocks });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error fetching blocks', error: error.message });
@@ -92,6 +105,26 @@ router.get('/books/:bookId/structure', async (req, res) => {
   }
 });
 
+// PUT /api/orthodox-library/books/:bookId - Update book (admin only)
+router.put('/books/:bookId', authenticateToken, authorizeRoles('admin', 'super-admin'), async (req, res) => {
+  try {
+    const allowed = ['title', 'titleGez', 'titleTi', 'description', 'status',
+                     'featured', 'languages', 'type', 'category', 'tags'];
+    const update = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) update[key] = req.body[key];
+    }
+    update.updatedAt = new Date();
+    const book = await LiturgicalBook.findByIdAndUpdate(
+      req.params.bookId, update, { new: true, runValidators: true }
+    );
+    if (!book) return res.status(404).json({ success: false, message: 'Book not found' });
+    res.json({ success: true, data: book });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error updating book', error: error.message });
+  }
+});
+
 // PUT /api/orthodox-library/books/:bookId/languages - Update book languages
 router.put('/books/:bookId/languages', async (req, res) => {
   try {
@@ -114,13 +147,32 @@ router.put('/books/:bookId/languages', async (req, res) => {
 // ── BLOCKS ─────────────────────────────────────────────────────────────────
 
 // Bulk submit - no auth (volunteers)
+// Also updates the book's blockCount after insert
 router.post('/blocks/bulk', async (req, res) => {
   try {
     const { blocks } = req.body;
     if (!Array.isArray(blocks) || blocks.length === 0) {
       return res.status(400).json({ success: false, message: 'Blocks array is required' });
     }
-    const result = await LiturgicalBlock.insertMany(blocks);
+
+    // Normalise translations: frontend sends plain objects, Mongoose Map needs that too,
+    // but store as plain object to avoid Map serialisation issues on read.
+    const normalised = blocks.map(b => ({
+      ...b,
+      translations: b.translations && typeof b.translations === 'object'
+        ? b.translations          // already a plain object — Mongoose accepts this for Map fields
+        : {}
+    }));
+
+    const result = await LiturgicalBlock.insertMany(normalised, { ordered: false });
+
+    // Update blockCount for every affected book
+    const bookIds = [...new Set(normalised.map(b => b.bookId).filter(Boolean))];
+    await Promise.all(bookIds.map(async bookId => {
+      const count = await LiturgicalBlock.countDocuments({ bookId });
+      await LiturgicalBook.findByIdAndUpdate(bookId, { blockCount: count, updatedAt: new Date() });
+    }));
+
     res.status(201).json({ success: true, count: result.length, data: result });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error bulk creating blocks', error: error.message });
@@ -132,6 +184,11 @@ router.post('/blocks', authenticateToken, authorizeRoles('admin', 'super-admin')
   try {
     const block = new LiturgicalBlock({ ...req.body });
     await block.save();
+
+    // Keep blockCount in sync
+    const count = await LiturgicalBlock.countDocuments({ bookId: block.bookId });
+    await LiturgicalBook.findByIdAndUpdate(block.bookId, { blockCount: count, updatedAt: new Date() });
+
     res.status(201).json({ success: true, data: block });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error creating block', error: error.message });

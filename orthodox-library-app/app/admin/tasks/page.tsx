@@ -71,7 +71,8 @@ export default function AdminTasksPage() {
   });
 
   const loadBooks = useCallback(async (cat: string) => {
-    const data = await fetchBooks(cat);
+    // Pass all:true so admins see draft books too
+    const data = await fetchBooks(cat, { all: true });
     setBooks(data);
     setSelectedBook(null); setStructure([]); setProgress(null);
     setSelectedSection(''); setSelectedTasks(new Set());
@@ -235,7 +236,14 @@ export default function AdminTasksPage() {
                 className={`w-full text-left px-3 py-2.5 rounded-lg mb-1 border transition-all ${
                   selectedBook?._id === book._id ? 'bg-blue-50 border-blue-200' : 'border-transparent hover:bg-gray-50'
                 }`}>
-                <p className="text-sm font-medium text-gray-900 leading-tight">{book.title}</p>
+                <div className="flex items-center justify-between gap-1">
+                  <p className="text-sm font-medium text-gray-900 leading-tight">{book.title}</p>
+                  {book.status !== 'published' && (
+                    <span className={`flex-shrink-0 text-xs px-1.5 py-0.5 rounded font-medium ${
+                      book.status === 'draft' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'
+                    }`}>{book.status}</span>
+                  )}
+                </div>
                 {book.titleGez && <p className="text-xs text-gray-400">{book.titleGez}</p>}
               </button>
             ))}
@@ -255,6 +263,30 @@ export default function AdminTasksPage() {
                 <div>
                   <h2 className="font-bold text-gray-900">{selectedBook.title}</h2>
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    {/* Status badge with toggle */}
+                    <button
+                      onClick={async () => {
+                        const newStatus = selectedBook.status === 'published' ? 'draft' : 'published';
+                        try {
+                          const res = await fetch(`${API_BASE}/api/orthodox-library/books/${selectedBook._id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('orthlib_token')}` },
+                            body: JSON.stringify({ status: newStatus })
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setSelectedBook({ ...selectedBook, status: newStatus });
+                            setMessage(`✅ Book ${newStatus === 'published' ? 'published' : 'set to draft'}`);
+                          }
+                        } catch { setMessage('❌ Failed to update status'); }
+                      }}
+                      className={`text-xs px-2 py-0.5 rounded font-medium border cursor-pointer hover:opacity-80 transition ${
+                        selectedBook.status === 'published'
+                          ? 'bg-green-100 text-green-700 border-green-300'
+                          : 'bg-yellow-100 text-yellow-700 border-yellow-300'
+                      }`}>
+                      {selectedBook.status === 'published' ? '✅ Published' : '⚠️ Draft — click to publish'}
+                    </button>
                     {bookLanguages.map(l => (
                       <span key={l} className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded">
                         {COMMON_LANGS[l] || l}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { fetchBook, fetchBlocks, type Book, type Block } from '@/lib/realApi';
+import { fetchBook, fetchBlocks, fetchBookStructure, type Book, type Block, type BookStructure } from '@/lib/realApi';
 
 const ROLE_BG: Record<string, string> = {
   priest: 'bg-yellow-700', deacon: 'bg-red-700', choir: 'bg-blue-800',
@@ -13,26 +13,46 @@ const LANG_LABELS: Record<string, string> = { gez: "Ge'ez", ti: 'Tigrinya', en: 
 
 export default function DisplayPage() {
   const { bookId } = useParams() as { bookId: string };
-  const [book, setBook] = useState<Book | null>(null);
-  const [blocks, setBlocks] = useState<Block[]>([]);
-  const [idx, setIdx] = useState(0);
-  const [language, setLanguage] = useState('ti');
-  const [fontSize, setFontSize] = useState(4);
+  const [book, setBook]             = useState<Book | null>(null);
+  const [structure, setStructure]   = useState<BookStructure[]>([]);
+  const [blocks, setBlocks]         = useState<Block[]>([]);
+  const [idx, setIdx]               = useState(0);
+  const [language, setLanguage]     = useState('ti');
+  const [section, setSection]       = useState('');
+  const [fontSize, setFontSize]     = useState(4);
   const [autoScroll, setAutoScroll] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]       = useState(true);
+  const [showSectionPicker, setShowSectionPicker] = useState(false);
 
+  // Load book + structure
   useEffect(() => {
-    Promise.all([fetchBook(bookId), fetchBlocks(bookId)])
-      .then(([b, bl]) => { setBook(b); setBlocks(bl); if (b?.languages?.length) setLanguage(b.languages[0]); })
+    Promise.all([fetchBook(bookId), fetchBookStructure(bookId)])
+      .then(([b, struct]) => {
+        setBook(b);
+        setStructure(struct);
+        if (b?.languages?.length) setLanguage(b.languages[0]);
+        if (struct.length > 0) setSection(struct[0].sectionId);
+      })
       .finally(() => setLoading(false));
   }, [bookId]);
 
+  // Load blocks when section changes
+  useEffect(() => {
+    if (!bookId) return;
+    fetchBlocks(bookId, section || undefined).then(bl => {
+      setBlocks(bl);
+      setIdx(0);
+    });
+  }, [bookId, section]);
+
+  // Auto-scroll timer
   useEffect(() => {
     if (!autoScroll || blocks.length === 0) return;
     const t = setTimeout(() => { if (idx < blocks.length - 1) setIdx(i => i + 1); }, 8000);
     return () => clearTimeout(t);
   }, [autoScroll, idx, blocks.length]);
 
+  // Keyboard nav
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === ' ') setIdx(i => Math.min(i + 1, blocks.length - 1));
@@ -42,26 +62,41 @@ export default function DisplayPage() {
     return () => window.removeEventListener('keydown', handler);
   }, [blocks.length]);
 
-  if (loading) return <div className="fixed inset-0 bg-gray-900 flex items-center justify-center text-white">Loading...</div>;
-  if (!book || blocks.length === 0) return (
+  if (loading) return (
+    <div className="fixed inset-0 bg-gray-900 flex items-center justify-center text-white">Loading...</div>
+  );
+
+  if (!book) return (
     <div className="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center text-white">
-      <p className="text-2xl mb-4">{book?.title || 'Book not found'}</p>
+      <p className="text-2xl mb-4">Book not found</p>
+      <Link href="/books" className="text-blue-400 hover:text-blue-300">← Books</Link>
+    </div>
+  );
+
+  if (blocks.length === 0) return (
+    <div className="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center text-white">
+      <p className="text-2xl mb-2">{book.title}</p>
+      {section && <p className="text-gray-400 mb-2">Section: {section}</p>}
       <p className="text-gray-400 mb-6">No content available yet.</p>
       <Link href={`/books/${bookId}`} className="text-blue-400 hover:text-blue-300">← Back</Link>
     </div>
   );
 
   const block = blocks[idx];
-  const text = block?.translations?.[language as keyof typeof block.translations] || '';
+  const t = block?.translations as Record<string, string>;
+  const text = t?.[language] || '';
   const bg = ROLE_BG[block?.role || ''] || 'bg-gray-900';
   const fontSizes: Record<number, string> = { 2:'text-2xl', 3:'text-3xl', 4:'text-4xl', 5:'text-5xl', 6:'text-6xl' };
   const langs = book.languages?.length ? book.languages : ['gez','ti','en'];
 
   return (
     <>
+      {/* Main display */}
       <div className={`fixed inset-0 ${bg} flex items-center justify-center p-8 pb-24`}>
         <div className="text-center max-w-4xl">
-          {block?.role && <p className="text-white text-lg font-semibold mb-4 opacity-60 uppercase tracking-widest">{block.role}</p>}
+          {block?.role && (
+            <p className="text-white text-lg font-semibold mb-4 opacity-60 uppercase tracking-widest">{block.role}</p>
+          )}
           <p className={`${fontSizes[fontSize] || 'text-4xl'} font-serif text-white leading-relaxed font-bold`}>
             {text || <span className="opacity-40 italic">No {LANG_LABELS[language] || language} translation</span>}
           </p>
@@ -69,26 +104,70 @@ export default function DisplayPage() {
           <p className="text-white text-xs mt-8 opacity-30">{idx + 1} / {blocks.length}</p>
         </div>
       </div>
-      <div className="fixed bottom-0 left-0 right-0 bg-black/80 text-white px-4 py-3 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <button onClick={() => setIdx(i => Math.max(i-1,0))} disabled={idx===0} className="px-3 py-1.5 bg-gray-700 rounded hover:bg-gray-600 disabled:opacity-30 text-sm">← Prev</button>
-          <span className="text-sm text-gray-400">{idx+1}/{blocks.length}</span>
-          <button onClick={() => setIdx(i => Math.min(i+1,blocks.length-1))} disabled={idx===blocks.length-1} className="px-3 py-1.5 bg-gray-700 rounded hover:bg-gray-600 disabled:opacity-30 text-sm">Next →</button>
+
+      {/* Section picker overlay */}
+      {showSectionPicker && structure.length > 0 && (
+        <div className="fixed inset-0 bg-black/70 z-20 flex items-center justify-center px-4"
+          onClick={() => setShowSectionPicker(false)}>
+          <div className="bg-gray-800 rounded-xl p-4 max-w-sm w-full max-h-80 overflow-y-auto"
+            onClick={e => e.stopPropagation()}>
+            <p className="text-white font-semibold mb-3 text-sm">Choose Section</p>
+            <button
+              onClick={() => { setSection(''); setShowSectionPicker(false); }}
+              className={`w-full text-left px-3 py-2 rounded-lg text-sm mb-1 ${
+                !section ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+              }`}>
+              All Sections
+            </button>
+            {structure.map(s => (
+              <button key={s.sectionId}
+                onClick={() => { setSection(s.sectionId); setShowSectionPicker(false); }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm mb-1 ${
+                  section === s.sectionId ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+                }`}>
+                {s.sectionId}
+              </button>
+            ))}
+          </div>
         </div>
+      )}
+
+      {/* Control bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-black/80 text-white px-4 py-3 flex items-center justify-between gap-4 flex-wrap z-10">
+
+        <div className="flex items-center gap-2">
+          <button onClick={() => setIdx(i => Math.max(i-1,0))} disabled={idx===0}
+            className="px-3 py-1.5 bg-gray-700 rounded hover:bg-gray-600 disabled:opacity-30 text-sm">← Prev</button>
+          <span className="text-sm text-gray-400">{idx+1}/{blocks.length}</span>
+          <button onClick={() => setIdx(i => Math.min(i+1,blocks.length-1))} disabled={idx===blocks.length-1}
+            className="px-3 py-1.5 bg-gray-700 rounded hover:bg-gray-600 disabled:opacity-30 text-sm">Next →</button>
+        </div>
+
+        {structure.length > 1 && (
+          <button onClick={() => setShowSectionPicker(true)}
+            className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">
+            📑 {section || 'All'}
+          </button>
+        )}
+
         <div className="flex gap-1">
           {langs.map(lang => (
-            <button key={lang} onClick={() => setLanguage(lang)} className={`px-3 py-1 text-sm rounded ${language===lang?'bg-blue-600':'bg-gray-700 hover:bg-gray-600'}`}>
+            <button key={lang} onClick={() => setLanguage(lang)}
+              className={`px-3 py-1 text-sm rounded ${language===lang?'bg-blue-600':'bg-gray-700 hover:bg-gray-600'}`}>
               {LANG_LABELS[lang] || lang}
             </button>
           ))}
         </div>
+
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
             <span className="text-xs text-gray-400">A</span>
-            <input type="range" min={2} max={6} value={fontSize} onChange={e => setFontSize(+e.target.value)} className="w-16 accent-blue-500" />
+            <input type="range" min={2} max={6} value={fontSize}
+              onChange={e => setFontSize(+e.target.value)} className="w-16 accent-blue-500" />
             <span className="text-sm text-gray-400">A</span>
           </div>
-          <button onClick={() => setAutoScroll(a => !a)} className={`px-3 py-1 rounded text-sm ${autoScroll?'bg-green-600':'bg-gray-700 hover:bg-gray-600'}`}>
+          <button onClick={() => setAutoScroll(a => !a)}
+            className={`px-3 py-1 rounded text-sm ${autoScroll?'bg-green-600':'bg-gray-700 hover:bg-gray-600'}`}>
             {autoScroll ? 'Auto: ON' : 'Auto: OFF'}
           </button>
           <Link href={`/books/${bookId}`} className="text-xs text-gray-400 hover:text-white">Exit</Link>
