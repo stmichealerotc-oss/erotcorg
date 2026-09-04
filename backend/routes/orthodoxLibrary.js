@@ -105,6 +105,32 @@ router.get('/books/:bookId/structure', async (req, res) => {
   }
 });
 
+// POST /api/orthodox-library/books - Create new book (admin only)
+router.post('/books', authenticateToken, authorizeRoles('admin', 'super-admin'), async (req, res) => {
+  try {
+    const { title, titleGez, titleTi, description, category, type, tradition, languages, status, featured, tags } = req.body;
+    if (!title || !type) {
+      return res.status(400).json({ success: false, message: 'title and type are required' });
+    }
+    const book = new LiturgicalBook({
+      title, titleGez, titleTi, description,
+      category: category || 'other',
+      type,
+      tradition: tradition || 'eritrean-orthodox',
+      languages: languages || [],
+      status: status || 'draft',
+      featured: featured || false,
+      tags: tags || [],
+      blockCount: 0,
+      createdBy: req.user?.name || 'admin',
+    });
+    await book.save();
+    res.status(201).json({ success: true, data: book });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error creating book', error: error.message });
+  }
+});
+
 // PUT /api/orthodox-library/books/:bookId - Update book (admin only)
 router.put('/books/:bookId', authenticateToken, authorizeRoles('admin', 'super-admin'), async (req, res) => {
   try {

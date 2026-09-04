@@ -244,3 +244,20 @@ export async function deleteAssignment(assignmentId: string): Promise<boolean> {
     return data.success;
   } catch { return false; }
 }
+
+// ── Book management (admin) ────────────────────────────────────────────────
+
+export async function createBook(payload: {
+  title: string; titleGez?: string; titleTi?: string; description?: string;
+  category?: string; type: string; languages?: string[];
+}, token: string): Promise<Book | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/orthodox-library/books`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ...payload, status: 'draft', tradition: 'eritrean-orthodox' })
+    });
+    const data = await res.json();
+    return data.success ? data.data : null;
+  } catch { return null; }
+}

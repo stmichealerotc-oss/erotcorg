@@ -45,7 +45,7 @@ interface VolunteerProfile {
   status: string; stats: { tasksCompleted: number };
 }
 
-type RightPanel = 'none' | 'create' | 'assign' | 'languages';
+type RightPanel = 'none' | 'create' | 'assign' | 'languages' | 'newbook';
 
 export default function AdminTasksPage() {
   const router = useRouter();
@@ -69,6 +69,35 @@ export default function AdminTasksPage() {
     sectionId: '', subtitle: '', startOrder: 1, endOrder: 10,
     language: 'gez', taskCount: 5, notes: ''
   });
+
+  // New book form
+  const [bookForm, setBookForm] = useState({
+    title: '', titleGez: '', titleTi: '', description: '',
+    category: 'anaphora', type: 'liturgy', languages: ['gez', 'ti', 'en'],
+  });
+
+  const handleCreateBook = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { getToken } = await import('@/lib/auth');
+      const res = await fetch(`${API_BASE}/api/orthodox-library/books`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ ...bookForm, status: 'draft', tradition: 'eritrean-orthodox' })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage(`✅ Book "${data.data.title}" created (draft)`);
+        setPanel('none');
+        setBookForm({ title: '', titleGez: '', titleTi: '', description: '', category: 'anaphora', type: 'liturgy', languages: ['gez', 'ti', 'en'] });
+        await loadBooks(activeCategory);
+      } else {
+        setMessage(`❌ ${data.message || 'Failed to create book'}`);
+      }
+    } catch { setMessage('❌ Failed to create book'); }
+    setLoading(false);
+  };
 
   const loadBooks = useCallback(async (cat: string) => {
     // Pass all:true so admins see draft books too
@@ -210,6 +239,8 @@ export default function AdminTasksPage() {
           <span className="font-bold text-gray-900">Task Management</span>
           <button onClick={() => router.push('/admin/volunteers')} className="text-sm text-gray-500 hover:text-gray-800">Volunteers</button>
           <button onClick={() => router.push('/admin')} className="text-sm text-gray-500 hover:text-gray-800">Data Entry</button>
+          <button onClick={() => setPanel(panel === 'newbook' ? 'none' : 'newbook')}
+            className="text-sm text-amber-600 hover:text-amber-800 font-medium">+ New Book</button>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-400">{user?.name}</span>
@@ -473,7 +504,7 @@ export default function AdminTasksPage() {
           <div className="w-80 bg-white border-l flex flex-col overflow-hidden flex-shrink-0">
             <div className="p-4 border-b flex justify-between items-center">
               <h3 className="font-bold text-gray-900">
-                {panel === 'create' ? '⚡ Create Tasks' : panel === 'assign' ? '👤 Assign Volunteer' : '🌐 Languages'}
+                {panel === 'create' ? '⚡ Create Tasks' : panel === 'assign' ? '👤 Assign Volunteer' : panel === 'newbook' ? '📚 New Book' : '🌐 Languages'}
               </h3>
               <button onClick={() => setPanel('none')} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
             </div>
@@ -676,6 +707,103 @@ export default function AdminTasksPage() {
                     Save Languages
                   </button>
                 </div>
+              </div>
+            )}
+
+            {/* NEW BOOK PANEL */}
+            {panel === 'newbook' && (
+              <div className="flex-1 overflow-y-auto p-4">
+                <form onSubmit={handleCreateBook} className="space-y-3">
+                  <p className="text-xs text-gray-500 mb-3">
+                    Book is created as <span className="font-medium text-yellow-700">draft</span> — publish it from the book header once content is ready.
+                  </p>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Title (English) *</label>
+                    <input type="text" required value={bookForm.title}
+                      onChange={e => setBookForm({...bookForm, title: e.target.value})}
+                      placeholder="e.g. Anaphora of the Apostles"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Title in Ge&apos;ez</label>
+                    <input type="text" value={bookForm.titleGez}
+                      onChange={e => setBookForm({...bookForm, titleGez: e.target.value})}
+                      placeholder="ቅዱስ ሃዋርያት ቅዳሴ"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Title in Tigrinya</label>
+                    <input type="text" value={bookForm.titleTi}
+                      onChange={e => setBookForm({...bookForm, titleTi: e.target.value})}
+                      placeholder="ቅዳሴ ሃዋርያት"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                    <textarea value={bookForm.description} rows={2}
+                      onChange={e => setBookForm({...bookForm, description: e.target.value})}
+                      placeholder="Brief description of this book..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Category *</label>
+                      <select value={bookForm.category}
+                        onChange={e => setBookForm({...bookForm, category: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="anaphora">Anaphora</option>
+                        <option value="synaxar">Synaxar</option>
+                        <option value="seatat">Seatat</option>
+                        <option value="bible">Bible</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Type *</label>
+                      <select value={bookForm.type}
+                        onChange={e => setBookForm({...bookForm, type: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="liturgy">Liturgy</option>
+                        <option value="hymn">Hymn</option>
+                        <option value="prayer">Prayer</option>
+                        <option value="scripture">Scripture</option>
+                        <option value="devotional">Devotional</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-2">Languages</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(['gez','ti','en','am','ar'] as const).map(lang => (
+                        <button key={lang} type="button"
+                          onClick={() => {
+                            const langs = bookForm.languages.includes(lang)
+                              ? bookForm.languages.filter(l => l !== lang)
+                              : [...bookForm.languages, lang];
+                            setBookForm({...bookForm, languages: langs});
+                          }}
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+                            bookForm.languages.includes(lang)
+                              ? 'bg-amber-700 text-white border-amber-700'
+                              : 'bg-white text-gray-600 border-gray-300 hover:border-amber-400'
+                          }`}>
+                          {COMMON_LANGS[lang] || lang}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button type="submit" disabled={loading || !bookForm.title}
+                    className="w-full bg-amber-700 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-amber-800 disabled:opacity-40 mt-2">
+                    {loading ? 'Creating...' : '📚 Create Book (Draft)'}
+                  </button>
+                </form>
               </div>
             )}
           </div>
