@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { isLoggedIn, isAdmin, authHeaders } from '@/lib/auth';
 
 interface Book {
   _id: string;
@@ -28,44 +29,51 @@ interface BlockFormData {
 }
 
 export default function AdminPage() {
+  const router = useRouter();
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedBook, setSelectedBook] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [message, setMessage] = useState('');
-  
+
   const [formData, setFormData] = useState<BlockFormData>({
     bookId: '',
     sectionId: 'opening',
     order: 1,
     type: 'prayer',
     role: 'priest',
-    translations: {
-      gez: '',
-      ti: '',
-      en: '',
-      am: ''
-    },
+    translations: { gez: '', ti: '', en: '', am: '' },
     isRubric: false,
     isResponsive: false
   });
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
+  // ── Auth guard ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isLoggedIn() || !isAdmin()) {
+      router.replace('/login');
+    } else {
+      setAuthChecked(true);
+    }
+  }, [router]);
+
   const fetchBooks = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/orthodox-library/books`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/orthodox-library/books`,
+        { headers: authHeaders() }
+      );
       const data = await response.json();
-      if (data.success) {
-        setBooks(data.data);
-      }
+      if (data.success) setBooks(data.data);
     } catch (error) {
       console.error('Error fetching books:', error);
     }
   }, [API_BASE_URL]);
 
   useEffect(() => {
-    fetchBooks();
-  }, [fetchBooks]);
+    if (authChecked) fetchBooks();
+  }, [authChecked, fetchBooks]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,9 +89,7 @@ export default function AdminPage() {
 
       const response = await fetch(`${API_BASE_URL}/api/orthodox-library/blocks`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: authHeaders(),
         body: JSON.stringify(blockData)
       });
 
@@ -107,6 +113,9 @@ export default function AdminPage() {
       setLoading(false);
     }
   };
+
+  // Show nothing while auth redirect is in progress
+  if (!authChecked) return null;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">

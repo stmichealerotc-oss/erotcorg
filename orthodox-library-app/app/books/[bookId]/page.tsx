@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { fetchBook, fetchBlocks, type Book } from '@/lib/realApi';
+import { fetchBook, type Book } from '@/lib/realApi';
 
 const LANG_LABELS: Record<string, string> = {
   gez: "Ge'ez", ti: 'Tigrinya', en: 'English', am: 'Amharic', ar: 'Arabic'
@@ -13,12 +13,12 @@ export default function BookPage() {
   const params = useParams();
   const bookId = params.bookId as string;
   const [book, setBook] = useState<Book | null>(null);
-  const [blockCount, setBlockCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchBook(bookId), fetchBlocks(bookId)])
-      .then(([b, blocks]) => { setBook(b); setBlockCount(blocks.length); })
+    // Use book.blockCount from the API — no need to fetch all blocks just for a count
+    fetchBook(bookId)
+      .then(setBook)
       .finally(() => setLoading(false));
   }, [bookId]);
 
@@ -51,7 +51,7 @@ export default function BookPage() {
           ))}
         </div>
         <div className="grid grid-cols-3 gap-4 text-center bg-gray-50 p-4 rounded-xl">
-          <div><p className="text-2xl font-bold text-blue-600">{blockCount || book.blockCount}</p><p className="text-sm text-gray-500">Blocks entered</p></div>
+          <div><p className="text-2xl font-bold text-blue-600">{book.blockCount}</p><p className="text-sm text-gray-500">Blocks entered</p></div>
           <div><p className="text-2xl font-bold text-amber-600">{(book.languages || []).length}</p><p className="text-sm text-gray-500">Languages</p></div>
           <div><p className="text-2xl font-bold text-green-600">3</p><p className="text-sm text-gray-500">Display modes</p></div>
         </div>

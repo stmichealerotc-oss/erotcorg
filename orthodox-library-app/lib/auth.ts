@@ -95,9 +95,31 @@ export function logout(): void {
   clearAuth();
 }
 
-// ── Auth header helper for API calls ──────────────────────────────────────
+// Volunteer-specific user type — lighter than full AuthUser (no id/username needed)
+export interface VolunteerUser {
+  name: string;
+  email: string;
+  role: 'volunteer';
+}
 
-export function authHeaders(): Record<string, string> {
+const VOLUNTEER_KEY = 'orthlib_volunteer';
+
+export function getVolunteerUser(): VolunteerUser | null {
+  if (typeof window === 'undefined') return null;
+  const stored = localStorage.getItem(VOLUNTEER_KEY);
+  if (!stored) return null;
+  try { return JSON.parse(stored); } catch { return null; }
+}
+
+export function setVolunteerUser(user: VolunteerUser): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(VOLUNTEER_KEY, JSON.stringify(user));
+}
+
+export function clearVolunteerUser(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(VOLUNTEER_KEY);
+}
   const token = getToken();
   return token
     ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }

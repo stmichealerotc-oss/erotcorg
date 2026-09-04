@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getCurrentUser, setCurrentUser } from '@/lib/auth';
+import { getVolunteerUser, setVolunteerUser, clearVolunteerUser } from '@/lib/auth';
 import { fetchMyAssignments, updateAssignmentStatus, submitBlocks } from '@/lib/realApi';
 import type { Assignment } from '@/lib/realApi';
 
@@ -47,7 +47,7 @@ export default function VolunteerPage() {
   }, []);
 
   useEffect(() => {
-    const user = getCurrentUser();
+    const user = getVolunteerUser();
     if (user?.email) {
       setEmail(user.email);
       setName(user.name || '');
@@ -59,7 +59,7 @@ export default function VolunteerPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !name) return;
-    setCurrentUser({ email, name, role: 'volunteer', canEdit: true } as any);
+    setVolunteerUser({ email, name, role: 'volunteer' });
     setIsLoggedIn(true);
     loadAssignments(email);
   };
@@ -401,7 +401,7 @@ export default function VolunteerPage() {
             </div>
             <button
               onClick={() => {
-                localStorage.removeItem('orthlib_user');
+                clearVolunteerUser();
                 setIsLoggedIn(false);
                 setAssignments([]);
               }}
