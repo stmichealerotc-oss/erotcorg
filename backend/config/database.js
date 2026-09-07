@@ -29,9 +29,10 @@ class DatabaseService {
       
       await mongoose.connect(this.connectionString, {
         dbName: 'church_db',
-        retryWrites: false,           // Required for Azure Cosmos DB
-        tls: true,                    // Cosmos DB requires TLS
+        retryWrites: false,
+        tls: true,
         tlsAllowInvalidCertificates: false,
+        family: 4,              // force IPv4 — Cosmos DB firewall rules are IPv4-only
         serverSelectionTimeoutMS: 30000,
         connectTimeoutMS: 30000,
         socketTimeoutMS: 45000,
