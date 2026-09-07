@@ -48,10 +48,17 @@ router.get('/books/:bookId/blocks', async (req, res) => {
     if (type)      filter.type      = type;
     if (role)      filter.role      = role;
 
+    // Cosmos DB only supports composite index sorts when the index is explicitly
+    // created in the portal. Use single-field sort on _id (always available)
+    // when querying a specific section, or sort by order when section is filtered.
+    const sort = sectionId
+      ? { order: 1 }           // single field — always works
+      : { _id: 1 };            // full-book fetch — stable insertion order
+
     const blocks = await LiturgicalBlock.find(filter)
-      .sort({ sectionId: 1, order: 1 })
+      .sort(sort)
       .select('-__v')
-      .lean();   // plain JS objects — Maps become plain objects automatically
+      .lean();
 
     res.json({ success: true, count: blocks.length, data: blocks });
   } catch (error) {
@@ -280,7 +287,7 @@ router.get('/assignments/my/:email', async (req, res) => {
 router.get('/assignments/book/:bookId/progress', async (req, res) => {
   try {
     const assignments = await VolunteerAssignment.find({ bookId: req.params.bookId })
-      .sort({ sectionId: 1, startOrder: 1 });
+      .sort({ _id: 1 }); // single field — Cosmos DB safe
     const summary = {
       total:      assignments.length,
       unassigned: assignments.filter(a => a.status === 'unassigned').length,
