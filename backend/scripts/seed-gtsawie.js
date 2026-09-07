@@ -473,12 +473,58 @@ async function main() {
 
   console.log(`Built ${blocks.length} blocks from ${RAW_DAYS.length} days\n`);
 
-  // ── 3. Clear existing blocks then insert ───────────────────────────────
-  const deleted = await LiturgicalBlock.deleteMany({ bookId: BOOK_ID });
+  // ── 3. Clear existing blocks then insert in batches ───────────────────
+  // Use raw collection to fully delete all blocks for this book first
+  const deleted = await mongoose.connection.collection('liturgical_blocks')
+    .deleteMany({ bookId: BOOK_ID });
   console.log(`Cleared ${deleted.deletedCount} existing blocks`);
 
-  const result = await LiturgicalBlock.insertMany(blocks, { ordered: false });
-  console.log(`Inserted ${result.length} blocks`);
+  // Small pause after delete so Cosmos DB isn't overwhelmed
+  await new Promise(r => setTimeout(r, 1000));
+
+  // Cosmos DB RU-based rate limiting — upsert in small batches with delay.
+  // Using upsert (bulkWrite updateOne+upsert) avoids duplicate key errors
+  // if the script is re-run or a previous batch partially succeeded.
+  const BATCH_SIZE = 5;
+  const DELAY_MS   = 800;
+  let inserted = 0;
+
+  for (let i = 0; i < blocks.length; i += BATCH_SIZE) {
+    const batch = blocks.slice(i, i + BATCH_SIZE);
+
+    const ops = batch.map(doc => ({
+      updateOne: {
+        filter: { blockId: doc.blockId },
+        update: { $set: doc },
+        upsert: true,
+      }
+    }));
+
+    let attempts = 0;
+    while (attempts < 3) {
+      try {
+        await mongoose.connection.collection('liturgical_blocks').bulkWrite(ops, { ordered: false });
+        inserted += batch.length;
+        process.stdout.write(`\r  Upserted ${inserted}/${blocks.length} blocks...`);
+        break;
+      } catch (batchErr) {
+        attempts++;
+        const isRateLimit = batchErr.code === 16500 || (batchErr.message || '').includes('16500');
+        if (isRateLimit && attempts < 3) {
+          const waitMs = 3000 * attempts;
+          process.stdout.write(`\n  ⚠️  Rate limited — waiting ${waitMs}ms (attempt ${attempts}/3)...\n`);
+          await new Promise(r => setTimeout(r, waitMs));
+        } else {
+          throw batchErr;
+        }
+      }
+    }
+
+    if (i + BATCH_SIZE < blocks.length) {
+      await new Promise(r => setTimeout(r, DELAY_MS));
+    }
+  }
+  console.log(`\nUpserted ${inserted} blocks`);
 
   // ── 4. Update blockCount ────────────────────────────────────────────────
   const total = await LiturgicalBlock.countDocuments({ bookId: BOOK_ID });
