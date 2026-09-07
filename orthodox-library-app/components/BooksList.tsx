@@ -5,7 +5,8 @@
 
 import Link from "next/link";
 
-// Category display labels and colours
+// Gtsawie book gets its own dedicated page
+const GTSAWIE_BOOK_ID = '6a9e555a1bb1f932d6b8f3f9';
 const CATEGORY_LABELS: Record<string, string> = {
   anaphora: 'Anaphora (ኣናፎራ)',
   synaxar:  'Synaxar (ስንክሳር)',
@@ -52,12 +53,14 @@ export default function BooksList({ books }: BooksListProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {books.map((book) => {
+        const bookId = book._id;
+        const href   = bookId === GTSAWIE_BOOK_ID ? '/gtsawie' : `/books/${bookId}`;
         const gradient = CATEGORY_GRADIENT[book.category || 'other'] ?? CATEGORY_GRADIENT.other;
         const categoryLabel = CATEGORY_LABELS[book.category || ''] ?? book.category ?? '';
         return (
           <Link
             key={book._id}
-            href={`/books/${book._id}`}
+            href={href}
             className="group border rounded-lg overflow-hidden hover:shadow-lg transition transform hover:-translate-y-1"
           >
             <div className={`bg-gradient-to-r ${gradient} h-40 flex items-center justify-center`}>

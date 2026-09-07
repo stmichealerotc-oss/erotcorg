@@ -5,34 +5,6 @@ export const dynamic = 'force-dynamic';
 export default function Home() {
   return (
     <div className="min-h-screen">
-      {/* Gtsawie Feature — prominent daily lectionary card */}
-      <section className="bg-gradient-to-r from-amber-900 to-amber-700 py-10">
-        <div className="max-w-5xl mx-auto px-4 flex flex-col md:flex-row items-center gap-8">
-          <div className="text-white flex-1">
-            <p className="text-amber-200 text-sm font-medium uppercase tracking-widest mb-2">Daily Lectionary</p>
-            <h2 className="text-4xl font-bold font-serif mb-3">ግጻዌ</h2>
-            <p className="text-amber-100 mb-2">
-              What psalm, which Gospel, which readings, and which Anaphora for today.
-            </p>
-            <p className="text-amber-200 text-sm mb-6">
-              All 9 daily slots in one view — morning prayer through the liturgy.
-              Ge&apos;ez text available now · Tigrinya &amp; English coming via volunteers.
-            </p>
-            <Link href="/gtsawie"
-              className="inline-block bg-white text-amber-900 px-6 py-3 rounded-lg font-bold hover:bg-amber-50 transition">
-              Open Today&apos;s ግጻዌ →
-            </Link>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-center text-white text-xs opacity-80">
-            {['ዝካረ','ዘነግህ ምስባክ','ዘነግህ ወንጌል','ጳውሎስ','ሐዋርያት','ግብረ ሐዋርያት','ቅዳሴ ምስባክ','ዘቅዳሴ ወንጌል','ቅዳሴ'].map(s => (
-              <div key={s} className="bg-white/10 rounded-lg px-2 py-2 text-amber-100">
-                {s}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Hero */}
       <section className="bg-gradient-to-r from-amber-900 to-amber-700 text-white py-16">
         <div className="max-w-5xl mx-auto px-4 text-center">
@@ -41,14 +13,14 @@ export default function Home() {
             Digital Liturgical Platform for Eritrean Orthodox Tewahedo Church
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link href="/gtsawie" className="bg-white text-amber-900 px-6 py-3 rounded font-bold hover:bg-amber-50">
-              ግጻዌ — Daily Readings
-            </Link>
-            <Link href="/books" className="bg-amber-800 text-white px-6 py-3 rounded font-bold hover:bg-amber-700 border border-amber-600">
-              All Books
+            <Link href="/books" className="bg-white text-amber-900 px-6 py-3 rounded font-bold hover:bg-amber-50">
+              Explore Books
             </Link>
             <Link href="/volunteer" className="bg-green-600 text-white px-6 py-3 rounded font-bold hover:bg-green-700">
               Volunteer Portal
+            </Link>
+            <Link href="/admin/tasks" className="bg-blue-600 text-white px-6 py-3 rounded font-bold hover:bg-blue-700">
+              Admin Tasks
             </Link>
           </div>
         </div>
