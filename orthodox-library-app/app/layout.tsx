@@ -26,6 +26,9 @@ export default function RootLayout({
                 <Link href="/" className="text-gray-700 hover:text-blue-600">
                   Home
                 </Link>
+                <Link href="/gtsawie" className="text-amber-800 hover:text-amber-900 font-semibold">
+                  ግጻዌ
+                </Link>
                 <Link href="/books" className="text-gray-700 hover:text-blue-600">
                   Books
                 </Link>
