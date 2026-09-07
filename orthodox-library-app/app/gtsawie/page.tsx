@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { fetchBlocks, fetchBookStructure, type Block, type BookStructure } from '@/lib/realApi';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const GTSAWIE_BOOK_ID = '6a9e555a1bb1f932d6b8f3f9';
+const API_BASE     = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+const BOOK_ID      = '6a9e555a1bb1f932d6b8f3f9';
 
 const MONTHS = [
   'መስከረም','ጥቅምት','ኅዳር','ታኅሣሥ','ጥር','የካቲት',
@@ -17,164 +17,156 @@ const DAYS_PER_MONTH: Record<string, number> = {
   'መጋቢት':30,'ሚያዝያ':30,'ግንቦት':30,'ሰኔ':30,'ሐምሌ':30,'ነሐሴ':30,'ጰጉሜ':5,
 };
 
-const GEZ_NUMS = [
+const GEZ = [
   '፩','፪','፫','፬','፭','፮','፯','፰','፱','፲',
   '፲፩','፲፪','፲፫','፲፬','፲፭','፲፮','፲፯','፲፰','፲፱','፳',
   '፳፩','፳፪','፳፫','፳፬','፳፭','፳፮','፳፯','፳፰','፳፱','፴',
 ];
 
-// Slot definitions — order 1..9
-const SLOT_DEFS: Record<number, { label: string; labelEn: string; color: string; icon: string }> = {
-  1: { label: 'ዝካረ / ተዝካር',        labelEn: 'Commemoration',      color: 'border-purple-500 bg-purple-50', icon: '✝️' },
-  2: { label: 'ዘነግህ ምስባክ',          labelEn: 'Morning Psalm',       color: 'border-amber-500 bg-amber-50',   icon: '🎵' },
-  3: { label: 'ዘነግህ ወንጌል',           labelEn: 'Morning Gospel',      color: 'border-blue-500 bg-blue-50',     icon: '📖' },
-  4: { label: 'ዘቅዳሴ — ጳውሎስ',        labelEn: 'Epistle of Paul',     color: 'border-green-600 bg-green-50',   icon: '📜' },
-  5: { label: 'ዘቅዳሴ — ሐዋርያት',       labelEn: 'Apostles',            color: 'border-teal-500 bg-teal-50',     icon: '📜' },
-  6: { label: 'ዘቅዳሴ — ግብረ ሐዋርያት',  labelEn: 'Acts',                color: 'border-cyan-500 bg-cyan-50',     icon: '📜' },
-  7: { label: 'ቅዳሴ ምስባክ',           labelEn: 'Liturgy Psalm',       color: 'border-orange-500 bg-orange-50', icon: '🎵' },
-  8: { label: 'ዘቅዳሴ ወንጌል',           labelEn: 'Liturgy Gospel',      color: 'border-red-600 bg-red-50',       icon: '📖' },
-  9: { label: 'ቅዳሴ',                 labelEn: 'Anaphora',            color: 'border-yellow-600 bg-yellow-50', icon: '⛪' },
+// Each slot: colour bar on left, icon, bilingual label
+const SLOTS: Record<number, { bar: string; icon: string; label: string; sub: string }> = {
+  1: { bar:'bg-purple-500', icon:'✝',  label:'ዝካረ / ተዝካር',          sub:'Commemoration'      },
+  2: { bar:'bg-amber-500',  icon:'♪',  label:'ዘነግህ ምስባክ',            sub:'Morning Psalm'       },
+  3: { bar:'bg-blue-500',   icon:'⊕',  label:'ዘነግህ ወንጌል',             sub:'Morning Gospel'      },
+  4: { bar:'bg-green-600',  icon:'✉',  label:'ዘቅዳሴ — ጳውሎስ',          sub:'Epistle of Paul'     },
+  5: { bar:'bg-teal-500',   icon:'✉',  label:'ዘቅዳሴ — ሐዋርያት',         sub:'Apostles'            },
+  6: { bar:'bg-cyan-600',   icon:'✉',  label:'ዘቅዳሴ — ግብረ ሐዋርያት',    sub:'Acts'                },
+  7: { bar:'bg-orange-500', icon:'♪',  label:'ቅዳሴ ምስባክ',             sub:'Liturgy Psalm'       },
+  8: { bar:'bg-red-600',    icon:'⊕',  label:'ዘቅዳሴ ወንጌል',             sub:'Liturgy Gospel'      },
+  9: { bar:'bg-yellow-600', icon:'⛪', label:'ቅዳሴ',                   sub:'Anaphora'            },
 };
 
-const LANG_LABELS: Record<string, string> = { gez: "Ge'ez", ti: 'Tigrinya', en: 'English' };
+interface DayBlock { order: number; role: string; gez: string; ti: string; en: string; }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function GtsawiePage() {
-  const [month, setMonth]       = useState(MONTHS[0]);
-  const [day, setDay]           = useState(1);
-  const [blocks, setBlocks]     = useState<Block[]>([]);
-  const [structure, setStructure] = useState<BookStructure[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [lang, setLang]         = useState<'gez' | 'ti' | 'en'>('gez');
-  const [hasData, setHasData]   = useState<Record<string, boolean>>({});  // month → has data
+  const [month, setMonth] = useState(MONTHS[0]);
+  const [day,   setDay]   = useState(1);
+  const [slots, setSlots] = useState<DayBlock[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [lang,  setLang]  = useState<'gez'|'ti'|'en'>('gez');
+  const [seededMonths, setSeededMonths] = useState<Set<string>>(new Set());
 
-  // Load structure once to know which months have data
+  // Load which months have data (once)
   useEffect(() => {
-    fetchBookStructure(GTSAWIE_BOOK_ID).then(struct => {
-      setStructure(struct);
-      const map: Record<string, boolean> = {};
-      struct.forEach(s => { map[s.sectionId] = true; });
-      setHasData(map);
-    });
+    fetch(`${API_BASE}/api/orthodox-library/books/${BOOK_ID}/sections`)
+      .then(r => r.json())
+      .then(d => { if (d.success) setSeededMonths(new Set(d.data as string[])); })
+      .catch(() => {});
   }, []);
 
-  // Load blocks whenever month or day changes
+  // Load exactly the 9 blocks for the selected day
   const loadDay = useCallback(async (m: string, d: number) => {
     setLoading(true);
-    setBlocks([]);
-    const subtitle = GEZ_NUMS[d - 1];
+    setSlots([]);
+    const subtitle = GEZ[d - 1];
     if (!subtitle) { setLoading(false); return; }
-    const data = await fetchBlocks(GTSAWIE_BOOK_ID, m);
-    // Filter to just the requested day
-    const dayBlocks = data
-      .filter(b => b.subtitle === subtitle)
-      .sort((a, b) => a.order - b.order);
-    setBlocks(dayBlocks);
+
+    try {
+      const url = `${API_BASE}/api/orthodox-library/books/${BOOK_ID}/blocks` +
+                  `?sectionId=${encodeURIComponent(m)}&subtitle=${encodeURIComponent(subtitle)}`;
+      const res  = await fetch(url, { cache: 'no-store' });
+      const data = await res.json();
+
+      if (data.success && Array.isArray(data.data)) {
+        const parsed: DayBlock[] = data.data
+          .sort((a: any, b: any) => a.order - b.order)
+          .map((b: any) => ({
+            order: b.order,
+            role:  b.role,
+            gez:   b.translations?.gez ?? '',
+            ti:    b.translations?.ti  ?? '',
+            en:    b.translations?.en  ?? '',
+          }));
+        setSlots(parsed);
+      }
+    } catch { /* ignore */ }
     setLoading(false);
   }, []);
 
   useEffect(() => { loadDay(month, day); }, [month, day, loadDay]);
 
-  // ── Navigation helpers ───────────────────────────────────────────────────
-  const maxDay = DAYS_PER_MONTH[month] ?? 30;
+  // ── Navigation ────────────────────────────────────────────────────────────
+  const maxDay  = DAYS_PER_MONTH[month] ?? 30;
+  const mi      = MONTHS.indexOf(month);
+  const isFirst = mi === 0 && day === 1;
+  const isLast  = mi === MONTHS.length - 1 && day === maxDay;
 
-  const goNextDay = () => {
-    if (day < maxDay) { setDay(d => d + 1); }
-    else {
-      const mi = MONTHS.indexOf(month);
-      if (mi < MONTHS.length - 1) { setMonth(MONTHS[mi + 1]); setDay(1); }
-    }
+  const prev = () => {
+    if (day > 1) setDay(d => d - 1);
+    else if (mi > 0) { setMonth(MONTHS[mi-1]); setDay(DAYS_PER_MONTH[MONTHS[mi-1]] ?? 30); }
+  };
+  const next = () => {
+    if (day < maxDay) setDay(d => d + 1);
+    else if (mi < MONTHS.length - 1) { setMonth(MONTHS[mi+1]); setDay(1); }
   };
 
-  const goPrevDay = () => {
-    if (day > 1) { setDay(d => d - 1); }
-    else {
-      const mi = MONTHS.indexOf(month);
-      if (mi > 0) {
-        const prevMonth = MONTHS[mi - 1];
-        setMonth(prevMonth);
-        setDay(DAYS_PER_MONTH[prevMonth] ?? 30);
-      }
-    }
-  };
-
-  const monthIdx = MONTHS.indexOf(month);
-  const isFirst  = monthIdx === 0 && day === 1;
-  const isLast   = monthIdx === MONTHS.length - 1 && day === maxDay;
-
-  // ── Render ───────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gray-50">
 
-      {/* ── Page header ─────────────────────────────────────────────── */}
-      <div className="mb-6">
-        <Link href="/" className="text-sm text-gray-400 hover:text-gray-600">← Home</Link>
-        <div className="flex items-center justify-between mt-2 flex-wrap gap-3">
-          <div>
-            <h1 className="text-3xl font-bold text-amber-900">ግጻዌ</h1>
-            <p className="text-sm text-gray-500">Daily Lectionary — Eritrean Orthodox Tewahdo</p>
+      {/* ── Sticky top bar ─────────────────────────────────────────────────── */}
+      <div className="sticky top-0 z-20 bg-amber-900 text-white shadow-lg">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+
+          {/* Title + date */}
+          <div className="flex items-center gap-3 min-w-0">
+            <Link href="/" className="text-amber-300 hover:text-white text-sm flex-shrink-0">← Home</Link>
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold leading-tight">ግጻዌ</h1>
+              <p className="text-amber-200 text-xs truncate">{month} {GEZ[day-1]} ({day})</p>
+            </div>
           </div>
-          {/* Language selector */}
-          <div className="flex gap-1">
-            {(['gez', 'ti', 'en'] as const).map(l => (
+
+          {/* Prev / Next */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={prev} disabled={isFirst}
+              className="px-3 py-1.5 bg-amber-800 hover:bg-amber-700 rounded text-sm disabled:opacity-30 transition">
+              ‹
+            </button>
+            <button onClick={next} disabled={isLast}
+              className="px-3 py-1.5 bg-amber-800 hover:bg-amber-700 rounded text-sm disabled:opacity-30 transition">
+              ›
+            </button>
+          </div>
+
+          {/* Language */}
+          <div className="flex gap-1 flex-shrink-0">
+            {(['gez','ti','en'] as const).map(l => (
               <button key={l} onClick={() => setLang(l)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  lang === l
-                    ? 'bg-amber-700 text-white'
-                    : 'bg-white border border-gray-300 text-gray-600 hover:border-amber-400'
+                className={`px-2 py-1 rounded text-xs font-medium transition ${
+                  lang===l ? 'bg-white text-amber-900' : 'bg-amber-800 text-amber-200 hover:bg-amber-700'
                 }`}>
-                {LANG_LABELS[l]}
+                {l === 'gez' ? 'ግዕዝ' : l === 'ti' ? 'ትግርኛ' : 'EN'}
               </button>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* ── Month tabs ─────────────────────────────────────────────────── */}
-      <div className="flex gap-1.5 flex-wrap mb-4">
-        {MONTHS.map(m => {
-          const active  = m === month;
-          const hasIt   = hasData[m];
-          return (
+        {/* Month strip */}
+        <div className="max-w-3xl mx-auto px-4 pb-2 flex gap-1 overflow-x-auto scrollbar-hide">
+          {MONTHS.map(m => (
             <button key={m} onClick={() => { setMonth(m); setDay(1); }}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
-                active
-                  ? 'bg-amber-700 text-white shadow-sm'
-                  : hasIt
-                    ? 'bg-white border border-amber-300 text-amber-800 hover:bg-amber-50'
-                    : 'bg-gray-100 text-gray-400 border border-gray-200'
+              className={`flex-shrink-0 px-2.5 py-1 rounded text-xs transition ${
+                m === month
+                  ? 'bg-white text-amber-900 font-bold'
+                  : seededMonths.has(m)
+                    ? 'bg-amber-800 text-amber-100 hover:bg-amber-700'
+                    : 'bg-amber-950 text-amber-500'
               }`}>
               {m}
-              {!hasIt && <span className="ml-1 opacity-50">○</span>}
             </button>
-          );
-        })}
-      </div>
-
-      {/* ── Day picker ─────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-xl border border-amber-200 p-3 mb-5 shadow-sm">
-        <div className="flex items-center gap-3 mb-2">
-          <button onClick={goPrevDay} disabled={isFirst}
-            className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-30 text-sm">
-            ‹ Prev
-          </button>
-          <span className="text-sm font-semibold text-gray-700 flex-1 text-center">
-            {month} {GEZ_NUMS[day - 1]} ({day})
-          </span>
-          <button onClick={goNextDay} disabled={isLast}
-            className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-30 text-sm">
-            Next ›
-          </button>
+          ))}
         </div>
 
-        {/* Day grid */}
-        <div className="flex flex-wrap gap-1 justify-center">
+        {/* Day strip */}
+        <div className="max-w-3xl mx-auto px-4 pb-2 flex gap-1 overflow-x-auto scrollbar-hide">
           {Array.from({ length: maxDay }, (_, i) => i + 1).map(d => (
             <button key={d} onClick={() => setDay(d)}
-              className={`w-8 h-8 text-xs rounded-lg font-medium transition-all ${
+              className={`flex-shrink-0 w-7 h-7 rounded text-xs font-medium transition ${
                 d === day
-                  ? 'bg-amber-700 text-white shadow'
-                  : 'bg-gray-100 text-gray-600 hover:bg-amber-100 hover:text-amber-800'
+                  ? 'bg-white text-amber-900 font-bold shadow'
+                  : 'bg-amber-800 text-amber-200 hover:bg-amber-700'
               }`}>
               {d}
             </button>
@@ -182,91 +174,95 @@ export default function GtsawiePage() {
         </div>
       </div>
 
-      {/* ── Day content ────────────────────────────────────────────────── */}
-      {loading ? (
-        <div className="text-center py-16 text-gray-400 animate-pulse">
-          <p className="text-3xl mb-3">📖</p>
-          <p>Loading {month} {GEZ_NUMS[day - 1]}...</p>
-        </div>
-      ) : blocks.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <p className="text-3xl mb-3">📭</p>
-          <p className="font-medium">No data yet for {month} {GEZ_NUMS[day - 1]}</p>
-          <p className="text-sm mt-2">This month&apos;s content will be added soon.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {/* Day title */}
-          <div className="text-center py-3 border-b border-amber-200 mb-4">
-            <h2 className="text-2xl font-bold text-amber-900">
-              {month} {GEZ_NUMS[day - 1]}
-            </h2>
-            <p className="text-sm text-gray-400">{month} {day}</p>
+      {/* ── Day content — all 9 slots at once ─────────────────────────────── */}
+      <div className="max-w-3xl mx-auto px-4 py-4">
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 text-amber-800 animate-pulse">
+            <p className="text-4xl mb-3">📖</p>
+            <p>Loading {month} {GEZ[day-1]}…</p>
           </div>
-
-          {/* All 9 slots */}
-          {blocks.map(block => {
-            const t      = block.translations as Record<string, string>;
-            const text   = t?.[lang] || '';
-            const def    = SLOT_DEFS[block.order] ?? SLOT_DEFS[1];
-            const isRef  = block.role === 'gospel-negah' || block.role === 'pauline' ||
-                           block.role === 'apostles' || block.role === 'acts' ||
-                           block.role === 'gospel-qidat';
-
-            return (
-              <div key={block._id}
-                className={`rounded-xl border-l-4 p-4 ${def.color} shadow-sm`}>
-
-                {/* Slot header */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-base">{def.icon}</span>
-                  <div>
-                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">
-                      {def.label}
-                    </span>
-                    <span className="text-xs text-gray-400 ml-2">— {def.labelEn}</span>
-                  </div>
-                </div>
-
-                {/* Text content */}
-                {text ? (
-                  <p className={`leading-relaxed ${isRef ? 'text-sm text-gray-600' : 'text-base text-gray-900'}`}>
-                    {text}
-                  </p>
-                ) : (
-                  /* Show Ge'ez as fallback even when viewing ti/en if translation missing */
-                  <div>
-                    {lang !== 'gez' && t?.gez && (
-                      <p className="text-base text-gray-900 leading-relaxed mb-1">{t.gez}</p>
-                    )}
-                    {!t?.gez && (
-                      <p className="text-gray-300 italic text-sm">
-                        No {LANG_LABELS[lang]} translation yet
-                      </p>
-                    )}
-                    {lang !== 'gez' && !t?.gez && (
-                      <p className="text-gray-300 italic text-sm">No content yet</p>
-                    )}
-                  </div>
-                )}
+        ) : slots.length === 0 ? (
+          <div className="text-center py-20 text-gray-400">
+            <p className="text-4xl mb-3">📭</p>
+            <p className="font-medium text-gray-600">{month} {GEZ[day-1]} — No data yet</p>
+            <p className="text-sm mt-1">This month&apos;s content will be added soon.</p>
+          </div>
+        ) : (
+          <>
+            {/* Day heading */}
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-amber-200">
+              <div className="w-12 h-12 rounded-full bg-amber-700 text-white flex flex-col items-center justify-center flex-shrink-0">
+                <span className="text-lg font-bold leading-none">{GEZ[day-1]}</span>
+                <span className="text-xs opacity-75">{day}</span>
               </div>
-            );
-          })}
+              <div>
+                <h2 className="text-xl font-bold text-amber-900">{month} {GEZ[day-1]}</h2>
+                <p className="text-sm text-gray-500">
+                  {MONTHS.indexOf(month) + 1 < 10 ? '0' : ''}{MONTHS.indexOf(month)+1}/{String(day).padStart(2,'0')} · Ethiopian Calendar
+                </p>
+              </div>
+            </div>
 
-          {/* Bottom navigation */}
-          <div className="flex justify-between items-center pt-4 border-t border-gray-200 mt-4">
-            <button onClick={goPrevDay} disabled={isFirst}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm hover:bg-gray-50 disabled:opacity-30">
-              ‹ {day > 1 ? `${month} ${day - 1}` : `${MONTHS[monthIdx - 1] ?? ''} ${DAYS_PER_MONTH[MONTHS[monthIdx - 1] ?? ''] ?? ''}`}
-            </button>
-            <span className="text-xs text-gray-400">{blocks.length} slots</span>
-            <button onClick={goNextDay} disabled={isLast}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-sm hover:bg-gray-50 disabled:opacity-30">
-              {day < maxDay ? `${month} ${day + 1}` : `${MONTHS[monthIdx + 1] ?? ''} 1`} ›
-            </button>
-          </div>
-        </div>
-      )}
+            {/* All 9 slots — compact, no scrolling needed */}
+            <div className="space-y-2">
+              {slots.map(slot => {
+                const def  = SLOTS[slot.order] ?? SLOTS[1];
+                const text = lang === 'gez' ? slot.gez
+                           : lang === 'ti'  ? (slot.ti  || slot.gez)
+                           :                  (slot.en  || slot.gez);
+                const missing = lang !== 'gez' && !(lang === 'ti' ? slot.ti : slot.en);
+
+                return (
+                  <div key={slot.order}
+                    className="flex gap-0 rounded-lg overflow-hidden bg-white shadow-sm border border-gray-100">
+
+                    {/* Colour bar + number */}
+                    <div className={`${def.bar} flex flex-col items-center justify-center w-10 flex-shrink-0 py-2`}>
+                      <span className="text-white text-xs font-bold">{slot.order}</span>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 px-3 py-2.5 min-w-0">
+                      {/* Label row */}
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {def.label}
+                        </span>
+                        <span className="text-xs text-gray-300">·</span>
+                        <span className="text-xs text-gray-400">{def.sub}</span>
+                      </div>
+
+                      {/* Text */}
+                      <p className={`text-sm leading-relaxed break-words ${
+                        missing ? 'text-gray-400 italic' : 'text-gray-900'
+                      }`}>
+                        {text || <span className="text-gray-300 italic">—</span>}
+                        {missing && (
+                          <span className="ml-2 text-xs text-gray-300 not-italic">(Ge&apos;ez shown)</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bottom nav */}
+            <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+              <button onClick={prev} disabled={isFirst}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm text-gray-600 hover:bg-amber-50 hover:border-amber-300 disabled:opacity-30 transition">
+                ‹ {day > 1 ? `${month} ${day-1}` : `${MONTHS[mi-1]??''} ${DAYS_PER_MONTH[MONTHS[mi-1]??'']??''}`}
+              </button>
+              <span className="text-xs text-gray-400">{slots.length} readings</span>
+              <button onClick={next} disabled={isLast}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm text-gray-600 hover:bg-amber-50 hover:border-amber-300 disabled:opacity-30 transition">
+                {day < maxDay ? `${month} ${day+1}` : `${MONTHS[mi+1]??''} 1`} ›
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
