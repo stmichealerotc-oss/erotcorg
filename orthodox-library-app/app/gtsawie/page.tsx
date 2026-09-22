@@ -8,12 +8,12 @@ const BOOK_ID  = '6a9e555a1bb1f932d6b8f3f9';
 
 // ── Ethiopian calendar constants ──────────────────────────────────────────────
 const MONTHS = [
-  'መስከረም','ጥቅምት','ኅዳር','ታኅሣሥ','ጥር','የካቲት',
-  'መጋቢት','ሚያዝያ','ግንቦት','ሰኔ','ሐምሌ','ነሐሴ','ጰጉሜ',
+  'መስከረም','ጥቅምት','ሕዳር','ታኅሣሥ','ጥር','የካቲት',
+  'መጋቢት','ሚያዝያ','ግንቦት','ሰኔ','ሐምሌ','ነሐሴ','ጳጉሜን',
 ];
 const DAYS_PER_MONTH: Record<string,number> = {
-  'መስከረም':30,'ጥቅምት':30,'ኅዳር':30,'ታኅሣሥ':30,'ጥር':30,'የካቲት':30,
-  'መጋቢት':30,'ሚያዝያ':30,'ግንቦት':30,'ሰኔ':30,'ሐምሌ':30,'ነሐሴ':30,'ጰጉሜ':5,
+  'መስከረም':30,'ጥቅምት':30,'ሕዳር':30,'ታኅሣሥ':30,'ጥር':30,'የካቲት':30,
+  'መጋቢት':30,'ሚያዝያ':30,'ግንቦት':30,'ሰኔ':30,'ሐምሌ':30,'ነሐሴ':30,'ጳጉሜን':6,
 };
 const GEZ = [
   '፩','፪','፫','፬','፭','፮','፯','፰','፱','፲',
@@ -52,10 +52,11 @@ const BIBLE_MAP: Record<string, string> = {
 
 // ── Parsers ───────────────────────────────────────────────────────────────────
 
-/** Parse "ሉቃስ 4:16-23" → { book, ref, bookId? } */
+/** Parse "ሉቃስ 4:16-23" or "1 ቆሮንቶስ 12:12-27" → { bookName, ref, bookId? } */
 function parseBibleRef(text: string) {
-  // Match: BookName Chapter:Verse or Chapter:Verse-Verse
-  const m = text.match(/^(.+?)\s+(\d+[:\d\-–]+.*)$/);
+  // Match chapter:verse at the end, everything before is the book name
+  // e.g. "1 ቆሮንቶስ 12:12-27" → book="1 ቆሮንቶስ", ref="12:12-27"
+  const m = text.match(/^(.+?)\s+(\d+:\d[\d\-–,]*(?:\s*,\s*\d+:\d[\d\-–,]*)*)$/);
   if (!m) return null;
   const bookName = m[1].trim();
   const ref      = m[2].trim();
@@ -78,9 +79,10 @@ function parseMisbak(text: string) {
 
 /** Extract reading label + reference from a reading string */
 function parseReading(text: string) {
-  // "ሉቃስ 4:16-23"  or  "ጳውሎስ: 1 ቆሮንቶስ 1:1-10"  or "ዘቅዳሴ ወንጌል: ማቴዎስ 14:1-12"
-  const clean = text.replace(/^[^:]+:\s*/, '');  // strip prefix label
-  return parseBibleRef(clean) || { bookName: clean, ref: '', bookId: undefined };
+  // text is already stripped of the slot prefix (e.g. "ጳውሎስ: ") before arriving here.
+  // It may be: "1 ቆሮንቶስ 12:12-27"  or  "ሉቃስ 4:16-23"  or  "ግብረ ሐዋርያት 2:1-13"
+  // parseBibleRef splits on the LAST space before a digit-colon pattern
+  return parseBibleRef(text) || { bookName: text, ref: '', bookId: undefined };
 }
 
 /** Parse anaphora name → book link */
@@ -100,7 +102,7 @@ function parseCommemoration(text: string) {
 
 function BibleChip({ text, label }: { text: string; label?: string }) {
   const parsed = parseReading(text);
-  const display = label || `${parsed.bookName} ${parsed.ref}`.trim();
+  const display = label || (parsed.ref ? `${parsed.bookName} ${parsed.ref}` : parsed.bookName).trim();
   if (parsed.bookId) {
     return (
       <Link href={`/books/${parsed.bookId}`}
@@ -170,7 +172,16 @@ export default function GtsawiePage() {
       const res  = await fetch(url, { cache:'no-store' });
       const json = await res.json();
       if (json.success && json.data?.length > 0) {
-        setData(JSON.parse(json.data[0].translations?.gez || '{}') as DayData);
+        const raw = json.data[0].translations;
+        // The seed stores all 9 slots as a JSON string in translations.gez
+        // After .lean(), Mongoose Map comes back as a plain object: { gez: '{"commemoration":...}' }
+        let parsed: DayData = {};
+        try {
+          const gezStr = typeof raw === 'string' ? raw
+            : (raw?.gez ?? '');
+          if (gezStr) parsed = JSON.parse(gezStr) as DayData;
+        } catch { parsed = {}; }
+        setData(parsed);
       }
     } catch { /* ignore */ }
     setLoading(false);
