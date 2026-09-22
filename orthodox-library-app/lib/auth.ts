@@ -120,7 +120,8 @@ export function clearVolunteerUser(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(VOLUNTEER_KEY);
 }
-  const token = getToken();
+export function getAuthHeaders(): Record<string, string> {
+    const token = getToken();
   return token
     ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
     : { 'Content-Type': 'application/json' };
