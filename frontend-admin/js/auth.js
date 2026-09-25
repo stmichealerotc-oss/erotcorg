@@ -113,8 +113,7 @@ class AuthSystem {
                         'Authorization': `Bearer ${this.token}`,
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
-                    },
-                    credentials: 'include' // Important for CORS
+                    }
                 });
 
                 console.log('🔐 Server response status:', response.status);
@@ -245,7 +244,6 @@ class AuthSystem {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                credentials: 'include', // Important for CORS and cookies
                 body: JSON.stringify({ username, password })
             });
 

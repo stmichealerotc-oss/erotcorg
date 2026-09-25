@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { isLoggedIn, isAdmin, authHeaders } from '@/lib/auth';
+import { isLoggedIn, isAdmin, getAuthHeaders } from '@/lib/auth';
 
 interface Book {
   _id: string;
@@ -62,7 +62,7 @@ export default function AdminPage() {
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/orthodox-library/books`,
-        { headers: authHeaders() }
+        { headers: getAuthHeaders() }
       );
       const data = await response.json();
       if (data.success) setBooks(data.data);
@@ -89,7 +89,7 @@ export default function AdminPage() {
 
       const response = await fetch(`${API_BASE_URL}/api/orthodox-library/blocks`, {
         method: 'POST',
-        headers: authHeaders(),
+        headers: getAuthHeaders(),
         body: JSON.stringify(blockData)
       });
 
