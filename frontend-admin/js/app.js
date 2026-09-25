@@ -250,7 +250,6 @@ class API {
             const response = await fetch(`${this.baseUrl}${url}`, {
                 method,
                 headers,
-                credentials: "include",
                 body: method !== "GET" ? JSON.stringify(data) : undefined
             });
 
@@ -356,7 +355,6 @@ class API {
             const response = await fetch(`${this.baseUrl}${url}`, {
                 method,
                 headers,
-                credentials: "include",
                 body: method !== "GET" && data ? JSON.stringify(data) : undefined
             });
 
